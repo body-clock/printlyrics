@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/body-clock/printlyrics/compare/v1.1.0...v1.2.0) (2026-07-27)
+
+
+### Features
+
+* improve search experience and discoverability ([#6](https://github.com/body-clock/printlyrics/issues/6)) ([77ed018](https://github.com/body-clock/printlyrics/commit/77ed0185ccec4977492683ece24496403ddf62ed))
+
 ## [1.1.0](https://github.com/body-clock/printlyrics/compare/v1.0.0...v1.1.0) (2026-07-27)
 
 
