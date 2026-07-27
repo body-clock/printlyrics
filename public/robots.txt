@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://printlyrics.app/sitemap.xml

@@ -1,0 +1,72 @@
+<% content_for :title, "PrintLyrics | Clean, printable lyrics" %>
+<% content_for :description, "Create clean, printable lyric sheets from pasted lyrics or a Genius or AZLyrics URL." %>
+<% content_for :canonical_url, root_url %>
+
+<div class="landing-shell">
+  <%= turbo_frame_tag "lyric_entry", class: "landing-frame" do %>
+    <%= render "shared/flash" %>
+
+    <section class="entry-panel" aria-labelledby="page-heading">
+      <div class="intro">
+        <h1 id="page-heading">PrintLyrics</h1>
+        <p>Paste lyrics or fetch a song, then make a clean page for printing.</p>
+      </div>
+
+      <div class="fetch-section">
+        <div class="section-heading">
+          <h2>Fetch from a URL</h2>
+          <p>Genius and AZLyrics</p>
+        </div>
+
+        <%= form_with url: lyrics_path,
+          method: :post,
+          data: { turbo_frame: "lyric_entry" },
+          class: "fetch-form" do |form| %>
+          <div class="field grow">
+            <%= form.label :url, "Song URL", class: "sr-only" %>
+            <%= form.url_field :url,
+              value: @source_url,
+              placeholder: "https://genius.com/artist-song-lyrics",
+              autocomplete: "url",
+              required: true %>
+          </div>
+          <%= form.button "Fetch", name: "fetch", value: "1", class: "button button-secondary" %>
+        <% end %>
+      </div>
+
+      <div class="divider"><span>or paste lyrics</span></div>
+
+      <%= form_with model: @lyric, url: lyrics_path, data: { turbo: false }, class: "lyrics-form" do |form| %>
+        <%= form.hidden_field :source_url if @lyric.source_url.present? %>
+
+        <div class="metadata-grid">
+          <div class="field">
+            <%= form.label :title, "Song title" %>
+            <%= form.text_field :title, placeholder: "Optional", autocomplete: "off" %>
+          </div>
+          <div class="field">
+            <%= form.label :artist, "Artist" %>
+            <%= form.text_field :artist, placeholder: "Optional", autocomplete: "off" %>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <%= form.label :lyrics, "Lyrics" %>
+            <span>Required</span>
+          </div>
+          <%= form.text_area :lyrics,
+            rows: 15,
+            placeholder: "[Verse 1]\nFirst line\nSecond line\n\n[Chorus]\n...",
+            required: true %>
+        </div>
+
+        <%= form.button "Generate print page", class: "button button-primary button-wide" %>
+      <% end %>
+    </section>
+  <% end %>
+
+  <footer class="landing-footer">
+    <p>Share links remain available for 180 days after their last visit.</p>
+  </footer>
+</div>

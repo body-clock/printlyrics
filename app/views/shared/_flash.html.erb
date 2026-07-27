@@ -1,0 +1,8 @@
+<% flash.each do |type, message| %>
+  <% is_error = type.to_s == "alert" %>
+  <div class="flash <%= is_error ? "flash-error" : "flash-success" %>"
+       role="<%= is_error ? "alert" : "status" %>">
+    <span class="flash-mark" aria-hidden="true"><%= is_error ? "!" : "✓" %></span>
+    <span><%= message %></span>
+  </div>
+<% end %>

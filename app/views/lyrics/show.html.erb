@@ -1,0 +1,83 @@
+<%
+  display_title = @lyric.title.presence || "Untitled lyrics"
+  display_artist = @lyric.artist.presence
+  seo_title = display_artist ? "#{display_title} lyrics by #{display_artist}" : "#{display_title} | PrintLyrics"
+  description = display_artist ? "Print-friendly lyrics for #{display_title} by #{display_artist}." : "A clean, print-friendly lyric sheet."
+  structured_data = {
+    "@context": "https://schema.org",
+    "@type": "MusicRecording",
+    name: display_title,
+    byArtist: display_artist && { "@type": "MusicGroup", name: display_artist },
+    url: lyric_url(@lyric)
+  }.compact
+%>
+<% content_for :title, seo_title %>
+<% content_for :description, description %>
+<% content_for :canonical_url, lyric_url(@lyric) %>
+<% content_for :og_type, "music.song" %>
+<% content_for :robots, "noindex, nofollow" %>
+<% content_for :body_class, "preview-body" %>
+<% content_for :head do %>
+  <script type="application/ld+json"><%= raw json_escape(structured_data.to_json) %></script>
+<% end %>
+
+<div class="preview-shell" data-controller="preview">
+  <nav class="control-bar no-print" aria-label="Print page controls">
+    <div class="control-inner">
+      <%= link_to root_path, class: "back-link" do %>
+        <span aria-hidden="true">←</span>
+        <span>Back</span>
+      <% end %>
+
+      <div class="control-groups">
+        <fieldset class="segmented-control">
+          <legend>Size</legend>
+          <% %w[S M L XL].each do |size| %>
+            <button type="button"
+                    class="<%= size == "M" ? "is-active" : nil %>"
+                    aria-pressed="<%= size == "M" %>"
+                    data-preview-target="sizeButton"
+                    data-action="preview#setSize"
+                    data-size="<%= size.downcase %>"><%= size %></button>
+          <% end %>
+        </fieldset>
+
+        <fieldset class="segmented-control columns-control">
+          <legend>Columns</legend>
+          <% [1, 2].each do |columns| %>
+            <button type="button"
+                    class="<%= columns == 1 ? "is-active" : nil %>"
+                    aria-pressed="<%= columns == 1 %>"
+                    data-preview-target="columnButton"
+                    data-action="preview#setColumns"
+                    data-columns="<%= columns %>"><%= columns %></button>
+          <% end %>
+        </fieldset>
+
+        <button type="button" class="button button-print" data-action="preview#print">
+          <span aria-hidden="true">↗</span>
+          <span>Print</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <article class="paper size-m" data-preview-target="page">
+    <header class="lyric-header">
+      <h1><%= display_title %></h1>
+      <% if display_artist %>
+        <p><%= display_artist %></p>
+      <% end %>
+    </header>
+
+    <div class="lyrics" data-preview-target="lyrics">
+      <% @lyric.stanzas.each do |stanza| %>
+        <section class="stanza"><%= stanza %></section>
+      <% end %>
+    </div>
+  </article>
+
+  <p class="mobile-print-note no-print"
+     data-preview-target="mobileNote"
+     hidden>Two columns will be used when printing.</p>
+</div>

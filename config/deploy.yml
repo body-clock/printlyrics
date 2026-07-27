@@ -1,0 +1,39 @@
+service: printlyrics
+image: body-clock/printlyrics
+
+servers:
+  web:
+    hosts:
+      - 46.225.21.111
+
+proxy:
+  ssl: true
+  forward_headers: true
+  host: printlyrics.app
+
+registry:
+  server: ghcr.io
+  username: <%= ENV.fetch("KAMAL_REGISTRY_USERNAME", "body-clock") %>
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+env:
+  secret:
+    - RAILS_MASTER_KEY
+  clear:
+    RAILS_SERVE_STATIC_FILES: true
+
+volumes:
+  - "printlyrics_storage:/rails/storage"
+
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  shell: app exec --interactive --reuse "bash"
+  logs: app logs -f
+  dbc: app exec --interactive --reuse "bin/rails dbconsole"
+  purge: app exec --reuse "bin/rails lyrics:purge_expired"
+
+asset_path: /rails/public/assets
+
+builder:
+  arch: amd64

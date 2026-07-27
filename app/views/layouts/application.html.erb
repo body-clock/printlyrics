@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= page_title %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="<%= page_description %>">
+    <% if content_for?(:robots) %>
+      <meta name="robots" content="<%= content_for(:robots) %>">
+    <% end %>
+    <link rel="canonical" href="<%= canonical_url %>">
+    <meta property="og:title" content="<%= page_title %>">
+    <meta property="og:description" content="<%= page_description %>">
+    <meta property="og:type" content="<%= content_for?(:og_type) ? content_for(:og_type) : "website" %>">
+    <meta property="og:url" content="<%= canonical_url %>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="PrintLyrics">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f4f0e8" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1d1d1b" media="(prefers-color-scheme: dark)">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="<%= content_for?(:body_class) ? content_for(:body_class) : nil %>">
+    <main>
+      <%= yield %>
+    </main>
+  </body>
+</html>
