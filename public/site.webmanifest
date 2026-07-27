@@ -1,0 +1,23 @@
+{
+  "name": "PrintLyrics",
+  "short_name": "PrintLyrics",
+  "description": "Search, format, and print lyrics for any song.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f0e8",
+  "theme_color": "#292722",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

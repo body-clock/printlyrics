@@ -1,6 +1,41 @@
-<% content_for :title, "PrintLyrics | Clean, printable lyrics" %>
-<% content_for :description, "Find lyrics by song or artist and create clean, printable lyric sheets." %>
+<%
+  seo_description = "Search by song or artist, customize the layout, and print lyrics for any song on a clean page. Free to use with no account required."
+  structured_data = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "#{root_url}#website",
+        url: root_url,
+        name: "PrintLyrics",
+        alternateName: "Print Lyrics",
+        description: seo_description
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "#{root_url}#application",
+        url: root_url,
+        name: "PrintLyrics",
+        description: seo_description,
+        applicationCategory: "UtilitiesApplication",
+        operatingSystem: "Any",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD"
+        },
+        isPartOf: { "@id": "#{root_url}#website" }
+      }
+    ]
+  }
+%>
+<% content_for :title, "Print Lyrics for Any Song | PrintLyrics" %>
+<% content_for :description, seo_description %>
 <% content_for :canonical_url, root_url %>
+<% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
+<% content_for :head do %>
+  <script type="application/ld+json"><%= raw json_escape(structured_data.to_json) %></script>
+<% end %>
 
 <div class="landing-shell">
   <%= turbo_frame_tag "lyric_entry", class: "landing-frame" do %>
@@ -9,59 +44,98 @@
     <section class="entry-panel" aria-labelledby="page-heading">
       <div class="intro">
         <h1 id="page-heading">PrintLyrics</h1>
-        <p>Find a song, review the lyrics, and make a clean page for printing.</p>
+        <p>Print lyrics for any song on a clean, customizable page.</p>
       </div>
 
       <div class="search-section">
         <div class="section-heading">
-          <h2>Find lyrics</h2>
+          <h2>Find song lyrics</h2>
           <p>via LRCLIB</p>
         </div>
 
-        <%= form_with url: search_lyrics_path,
-          method: :post,
-          data: { turbo_frame: "lyric_entry" },
-          class: "search-form" do |form| %>
-          <div class="field grow">
-            <%= form.label :query, "Song title or artist", class: "sr-only" %>
-            <%= form.search_field :query,
-              value: @query,
-              placeholder: "Song title or artist",
-              autocomplete: "off",
-              required: true %>
-          </div>
-          <%= form.button "Search", class: "button button-secondary" %>
-        <% end %>
-
-        <% if @results.present? %>
-          <div class="search-results" role="list" aria-label="Song matches">
-            <% @results.each do |result| %>
-              <%= form_with url: select_lyrics_path,
-                method: :post,
-                data: { turbo_frame: "lyric_entry" },
-                class: "search-result",
-                role: "listitem" do |form| %>
-                <%= form.hidden_field :result_id, value: result.id %>
-                <%= form.hidden_field :query, value: @query %>
-                <%= form.button class: "search-result-button" do %>
-                  <span class="search-result-copy">
-                    <strong><%= result.title %></strong>
-                    <span><%= result.artist %></span>
-                  </span>
-                  <span class="search-result-meta">
-                    <% if result.album.present? %><span><%= result.album %></span><% end %>
-                    <% if result.duration.positive? %><span><%= song_duration(result.duration) %></span><% end %>
-                  </span>
-                <% end %>
-              <% end %>
+        <div class="search-composer"
+          data-controller="lyric-search"
+          data-action="click@window->lyric-search#dismissFromOutside keydown.esc@window->lyric-search#close">
+          <%= form_with url: search_lyrics_path,
+            method: :post,
+            data: {
+              turbo_frame: "lyric_entry",
+              action: "turbo:submit-start->lyric-search#start turbo:submit-end->lyric-search#finish"
+            },
+            html: { aria: { busy: "false" } },
+            class: "search-form" do |form| %>
+            <div class="field grow">
+              <%= form.label :query, "Song title or artist", class: "sr-only" %>
+              <%= form.search_field :query,
+                value: @query,
+                placeholder: "Song title or artist",
+                autocomplete: "off",
+                required: true,
+                aria: (@results.present? || @search_error.present? ? { controls: "song-search-results" } : {}),
+                data: { lyric_search_target: "query" } %>
+            </div>
+            <%= form.button class: "button button-secondary search-submit" do %>
+              <span data-lyric-search-target="idleLabel">Search</span>
+              <span class="search-busy-label" data-lyric-search-target="busyLabel" hidden>
+                <span class="search-spinner" aria-hidden="true"></span>
+                Searching...
+              </span>
             <% end %>
-          </div>
-        <% end %>
+          <% end %>
+
+          <% if @results.present? || @search_error.present? %>
+            <section id="song-search-results"
+              class="search-results-panel"
+              aria-label="Song search results"
+              data-lyric-search-target="panel">
+              <div class="search-results-header">
+                <% if @search_error.present? %>
+                  <p role="alert"><%= @search_error %></p>
+                <% else %>
+                  <p role="status" aria-live="polite"><%= @search_status %></p>
+                <% end %>
+                <button type="button"
+                  class="search-results-close"
+                  aria-label="Close search results"
+                  title="Close search results"
+                  data-action="lyric-search#close">&times;</button>
+              </div>
+
+              <% if @results.present? %>
+                <div class="search-results" role="list" aria-label="Song matches">
+                  <% @results.each do |result| %>
+                    <%= form_with url: select_lyrics_path,
+                      method: :post,
+                      data: { turbo_frame: "lyric_entry" },
+                      class: "search-result",
+                      role: "listitem" do |form| %>
+                      <%= form.hidden_field :result_id, value: result.id, id: nil %>
+                      <%= form.hidden_field :query, value: @query, id: nil %>
+                      <%= form.button class: "search-result-button" do %>
+                        <span class="search-result-copy">
+                          <strong><%= result.title %></strong>
+                          <span><%= result.artist %></span>
+                        </span>
+                        <span class="search-result-meta">
+                          <% if result.album.present? %><span><%= result.album %></span><% end %>
+                          <% if result.duration.positive? %><span><%= song_duration(result.duration) %></span><% end %>
+                        </span>
+                      <% end %>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
+            </section>
+          <% end %>
+        </div>
       </div>
 
       <div class="divider"><span>or enter lyrics manually</span></div>
 
       <%= form_with model: @lyric, url: lyrics_path, data: { turbo: false }, class: "lyrics-form" do |form| %>
+        <% if @loaded_status.present? %>
+          <p class="sr-only" role="status" aria-live="polite"><%= @loaded_status %></p>
+        <% end %>
         <%= form.hidden_field :source_url if @lyric.source_url.present? %>
 
         <div class="metadata-grid">

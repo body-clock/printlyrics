@@ -6,15 +6,36 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "PrintLyrics"
-    assert_select "title", "PrintLyrics | Clean, printable lyrics"
+    assert_select "title", "Print Lyrics for Any Song | PrintLyrics"
     assert_select "meta[name='application-name'][content='PrintLyrics']", 1
+    assert_select "meta[name='description'][content*='print lyrics for any song']"
+    assert_select "meta[name='robots'][content*='index, follow']", 1
+    assert_select "meta[property='og:site_name'][content='PrintLyrics']", 1
+    assert_select "meta[property='og:image'][content='#{root_url}social-card.png']", 1
+    assert_select "meta[name='twitter:card'][content='summary_large_image']", 1
+    assert_select "link[rel='icon'][href='/icon.svg'][sizes='any']", 1
+    assert_select "link[rel='icon'][href='/favicon.ico'][sizes='48x48']", 1
+    assert_select "link[rel='apple-touch-icon'][href='/apple-touch-icon.png']", 1
+    assert_select "link[rel='manifest'][href='/site.webmanifest'][type='application/manifest+json']", 1
     assert_select "form[action='#{lyrics_path}']", count: 1
     assert_select "turbo-frame#lyric_entry" do
-      assert_select "form[action='#{search_lyrics_path}'][data-turbo-frame='lyric_entry']", count: 1
+      assert_select "[data-controller='lyric-search']" do
+        assert_select "form[action='#{search_lyrics_path}'][data-turbo-frame='lyric_entry'][aria-busy='false']", count: 1
+        assert_select "button[type='submit']" do
+          assert_select "[data-lyric-search-target='idleLabel']", text: "Search"
+          assert_select "[data-lyric-search-target='busyLabel']", text: /Searching/
+        end
+      end
     end
     assert_select "input[name='query'][placeholder*='Song title']"
-    assert_select "meta[name='description'][content*='printable lyric sheets']"
+    assert_select "input[name='query'][aria-controls]", count: 0
+    assert_select "input[name='query'][aria-expanded]", count: 0
     assert_select "link[rel='canonical'][href='#{root_url}']"
+    assert_select "script[type='application/ld+json']", /WebSite/
+    assert_select "script[type='application/ld+json']", /WebApplication/
+    assert_select "script[type='application/ld+json']", /UtilitiesApplication/
+    assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
+    assert_select ".intro p", /Print lyrics for any song/
     assert_no_match(/Genius|AZLyrics|Song URL/, response.body)
   end
 
@@ -85,9 +106,15 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
-    assert_select "[role='status']", /1 match/
+    assert_select "section#song-search-results.search-results-panel[aria-label='Song search results']" do
+      assert_select "[role='status']", /1 match/
+      assert_select "button[type='button'][aria-label='Close search results']", count: 1
+      assert_select "[role='list']", count: 1
+    end
+    assert_select "input[name='query'][aria-controls='song-search-results']"
     assert_select "form[action='#{select_lyrics_path}']" do
       assert_select "input[name='result_id'][value='42']"
+      assert_select "input[id]", count: 0
       assert_select "button", /The Kiss/
       assert_select "button", /Judee Sill/
       assert_select "button", /Heart Food/
@@ -126,7 +153,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     post search_lyrics_path, params: { query: " " }
 
     assert_response :unprocessable_content
-    assert_select "[role='alert']", /Enter a song title or artist/
+    assert_select "#song-search-results [role='alert']", /Enter a song title or artist/
 
     client = Object.new
     client.define_singleton_method(:search) { |_| raise LrcLibClient::ServiceError }
@@ -136,7 +163,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :service_unavailable
-    assert_select "[role='alert']", /Song search is temporarily unavailable/
+    assert_select "#song-search-results [role='alert']", /Song search is temporarily unavailable/
   end
 
   test "shareable page renders stanzas controls and structured metadata" do
