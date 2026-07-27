@@ -24,9 +24,9 @@ class LyricsController < ApplicationController
 
     @results = LrcLibClient.new.search(@query)
     if @results.empty?
-      flash.now[:alert] = "No matching songs found"
+      @search_error = "No matching songs found"
     else
-      flash.now[:notice] = "#{helpers.pluralize(@results.size, "match")} found. Choose a song."
+      @search_status = "#{helpers.pluralize(@results.size, "match")} found. Choose a song."
     end
     render :new
   rescue LrcLibClient::ServiceError
@@ -42,7 +42,7 @@ class LyricsController < ApplicationController
       lyrics: result.lyrics,
       source_url: result.source_url
     )
-    flash.now[:notice] = "Lyrics loaded. Review and edit them before generating your print page."
+    @loaded_status = "Lyrics loaded. Review and edit them before generating your print page."
     render :new
   rescue LrcLibClient::NotFoundError
     @lyric = Lyric.new
@@ -61,13 +61,13 @@ class LyricsController < ApplicationController
 
   def render_search_error(message)
     @lyric ||= Lyric.new
-    flash.now[:alert] = message
+    @search_error = message
     render :new, status: :unprocessable_content
   end
 
   def render_service_error
     @lyric ||= Lyric.new
-    flash.now[:alert] = "Song search is temporarily unavailable. You can still paste lyrics below."
+    @search_error = "Song search is temporarily unavailable. You can still paste lyrics below."
     render :new, status: :service_unavailable
   end
 

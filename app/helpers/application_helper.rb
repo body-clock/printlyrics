@@ -1,13 +1,13 @@
 module ApplicationHelper
   def page_title
-    content_for?(:title) ? content_for(:title) : "PrintLyrics | Clean, printable lyrics"
+    content_for?(:title) ? content_for(:title) : "Print Lyrics for Any Song | PrintLyrics"
   end
 
   def page_description
     if content_for?(:description)
       content_for(:description)
     else
-      "Find lyrics by song or artist and create clean, printable lyric sheets."
+      "Search by song or artist, customize the layout, and print lyrics for any song on a clean page."
     end
   end
 
