@@ -375,7 +375,6 @@ DEPENDENCIES
   faraday
   importmap-rails
   kamal
-  nokogiri
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.3)

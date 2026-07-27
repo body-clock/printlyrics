@@ -1,8 +1,9 @@
 # PrintLyrics
 
-PrintLyrics turns pasted lyrics or a supported song URL into a shareable,
-print-optimized lyric sheet. It is a Rails 8.1 application built with Hotwire,
-Tailwind CSS, SQLite, and a small amount of Stimulus for preview controls.
+PrintLyrics finds songs through LRCLIB and turns their lyrics into shareable,
+print-optimized lyric sheets. Manual lyric entry is also supported. It is a
+Rails 8.1 application built with Hotwire, Tailwind CSS, SQLite, and a small
+amount of Stimulus for preview controls.
 
 ## Requirements
 
@@ -27,11 +28,11 @@ bin/brakeman --no-pager
 bin/rails assets:precompile
 ```
 
-## Extraction
+## Song Search
 
-`LyricExtractor` supports `genius.com` and `azlyrics.com`. Fetching a URL fills
-the editable form without creating a database record. A record is persisted
-only after the user generates the print page.
+Song search uses the public LRCLIB API. Selecting a result fills the editable
+form without creating a database record. A record is persisted only after the
+user generates the print page.
 
 ## Retention
 
