@@ -13,7 +13,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "meta[property='og:site_name'][content='PrintLyrics']", 1
     assert_select "meta[property='og:image'][content='#{root_url}social-card.png']", 1
     assert_select "meta[name='twitter:card'][content='summary_large_image']", 1
-    assert_select "link[rel='icon'][href='/icon.svg'][sizes='any']", 1
+    assert_select "link[rel='icon'][href='/favicon.svg'][sizes='any']", 1
     assert_select "link[rel='icon'][href='/favicon.ico'][sizes='48x48']", 1
     assert_select "link[rel='apple-touch-icon'][href='/apple-touch-icon.png']", 1
     assert_select "link[rel='manifest'][href='/site.webmanifest'][type='application/manifest+json']", 1
