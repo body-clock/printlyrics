@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/body-clock/printlyrics/compare/v1.2.0...v1.2.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* bypass cached placeholder favicon ([#8](https://github.com/body-clock/printlyrics/issues/8)) ([031efa8](https://github.com/body-clock/printlyrics/commit/031efa85a5c5edacec9c703c87fffd43f84b9929))
+
 ## [1.2.0](https://github.com/body-clock/printlyrics/compare/v1.1.0...v1.2.0) (2026-07-27)
 
 
