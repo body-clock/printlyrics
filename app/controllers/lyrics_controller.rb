@@ -6,8 +6,6 @@ class LyricsController < ApplicationController
   end
 
   def create
-    return fetch_lyrics if params[:fetch].present?
-
     Lyric.purge_expired!
     @lyric = Lyric.new(lyric_params)
     if @lyric.save
@@ -18,6 +16,42 @@ class LyricsController < ApplicationController
     end
   end
 
+  def search
+    @lyric = Lyric.new
+    @query = params[:query].to_s.strip
+    return render_search_error("Enter a song title or artist") if @query.blank?
+    return render_search_error("Keep your search under 200 characters") if @query.length > 200
+
+    @results = LrcLibClient.new.search(@query)
+    if @results.empty?
+      flash.now[:alert] = "No matching songs found"
+    else
+      flash.now[:notice] = "#{helpers.pluralize(@results.size, "match")} found. Choose a song."
+    end
+    render :new
+  rescue LrcLibClient::ServiceError
+    render_service_error
+  end
+
+  def select
+    @query = params[:query].to_s.strip
+    result = LrcLibClient.new.find(params[:result_id])
+    @lyric = Lyric.new(
+      title: result.title,
+      artist: result.artist,
+      lyrics: result.lyrics,
+      source_url: result.source_url
+    )
+    flash.now[:notice] = "Lyrics loaded. Review and edit them before generating your print page."
+    render :new
+  rescue LrcLibClient::NotFoundError
+    @lyric = Lyric.new
+    render_search_error("That song is no longer available")
+  rescue LrcLibClient::ServiceError
+    @lyric = Lyric.new
+    render_service_error
+  end
+
   def show
     @lyric = Lyric.active.find_by!(token: params[:token])
     @lyric.renew_retention!
@@ -25,18 +59,16 @@ class LyricsController < ApplicationController
 
   private
 
-  def fetch_lyrics
-    result = LyricExtractor.new.extract(params[:url])
-    @source_url = params[:url]
-    @lyric = Lyric.new(title: result.title, artist: result.artist, lyrics: result.lyrics, source_url: @source_url)
-    flash.now[:notice] = "Lyrics fetched. Review and edit them before generating your print page."
-    render :new
-  rescue LyricExtractor::UnsupportedSiteError
-    redirect_to root_path, alert: "Couldn't fetch lyrics from that URL"
-  rescue LyricExtractor::FetchError
-    redirect_to root_path, alert: "Couldn't reach that page"
-  rescue LyricExtractor::ParseError
-    redirect_to root_path, alert: "Couldn't find lyrics on that page"
+  def render_search_error(message)
+    @lyric ||= Lyric.new
+    flash.now[:alert] = message
+    render :new, status: :unprocessable_content
+  end
+
+  def render_service_error
+    @lyric ||= Lyric.new
+    flash.now[:alert] = "Song search is temporarily unavailable. You can still paste lyrics below."
+    render :new, status: :service_unavailable
   end
 
   def lyric_params

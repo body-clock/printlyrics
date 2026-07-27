@@ -1,5 +1,5 @@
 <% content_for :title, "PrintLyrics | Clean, printable lyrics" %>
-<% content_for :description, "Create clean, printable lyric sheets from pasted lyrics or a Genius or AZLyrics URL." %>
+<% content_for :description, "Find lyrics by song or artist and create clean, printable lyric sheets." %>
 <% content_for :canonical_url, root_url %>
 
 <div class="landing-shell">
@@ -9,32 +9,57 @@
     <section class="entry-panel" aria-labelledby="page-heading">
       <div class="intro">
         <h1 id="page-heading">PrintLyrics</h1>
-        <p>Paste lyrics or fetch a song, then make a clean page for printing.</p>
+        <p>Find a song, review the lyrics, and make a clean page for printing.</p>
       </div>
 
-      <div class="fetch-section">
+      <div class="search-section">
         <div class="section-heading">
-          <h2>Fetch from a URL</h2>
-          <p>Genius and AZLyrics</p>
+          <h2>Find lyrics</h2>
+          <p>via LRCLIB</p>
         </div>
 
-        <%= form_with url: lyrics_path,
+        <%= form_with url: search_lyrics_path,
           method: :post,
           data: { turbo_frame: "lyric_entry" },
-          class: "fetch-form" do |form| %>
+          class: "search-form" do |form| %>
           <div class="field grow">
-            <%= form.label :url, "Song URL", class: "sr-only" %>
-            <%= form.url_field :url,
-              value: @source_url,
-              placeholder: "https://genius.com/artist-song-lyrics",
-              autocomplete: "url",
+            <%= form.label :query, "Song title or artist", class: "sr-only" %>
+            <%= form.search_field :query,
+              value: @query,
+              placeholder: "Song title or artist",
+              autocomplete: "off",
               required: true %>
           </div>
-          <%= form.button "Fetch", name: "fetch", value: "1", class: "button button-secondary" %>
+          <%= form.button "Search", class: "button button-secondary" %>
+        <% end %>
+
+        <% if @results.present? %>
+          <div class="search-results" role="list" aria-label="Song matches">
+            <% @results.each do |result| %>
+              <%= form_with url: select_lyrics_path,
+                method: :post,
+                data: { turbo_frame: "lyric_entry" },
+                class: "search-result",
+                role: "listitem" do |form| %>
+                <%= form.hidden_field :result_id, value: result.id %>
+                <%= form.hidden_field :query, value: @query %>
+                <%= form.button class: "search-result-button" do %>
+                  <span class="search-result-copy">
+                    <strong><%= result.title %></strong>
+                    <span><%= result.artist %></span>
+                  </span>
+                  <span class="search-result-meta">
+                    <% if result.album.present? %><span><%= result.album %></span><% end %>
+                    <% if result.duration.positive? %><span><%= song_duration(result.duration) %></span><% end %>
+                  </span>
+                <% end %>
+              <% end %>
+            <% end %>
+          </div>
         <% end %>
       </div>
 
-      <div class="divider"><span>or paste lyrics</span></div>
+      <div class="divider"><span>or enter lyrics manually</span></div>
 
       <%= form_with model: @lyric, url: lyrics_path, data: { turbo: false }, class: "lyrics-form" do |form| %>
         <%= form.hidden_field :source_url if @lyric.source_url.present? %>
