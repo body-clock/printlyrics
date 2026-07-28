@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/body-clock/printlyrics/compare/v1.2.2...v1.3.0) (2026-07-28)
+
+
+### Features
+
+* publish organic search and privacy-safe song catalog ([#18](https://github.com/body-clock/printlyrics/issues/18)) ([e4a07d6](https://github.com/body-clock/printlyrics/commit/e4a07d62cfc54dccdff423d4d2107ca2263abd0c))
+
 ## [1.2.2](https://github.com/body-clock/printlyrics/compare/v1.2.1...v1.2.2) (2026-07-28)
 
 
