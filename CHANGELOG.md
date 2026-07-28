@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/body-clock/printlyrics/compare/v1.2.1...v1.2.2) (2026-07-28)
+
+
+### Bug Fixes
+
+* add Plausible analytics tracking ([#10](https://github.com/body-clock/printlyrics/issues/10)) ([ca6e371](https://github.com/body-clock/printlyrics/commit/ca6e371dbec25dda564ec99da4da47e84abb8a33))
+
 ## [1.2.1](https://github.com/body-clock/printlyrics/compare/v1.2.0...v1.2.1) (2026-07-27)
 
 
