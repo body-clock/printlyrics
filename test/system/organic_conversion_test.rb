@@ -22,7 +22,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     )
   end
 
-  test "search selection loads editable lyrics and promotes the song on generation" do
+  test "search selection loads editable lyrics and records demand without publishing it" do
     result = LrcLibResult.new(
       id: 42,
       title: "The Kiss",
@@ -63,7 +63,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     end
 
     assert_equal 42, Song.last.source_id
-    assert Song.last.indexable?
+    refute Song.last.indexable?
   end
 
   test "public song page loads lyrics into the editable form" do

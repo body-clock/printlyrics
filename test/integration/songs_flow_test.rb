@@ -108,9 +108,19 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Songs ready to print"
-    assert_select "[data-empty-catalog]", /appear here after/i
+    assert_select "[data-empty-catalog]", /No songs are available yet/i
     assert_select "a[href='/']", text: /find a song/i
     assert_select "[aria-label='Song pages']", count: 0
+  end
+
+  test "catalog introduces popular songs as a direct printing path" do
+    create_song
+
+    get "/songs"
+
+    assert_response :success
+    assert_select ".catalog-header .eyebrow", "Popular songs"
+    assert_select ".catalog-header", /Choose a song to load/i
   end
 
   test "browse paginates eligible songs with crawlable links" do
