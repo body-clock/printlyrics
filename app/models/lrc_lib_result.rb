@@ -1,9 +1,11 @@
 class LrcLibResult
   TIMESTAMP_PREFIX = /\A(?:\[[^\]]+\])+\s*/
 
-  attr_reader :id, :title, :artist, :album, :duration, :plain_lyrics, :synced_lyrics, :instrumental
+  attr_reader :id, :title, :artist, :album, :duration,
+              :plain_lyrics, :synced_lyrics, :instrumental
 
-  def initialize(id:, title:, artist:, album:, duration:, plain_lyrics:, synced_lyrics:, instrumental:)
+  def initialize(id:, title:, artist:, album:, duration:,
+                 plain_lyrics:, synced_lyrics:, instrumental:)
     @id = id
     @title = title
     @artist = artist
