@@ -8,13 +8,21 @@ class LyricsController < ApplicationController
   end
 
   def create
-    @lyric = Lyric.new(lyric_params)
-    if @lyric.save
-      redirect_to @lyric
-    else
+    creation = LyricPageCreation.new(
+      attributes: lyric_params,
+      catalog_token: params[:catalog_token]
+    )
+
+    unless creation.save
+      @lyric = creation.lyric
+      @catalog_token = params[:catalog_token]
       flash.now[:alert] = "Please paste your lyrics"
-      render :new, status: :unprocessable_content
+      return render :new, status: :unprocessable_content
     end
+
+    @lyric = creation.lyric
+    session[:generated_lyric_token] = @lyric.token
+    redirect_to @lyric
   end
 
   def search
@@ -39,6 +47,7 @@ class LyricsController < ApplicationController
 
     @lyric = lookup.lyric || Lyric.new
     @loaded_status = "Lyrics loaded. Review and edit them before generating your print page." if lookup.success?
+    @catalog_token = lookup.catalog_token
     @search_error = lookup.error
 
     render :new, status: lookup.http_status
@@ -46,6 +55,7 @@ class LyricsController < ApplicationController
 
   def show
     @lyric = Lyric.active.find_by!(token: params[:token])
+    @generated_page_key = @lyric.token if session.delete(:generated_lyric_token) == @lyric.token
     @lyric.renew_retention!
   end
 
@@ -56,7 +66,7 @@ class LyricsController < ApplicationController
   end
 
   def lyric_params
-    params.require(:lyric).permit(:title, :artist, :lyrics, :source_url)
+    params.require(:lyric).permit(:title, :artist, :lyrics)
   end
 
   def lyric_not_found

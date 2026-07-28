@@ -36,6 +36,12 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", /UtilitiesApplication/
     assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
     assert_select ".intro p", /Print lyrics for any song/
+    assert_select "main", /No account/
+    assert_select "main", /musicians/i
+    assert_select "main", /teachers/i
+    assert_select "main", /personal/i
+    assert_select "script", /autoCapturePageviews:\s*false/
+    assert_select "form[action='#{search_lyrics_path}'][data-action*='lyric-search#start']", count: 1
     assert_no_match(/Genius|AZLyrics|Song URL/, response.body)
   end
 
@@ -45,7 +51,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
-  test "manual submission persists lyrics and redirects to its token URL" do
+  test "manual submission persists lyrics without trusting a source URL" do
     assert_difference("Lyric.count", 1) do
       post lyrics_path, params: {
         lyric: {
@@ -59,7 +65,8 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
 
     lyric = Lyric.last
     assert_redirected_to lyric_path(lyric)
-    assert_equal "https://lrclib.net/api/get/123", lyric.source_url
+    assert_nil lyric.source_url
+    assert_nil lyric.song
   end
 
   test "manual submission accepts missing metadata" do
@@ -69,7 +76,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "blank manual submission renders the form with an error" do
-    assert_no_difference("Lyric.count") do
+    assert_no_difference([ "Lyric.count", "Song.count" ]) do
       post lyrics_path, params: {
         lyric: {
           title: "Untitled",
@@ -82,7 +89,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_content
     assert_select "[role='alert']", /Please paste your lyrics/
-    assert_select "input[type='hidden'][name='lyric[source_url]'][value='https://lrclib.net/api/get/123']"
+    assert_select "input[type='hidden'][name='lyric[source_url]']", count: 0
   end
 
   test "search returns selectable results without persisting lyrics" do
@@ -99,7 +106,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     client = Object.new
     client.define_singleton_method(:search) { |_| [ result ] }
 
-    assert_no_difference("Lyric.count") do
+    assert_no_difference([ "Lyric.count", "Song.count" ]) do
       with_lrc_lib_client(client) do
         post search_lyrics_path, params: { query: "judee sill the kiss" }
       end
@@ -147,6 +154,62 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "input[name='lyric[artist]'][value='Judee Sill']"
     assert_select "textarea[name='lyric[lyrics]']", /Love, rising/
     assert_select "input[type='hidden'][name='lyric[source_url]'][value='https://lrclib.net/api/get/42']"
+    assert_select "input[type='hidden'][name='catalog_token']", count: 1
+  end
+
+  test "generating selected lyrics promotes the verified song" do
+    result = LrcLibResult.new(
+      id: 42,
+      title: "The Kiss",
+      artist: "Judee Sill",
+      album: "Heart Food",
+      duration: 214,
+      plain_lyrics: "Love, rising",
+      synced_lyrics: nil,
+      instrumental: false
+    )
+
+    assert_difference([ "Lyric.count", "Song.count" ], 1) do
+      post lyrics_path, params: {
+        catalog_token: SongCatalogToken.issue(result),
+        lyric: {
+          title: "My display title",
+          artist: "My display artist",
+          lyrics: "Love, rising",
+          source_url: "https://attacker.example/forged"
+        }
+      }
+    end
+
+    lyric = Lyric.last
+    assert_redirected_to lyric_path(lyric)
+    assert_equal 42, lyric.song.source_id
+    assert_equal "The Kiss", lyric.song.title
+    assert_equal "My display title", lyric.title
+    assert_equal "https://lrclib.net/api/get/42", lyric.source_url
+  end
+
+  test "invalid verified metadata returns the editable form without persistence" do
+    result = LrcLibResult.new(
+      id: 42,
+      title: "T" * 201,
+      artist: "Judee Sill",
+      album: "Heart Food",
+      duration: 214,
+      plain_lyrics: "Love, rising",
+      synced_lyrics: nil,
+      instrumental: false
+    )
+
+    assert_no_difference([ "Lyric.count", "Song.count" ]) do
+      post lyrics_path, params: {
+        catalog_token: SongCatalogToken.issue(result),
+        lyric: { title: "Display title", artist: "Display artist", lyrics: "Love, rising" }
+      }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "textarea[name='lyric[lyrics]']", /Love, rising/
   end
 
   test "selecting a removed song shows not-available message" do
@@ -195,6 +258,8 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "link[rel='canonical'][href='#{lyric_url(lyric)}']"
     assert_select "meta[property='og:title'][content='Downtown Lights lyrics by The Blue Nile']"
     assert_select "meta[name='robots'][content='noindex, nofollow']", 1
+    assert_select "body[data-generated-page-key]", count: 0
+    assert_select "button[data-action='preview#print']", count: 1
   end
 
   test "visiting a shareable page renews its retention" do

@@ -1,0 +1,53 @@
+<%
+  title = @page == 1 ? "Printable Song Lyrics | PrintLyrics" : "Printable Song Lyrics – Page #{@page} | PrintLyrics"
+  description = "Browse songs that PrintLyrics visitors have successfully prepared for printing, then load the lyrics into an editable print page."
+  canonical = @page == 1 ? songs_url : songs_url(page: @page)
+%>
+<% content_for :title, title %>
+<% content_for :description, description %>
+<% content_for :canonical_url, canonical %>
+<% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
+
+<div class="catalog-shell">
+  <header class="catalog-header">
+    <p class="eyebrow">Created from real use</p>
+    <h1>Songs ready to print</h1>
+    <p>These pages appear after someone successfully prepares a print page. Choose a song to load its available lyrics, review them, and make your own sheet.</p>
+  </header>
+
+  <% if @songs.any? %>
+    <ol class="song-list">
+      <% @songs.each do |song| %>
+        <li>
+          <%= link_to song_path(song), data: { song_link: true } do %>
+            <span>
+              <strong><%= song.title %></strong>
+              <span><%= song.artist %></span>
+            </span>
+            <span aria-hidden="true">→</span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+
+    <% if @total_pages > 1 %>
+      <nav class="pagination" aria-label="Song pages">
+        <% if @page > 1 %>
+          <%= link_to "Previous", songs_path(page: @page == 2 ? nil : @page - 1), rel: "prev" %>
+        <% end %>
+        <span>Page <%= @page %> of <%= @total_pages %></span>
+        <% if @page < @total_pages %>
+          <%= link_to "Next", songs_path(page: @page + 1), rel: "next" %>
+        <% end %>
+      </nav>
+    <% end %>
+  <% else %>
+    <section class="catalog-empty" data-empty-catalog>
+      <h2>The catalog starts with a successful print page</h2>
+      <p>Songs will appear here after visitors find their lyrics and generate a printable sheet.</p>
+      <%= link_to "Find a song to print", root_path, class: "button button-primary" %>
+    </section>
+  <% end %>
+
+  <%= render "shared/resource_navigation", current_section: :songs %>
+</div>

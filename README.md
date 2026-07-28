@@ -59,3 +59,9 @@ The `printlyrics-prod` GitHub environment also requires `KAMAL_SSH_KEY`.
 CI runs for pull requests and pushes to `main`. Release Please maintains a
 release pull request; merging that pull request publishes a release and
 dispatches the production deployment.
+
+## Operations
+
+Use the [organic search operations runbook](docs/organic-search-operations.md)
+to configure Search Console and Plausible, schedule catalog verification, record
+launch baselines, and run the 30- and 90-day reviews.

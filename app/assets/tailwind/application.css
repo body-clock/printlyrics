@@ -85,6 +85,29 @@ textarea:focus-visible {
   padding: 4.5rem 0 2rem;
 }
 
+.resource-navigation {
+  margin-top: 3rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.15rem;
+}
+
+.resource-navigation nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.72rem;
+}
+
+.resource-navigation a {
+  color: var(--ink-muted);
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
+.resource-navigation a:hover {
+  color: var(--accent-hover);
+}
+
 .landing-frame {
   display: block;
 }
@@ -453,6 +476,280 @@ textarea:focus-visible {
   margin: 1.25rem 0 0;
   color: var(--ink-muted);
   font-size: 0.7rem;
+}
+
+.tool-explainer {
+  margin-top: 3.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.tool-explainer h2,
+.guide h1,
+.guide h2 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+
+.tool-explainer h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.tool-explainer p:not(.eyebrow) {
+  margin: 0.75rem 0 0;
+  color: var(--ink-muted);
+}
+
+.guide-shell {
+  width: min(100% - 2rem, 46rem);
+  margin: 0 auto;
+  padding: 3rem 0;
+}
+
+.guide header {
+  border-bottom: 1px solid var(--line);
+  padding: 1rem 0 2rem;
+}
+
+.guide h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.08;
+}
+
+.guide header > p:last-child {
+  max-width: 39rem;
+  margin: 0.9rem 0 0;
+  color: var(--ink-muted);
+}
+
+.guide-steps {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: guide-step;
+}
+
+.guide-steps li {
+  position: relative;
+  border-bottom: 1px solid var(--line);
+  padding: 1.75rem 0 1.75rem 3rem;
+  counter-increment: guide-step;
+}
+
+.guide-steps li::before {
+  position: absolute;
+  top: 1.85rem;
+  left: 0;
+  color: var(--ink-muted);
+  content: counter(guide-step, decimal-leading-zero);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.guide-steps h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.guide-steps p {
+  margin: 0.55rem 0 0;
+  color: var(--ink-muted);
+}
+
+.guide-callout {
+  margin-top: 2.5rem;
+  border: 1px solid var(--line);
+  padding: 1.5rem;
+  background: var(--surface);
+}
+
+.guide-callout h2 {
+  margin: 0;
+}
+
+.guide-callout p {
+  margin: 0.65rem 0 1.25rem;
+  color: var(--ink-muted);
+}
+
+.catalog-shell,
+.song-shell {
+  width: min(100% - 2rem, 46rem);
+  margin: 0 auto;
+  padding: 3rem 0;
+}
+
+.catalog-header {
+  border-bottom: 1px solid var(--line);
+  padding: 1rem 0 2rem;
+}
+
+.catalog-header h1,
+.song-card h1,
+.catalog-empty h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+
+.catalog-header h1,
+.song-card h1 {
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.08;
+}
+
+.catalog-header > p:last-child {
+  max-width: 40rem;
+  margin: 0.8rem 0 0;
+  color: var(--ink-muted);
+}
+
+.song-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.song-list li {
+  border-bottom: 1px solid var(--line);
+}
+
+.song-list a {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.song-list a > span:first-child {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.song-list a span span {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
+.song-list a:hover strong {
+  color: var(--accent);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 0;
+  font-size: 0.78rem;
+}
+
+.pagination a,
+.breadcrumbs a,
+.manual-fallback {
+  color: var(--accent);
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
+.catalog-empty {
+  margin-top: 2rem;
+  border: 1px solid var(--line);
+  padding: 1.5rem;
+  background: var(--surface);
+}
+
+.catalog-empty h2 {
+  font-size: 1.35rem;
+}
+
+.catalog-empty p {
+  margin: 0.65rem 0 1.25rem;
+  color: var(--ink-muted);
+}
+
+.breadcrumbs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+}
+
+.song-card {
+  border-top: 1px solid var(--line);
+  padding-top: 2rem;
+}
+
+.song-artist {
+  margin: 0.55rem 0 0;
+  color: var(--ink-muted);
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-style: italic;
+}
+
+.song-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin: 2rem 0;
+  border-block: 1px solid var(--line);
+  padding: 1rem 0;
+}
+
+.song-metadata div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.song-metadata dt {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.song-metadata dd {
+  margin: 0;
+}
+
+.song-card > p:not(.eyebrow, .song-artist, .song-load-error) {
+  max-width: 38rem;
+  color: var(--ink-muted);
+}
+
+.song-load-form {
+  margin-top: 1.25rem;
+}
+
+.song-load-error {
+  border: 1px solid color-mix(in oklch, var(--error), transparent 55%);
+  padding: 0.75rem;
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.manual-fallback {
+  display: inline-block;
+  margin-top: 1rem;
 }
 
 .landing-footer p {

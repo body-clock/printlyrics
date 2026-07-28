@@ -106,7 +106,10 @@
                   <% @results.each do |result| %>
                     <%= form_with url: select_lyrics_path,
                       method: :post,
-                      data: { turbo_frame: "lyric_entry" },
+                      data: {
+                        turbo_frame: "lyric_entry",
+                        action: "turbo:submit-end->lyric-search#selected"
+                      },
                       class: "search-result",
                       role: "listitem" do |form| %>
                       <%= form.hidden_field :result_id, value: result.id, id: nil %>
@@ -137,6 +140,7 @@
           <p class="sr-only" role="status" aria-live="polite"><%= @loaded_status %></p>
         <% end %>
         <%= form.hidden_field :source_url if @lyric.source_url.present? %>
+        <%= hidden_field_tag :catalog_token, @catalog_token if @catalog_token.present? %>
 
         <div class="metadata-grid">
           <div class="field">
@@ -164,6 +168,15 @@
       <% end %>
     </section>
   <% end %>
+
+  <section class="tool-explainer" aria-labelledby="how-it-works">
+    <p class="eyebrow">Simple by design</p>
+    <h2 id="how-it-works">From song to paper</h2>
+    <p>Search for a song or paste lyrics you already have. Review the words, generate the print page, then choose a readable size and one or two columns before printing. No account is required.</p>
+    <p>It works the same way for musicians keeping a sheet beside an instrument, teachers preparing a class or group, and anyone printing lyrics for personal use.</p>
+  </section>
+
+  <%= render "shared/resource_navigation", current_section: :tool %>
 
   <footer class="landing-footer">
     <p>Share links remain available for 180 days after their last visit.</p>

@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { trackEvent } from "lib/analytics"
 import { SettingsStore } from "lib/settings_store"
 
 const SIZE_KEY = "printlyrics-size"
@@ -26,6 +27,7 @@ export default class extends Controller {
   }
 
   print() {
+    trackEvent("Print Dialog Opened", { entry_method: "print_page" })
     window.print()
   }
 
