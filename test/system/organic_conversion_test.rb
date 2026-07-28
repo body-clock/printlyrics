@@ -109,8 +109,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     fill_in "Lyrics", with: "Line one"
     click_button "Generate print page"
-    generated_path = current_path
     assert_selector "body[data-generated-page-key]"
+    generated_path = current_path
     page.execute_script(analytics_capture_source)
 
     2.times do
