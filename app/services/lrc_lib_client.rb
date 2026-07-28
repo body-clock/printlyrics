@@ -3,38 +3,6 @@ class LrcLibClient
   class NotFoundError < Error; end
   class ServiceError < Error; end
 
-  Result = Data.define(
-    :id,
-    :title,
-    :artist,
-    :album,
-    :duration,
-    :plain_lyrics,
-    :synced_lyrics,
-    :instrumental
-  ) do
-    def lyrics
-      return plain_lyrics.strip if plain_lyrics.present?
-
-      synced_lyrics.to_s.lines.filter_map do |line|
-        text = line.sub(/\A(?:\[[^\]]+\])+\s*/, "").strip
-        text if text.present?
-      end.join("\n")
-    end
-
-    def source_url
-      "https://lrclib.net/api/get/#{id}"
-    end
-
-    def printable?
-      !instrumental && (plain_lyrics.present? || synced_lyrics.present?)
-    end
-
-    def deduplication_key
-      [ artist, title, album ].map { |value| value.to_s.downcase.squish }
-    end
-  end
-
   SEARCH_LIMIT = 5
 
   def initialize(connection: nil)
@@ -92,7 +60,7 @@ class LrcLibClient
     artist = row["artistName"].to_s.strip
     return unless id&.positive? && title.present? && artist.present?
 
-    Result.new(
+    LrcLibResult.new(
       id: id,
       title: title,
       artist: artist,

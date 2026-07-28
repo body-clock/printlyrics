@@ -1,4 +1,6 @@
 class LyricsController < ApplicationController
+  attr_writer :lrc_lib_client
+
   rescue_from ActiveRecord::RecordNotFound, with: :lyric_not_found
 
   def new
@@ -19,37 +21,32 @@ class LyricsController < ApplicationController
   def search
     @lyric = Lyric.new
     @query = params[:query].to_s.strip
-    return render_search_error("Enter a song title or artist") if @query.blank?
-    return render_search_error("Keep your search under 200 characters") if @query.length > 200
 
-    @results = LrcLibClient.new.search(@query)
-    if @results.empty?
-      @search_error = "No matching songs found"
-    else
-      @search_status = "#{helpers.pluralize(@results.size, "match")} found. Choose a song."
-    end
-    render :new
-  rescue LrcLibClient::ServiceError
-    render_service_error
+    search = SongSearch.new(query: @query)
+    search.perform(client: lrc_lib_client)
+
+    @results = search.results || []
+    @search_error = search.error_message
+    @search_status = "#{helpers.pluralize(@results.size, "match")} found. Choose a song." if search.success?
+
+    render :new, status: search.http_status
   end
 
   def select
     @query = params[:query].to_s.strip
-    result = LrcLibClient.new.find(params[:result_id])
-    @lyric = Lyric.new(
-      title: result.title,
-      artist: result.artist,
-      lyrics: result.lyrics,
-      source_url: result.source_url
-    )
-    @loaded_status = "Lyrics loaded. Review and edit them before generating your print page."
-    render :new
-  rescue LrcLibClient::NotFoundError
-    @lyric = Lyric.new
-    render_search_error("That song is no longer available")
-  rescue LrcLibClient::ServiceError
-    @lyric = Lyric.new
-    render_service_error
+
+    lookup = SongLookup.new
+    status = lookup.perform(params[:result_id], client: lrc_lib_client)
+
+    if lookup.success?
+      @lyric = lookup.lyric
+      @loaded_status = "Lyrics loaded. Review and edit them before generating your print page."
+    else
+      @lyric = Lyric.new
+      @search_error = lookup.error
+    end
+
+    render :new, status: (status || :unprocessable_content)
   end
 
   def show
@@ -59,16 +56,8 @@ class LyricsController < ApplicationController
 
   private
 
-  def render_search_error(message)
-    @lyric ||= Lyric.new
-    @search_error = message
-    render :new, status: :unprocessable_content
-  end
-
-  def render_service_error
-    @lyric ||= Lyric.new
-    @search_error = "Song search is temporarily unavailable. You can still paste lyrics below."
-    render :new, status: :service_unavailable
+  def lrc_lib_client
+    @lrc_lib_client ||= LrcLibClient.new
   end
 
   def lyric_params

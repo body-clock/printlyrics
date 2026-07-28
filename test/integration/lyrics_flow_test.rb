@@ -86,7 +86,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "search returns selectable results without persisting lyrics" do
-    result = LrcLibClient::Result.new(
+    result = LrcLibResult.new(
       id: 42,
       title: "The Kiss",
       artist: "Judee Sill",
@@ -122,7 +122,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "selecting a result fills the editable form without persisting" do
-    result = LrcLibClient::Result.new(
+    result = LrcLibResult.new(
       id: 42,
       title: "The Kiss",
       artist: "Judee Sill",
@@ -147,6 +147,18 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "input[name='lyric[artist]'][value='Judee Sill']"
     assert_select "textarea[name='lyric[lyrics]']", /Love, rising/
     assert_select "input[type='hidden'][name='lyric[source_url]'][value='https://lrclib.net/api/get/42']"
+  end
+
+  test "selecting a removed song shows not-available message" do
+    client = Object.new
+    client.define_singleton_method(:find) { |_| raise LrcLibClient::NotFoundError }
+
+    with_lrc_lib_client(client) do
+      post select_lyrics_path, params: { result_id: "404", query: "the kiss" }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "#song-search-results [role='alert']", /That song is no longer available/
   end
 
   test "empty search and unavailable results render useful errors" do
@@ -223,10 +235,11 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
   private
 
   def with_lrc_lib_client(client)
-    original_new = LrcLibClient.method(:new)
-    LrcLibClient.define_singleton_method(:new) { client }
+    LyricsController.alias_method :__original_lrc_lib_client, :lrc_lib_client
+    LyricsController.define_method(:lrc_lib_client) { client }
     yield
   ensure
-    LrcLibClient.define_singleton_method(:new, original_new)
+    LyricsController.alias_method :lrc_lib_client, :__original_lrc_lib_client
+    LyricsController.remove_method :__original_lrc_lib_client
   end
 end
