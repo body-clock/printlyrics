@@ -17,6 +17,7 @@ Copy this table into the launch issue and fill every field.
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
 | Plausible goals | Site owner | All four exact event names exist | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
+| Launch catalog seed | Site owner | Twenty metadata-only song pages exist | |
 | Verifier first run | Site owner | Command exits successfully and prints counts | |
 | Verifier next run | Site owner | Scheduler shows the next daily run | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
@@ -119,6 +120,22 @@ present, treat it as a privacy incident: disable the affected instrumentation,
 deploy the redaction fix, and exclude the contaminated test period.
 
 ## 3. Schedule catalog verification
+
+Seed the initial catalog once on an existing production database:
+
+```sh
+bin/kamal app exec --reuse "bin/rails db:seed"
+```
+
+The seed is idempotent. It adds 20 metadata-only songs selected from entries
+near the top of the Genius global chart on July 16, 2026, makes those curated
+pages public, and does not overwrite metadata later refreshed from LRCLIB.
+It never stores lyrics.
+
+Outside this curated set, a sourced song becomes public only after three
+successful print-page generations. This threshold reduces the chance that one
+visitor's action is immediately disclosed; it does not represent three distinct
+people. Manually entered lyrics never enter the song catalog.
 
 Run a bounded batch daily. The task checks unverified and least-recently checked
 promoted songs first. A confirmed source not-found removes a song from public
