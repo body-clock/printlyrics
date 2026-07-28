@@ -19,9 +19,9 @@ export default class extends Controller {
   }
 
   selected(event) {
-    if (event.detail.success) {
-      trackEvent("Song Selected", { entry_method: "search" })
-    }
+    if (!event.detail.success) return
+
+    trackEvent("Song Selected", { entry_method: "search" })
   }
 
   close(event) {

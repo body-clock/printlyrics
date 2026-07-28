@@ -30,11 +30,9 @@ class Song < ApplicationRecord
       print_page_count: print_page_count + 1
     }
 
-    if public_state.any? { |attribute, value| public_send(attribute) != value }
-      update!(public_state.merge(counters))
-    else
-      update_columns(counters)
-    end
+    return update_columns(counters) unless attributes_changed?(public_state)
+
+    update!(public_state.merge(counters))
   end
 
   def refresh_from_result!(result, verified_at: Time.current)
@@ -46,22 +44,22 @@ class Song < ApplicationRecord
       unavailable_at: nil
     }
 
-    if metadata.any? { |attribute, value| public_send(attribute) != value }
-      update!(metadata.merge(last_verified_at: verified_at))
-    else
-      update_column(:last_verified_at, verified_at)
-    end
+    return update_column(:last_verified_at, verified_at) unless attributes_changed?(metadata)
+
+    update!(metadata.merge(last_verified_at: verified_at))
   end
 
   def mark_unavailable!(verified_at: Time.current)
-    if unavailable_at?
-      update_column(:last_verified_at, verified_at)
-    else
-      update!(unavailable_at: verified_at, last_verified_at: verified_at)
-    end
+    return update_column(:last_verified_at, verified_at) if unavailable_at?
+
+    update!(unavailable_at: verified_at, last_verified_at: verified_at)
   end
 
   private
+
+  def attributes_changed?(attributes)
+    attributes.any? { |attribute, value| public_send(attribute) != value }
+  end
 
   def set_slug
     return if slug.present? || source_id.blank?

@@ -13,16 +13,16 @@ class LyricsController < ApplicationController
       catalog_token: params[:catalog_token]
     )
 
-    if creation.save
-      @lyric = creation.lyric
-      session[:generated_lyric_token] = @lyric.token
-      redirect_to @lyric
-    else
+    unless creation.save
       @lyric = creation.lyric
       @catalog_token = params[:catalog_token]
       flash.now[:alert] = "Please paste your lyrics"
-      render :new, status: :unprocessable_content
+      return render :new, status: :unprocessable_content
     end
+
+    @lyric = creation.lyric
+    session[:generated_lyric_token] = @lyric.token
+    redirect_to @lyric
   end
 
   def search

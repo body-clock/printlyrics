@@ -24,19 +24,14 @@ class SongsController < ApplicationController
     lookup = SongLookup.new
     lookup.perform(@song.source_id, client: lrc_lib_client)
 
-    if lookup.success?
-      @song.refresh_from_result!(lookup.result)
-      @lyric = lookup.lyric
-      @catalog_token = lookup.catalog_token
-      @loaded_status = "Lyrics loaded. Review and edit them before generating your print page."
-      render "lyrics/new"
-    elsif lookup.http_status == :unprocessable_content
-      @song.mark_unavailable!
-      render_gone
-    else
-      @load_error = lookup.error
-      render :show, status: :service_unavailable
-    end
+    return mark_unavailable_and_render if lookup.http_status == :unprocessable_content
+    return render_load_error(lookup) unless lookup.success?
+
+    @song.refresh_from_result!(lookup.result)
+    @lyric = lookup.lyric
+    @catalog_token = lookup.catalog_token
+    @loaded_status = "Lyrics loaded. Review and edit them before generating your print page."
+    render "lyrics/new"
   end
 
   private
@@ -47,6 +42,16 @@ class SongsController < ApplicationController
 
   def render_gone
     render :gone, status: :gone
+  end
+
+  def mark_unavailable_and_render
+    @song.mark_unavailable!
+    render_gone
+  end
+
+  def render_load_error(lookup)
+    @load_error = lookup.error
+    render :show, status: :service_unavailable
   end
 
   def lrc_lib_client

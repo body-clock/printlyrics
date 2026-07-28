@@ -3,13 +3,11 @@ const GENERATED_KEY_PREFIX = "printlyrics:generated:"
 
 export function analyticsUrl() {
   const url = new URL(window.location.href)
+  if (!TOKEN_PATH.test(url.pathname)) return url.toString()
 
-  if (TOKEN_PATH.test(url.pathname)) {
-    url.pathname = "/lyrics/:token"
-    url.search = ""
-    url.hash = ""
-  }
-
+  url.pathname = "/lyrics/:token"
+  url.search = ""
+  url.hash = ""
   return url.toString()
 }
 
