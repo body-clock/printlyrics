@@ -127,12 +127,14 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
       assert_select "[role='list']", count: 1
     end
     assert_select "input[name='query'][aria-controls='song-search-results']"
-    assert_select "form[action='#{select_lyrics_path}']" do
+    assert_select "form[action='#{select_lyrics_path}'][aria-busy='false']" do
       assert_select "input[name='result_id'][value='42']"
       assert_select "input[id]", count: 0
-      assert_select "button", /The Kiss/
+      assert_select "[data-action*='lyric-search#selecting']"
+      assert_select "button[data-lyric-search-target='resultButton']", /The Kiss/
       assert_select "button", /Judee Sill/
       assert_select "button", /Heart Food/
+      assert_select "[data-lyric-search-target='resultBusy'][hidden]", /Loading lyrics/
     end
   end
 

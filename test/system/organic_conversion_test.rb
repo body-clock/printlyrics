@@ -35,7 +35,10 @@ class OrganicConversionTest < ApplicationSystemTestCase
     )
     client = Object.new
     client.define_singleton_method(:search) { |_| [ result ] }
-    client.define_singleton_method(:find) { |_| result }
+    client.define_singleton_method(:find) do |_|
+      sleep 0.05
+      result
+    end
 
     with_lrc_lib_client(client) do
       visit root_path
@@ -48,6 +51,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
       assert_text "1 match found"
 
       click_button "The Kiss"
+      assert_button "Loading lyrics…", disabled: true
       assert_field "Song title", with: "The Kiss"
       assert_field "Artist", with: "Judee Sill"
       assert_field "Lyrics", with: "Love, rising"

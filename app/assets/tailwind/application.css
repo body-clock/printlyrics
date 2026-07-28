@@ -292,6 +292,26 @@ textarea:focus-visible {
   background: var(--surface-muted);
 }
 
+.search-result-button:disabled {
+  cursor: wait;
+}
+
+.search-result-button:disabled:not(.is-loading) {
+  opacity: 0.55;
+}
+
+.search-result-button.is-loading {
+  background: var(--surface-muted);
+}
+
+.search-result-loading {
+  grid-column: 1 / -1;
+  justify-self: center;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .search-result-copy,
 .search-result-meta {
   min-width: 0;

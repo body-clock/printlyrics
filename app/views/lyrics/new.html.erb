@@ -108,20 +108,29 @@
                       method: :post,
                       data: {
                         turbo_frame: "lyric_entry",
-                        action: "turbo:submit-end->lyric-search#selected"
+                        action: "turbo:submit-start->lyric-search#selecting turbo:submit-end->lyric-search#selected"
                       },
+                      html: { aria: { busy: "false" } },
                       class: "search-result",
                       role: "listitem" do |form| %>
                       <%= form.hidden_field :result_id, value: result.id, id: nil %>
                       <%= form.hidden_field :query, value: @query, id: nil %>
-                      <%= form.button class: "search-result-button" do %>
-                        <span class="search-result-copy">
+                      <%= form.button class: "search-result-button",
+                        data: { lyric_search_target: "resultButton" } do %>
+                        <span class="search-result-copy" data-lyric-search-target="resultIdle">
                           <strong><%= result.title %></strong>
                           <span><%= result.artist %></span>
                         </span>
-                        <span class="search-result-meta">
+                        <span class="search-result-meta" data-lyric-search-target="resultIdle">
                           <% if result.album.present? %><span><%= result.album %></span><% end %>
                           <% if result.duration.positive? %><span><%= song_duration(result.duration) %></span><% end %>
+                        </span>
+                        <span class="search-result-loading search-busy-label"
+                          data-lyric-search-target="resultBusy"
+                          aria-live="polite"
+                          hidden>
+                          <span class="search-spinner" aria-hidden="true"></span>
+                          <%= t(".search.loading") %>
                         </span>
                       <% end %>
                     <% end %>

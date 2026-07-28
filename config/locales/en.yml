@@ -31,6 +31,7 @@ en:
         query: "Song title or artist"
         submit: "Search"
         busy: "Searching..."
+        loading: "Loading lyrics…"
         results_label: "Song search results"
         close: "Close search results"
         matches_label: "Song matches"
