@@ -24,7 +24,7 @@ en:
         description: "Search by song or artist, customize the layout, and print lyrics for any song on a clean page. Free to use with no account required."
       structured_data:
         operating_system: "Any"
-      intro: "Turn any song into a clean, editable, print-ready lyric sheet. No account. No fighting with Word."
+      intro: "Turn any song into a clean, editable, print-ready lyric sheet."
       search:
         heading: "Find song lyrics"
         provider: "via LRCLIB"

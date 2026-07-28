@@ -37,7 +37,6 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", /UtilitiesApplication/
     assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
     assert_select ".intro p", /clean, editable, print-ready lyric sheet/
-    assert_select ".intro p", /No fighting with Word/
     assert_select ".landing-footer .app-version[aria-label='PrintLyrics version #{app_version}']", "v#{app_version}"
     assert_select "main", /No account/
     assert_select "script", /autoCapturePageviews:\s*false/
