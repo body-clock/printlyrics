@@ -29,7 +29,7 @@ class LrcLibResult
   end
 
   def deduplication_key
-    [artist, title, album].map { |value| value.to_s.downcase.squish }
+    [ artist, title, album ].map { |value| value.to_s.downcase.squish }
   end
 
   private
