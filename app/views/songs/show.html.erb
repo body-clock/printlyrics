@@ -20,8 +20,6 @@
 <% end %>
 
 <div class="song-shell">
-  <%= render "shared/search_navigation" %>
-
   <nav class="breadcrumbs" aria-label="Breadcrumb">
     <%= link_to "PrintLyrics", root_path %>
     <span aria-hidden="true">/</span>
@@ -68,4 +66,6 @@
       <%= link_to "Search manually instead", root_path, class: "manual-fallback" %>
     <% end %>
   </article>
+
+  <%= render "shared/resource_navigation", current_section: :songs %>
 </div>

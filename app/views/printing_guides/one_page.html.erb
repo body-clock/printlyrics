@@ -7,8 +7,6 @@
 <% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
 
 <div class="guide-shell">
-  <%= render "shared/search_navigation" %>
-
   <article class="guide">
     <header>
       <p class="eyebrow">A practical printing guide</p>
@@ -41,4 +39,6 @@
       <%= link_to "Open the lyric printing tool", root_path, class: "button button-primary" %>
     </section>
   </article>
+
+  <%= render "shared/resource_navigation", current_section: :guide %>
 </div>

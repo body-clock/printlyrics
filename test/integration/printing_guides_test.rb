@@ -20,12 +20,22 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
-    assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /fit lyrics on one page/i
+    assert_select "[data-search-navigation]", count: 0
+    assert_select "footer[data-resource-navigation]" do
+      assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i
+      assert_select "a[href='#{songs_path}']", text: /browse printable songs/i
+      assert_select "a[href='#{root_path}']", count: 0
+    end
 
     get print_lyrics_on_one_page_path
 
     assert_response :success
-    assert_select "a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "[data-search-navigation]", count: 0
+    assert_select "footer[data-resource-navigation]" do
+      assert_select "a[href='#{root_path}']", text: /print song lyrics/i
+      assert_select "a[href='#{songs_path}']", text: /browse printable songs/i
+      assert_select "a[href='#{print_lyrics_on_one_page_path}']", count: 0
+    end
   end
 
   test "generated lyric page omits search navigation" do

@@ -9,8 +9,6 @@
 <% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
 
 <div class="catalog-shell">
-  <%= render "shared/search_navigation" %>
-
   <header class="catalog-header">
     <p class="eyebrow">Created from real use</p>
     <h1>Songs ready to print</h1>
@@ -50,4 +48,6 @@
       <%= link_to "Find a song to print", root_path, class: "button button-primary" %>
     </section>
   <% end %>
+
+  <%= render "shared/resource_navigation", current_section: :songs %>
 </div>

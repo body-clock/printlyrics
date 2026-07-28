@@ -38,8 +38,6 @@
 <% end %>
 
 <div class="landing-shell">
-  <%= render "shared/search_navigation" %>
-
   <%= turbo_frame_tag "lyric_entry", class: "landing-frame" do %>
     <%= render "shared/flash" %>
 
@@ -176,8 +174,9 @@
     <h2 id="how-it-works">From song to paper</h2>
     <p>Search for a song or paste lyrics you already have. Review the words, generate the print page, then choose a readable size and one or two columns before printing. No account is required.</p>
     <p>It works the same way for musicians keeping a sheet beside an instrument, teachers preparing a class or group, and anyone printing lyrics for personal use.</p>
-    <%= link_to "Learn how to fit lyrics on one page", print_lyrics_on_one_page_path %>
   </section>
+
+  <%= render "shared/resource_navigation", current_section: :tool %>
 
   <footer class="landing-footer">
     <p>Share links remain available for 180 days after their last visit.</p>

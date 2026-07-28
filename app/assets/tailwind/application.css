@@ -85,23 +85,26 @@ textarea:focus-visible {
   padding: 4.5rem 0 2rem;
 }
 
-.search-navigation {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem 1.1rem;
-  margin-bottom: 2rem;
-  font-size: 0.76rem;
+.resource-navigation {
+  margin-top: 3rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.15rem;
 }
 
-.search-navigation a,
-.tool-explainer a {
-  color: var(--accent);
+.resource-navigation nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-size: 0.72rem;
+}
+
+.resource-navigation a {
+  color: var(--ink-muted);
   font-weight: 700;
   text-underline-offset: 0.2em;
 }
 
-.search-navigation a:hover,
-.tool-explainer a:hover {
+.resource-navigation a:hover {
   color: var(--accent-hover);
 }
 
@@ -505,11 +508,6 @@ textarea:focus-visible {
 .tool-explainer p:not(.eyebrow) {
   margin: 0.75rem 0 0;
   color: var(--ink-muted);
-}
-
-.tool-explainer a {
-  display: inline-block;
-  margin-top: 1rem;
 }
 
 .guide-shell {
