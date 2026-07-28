@@ -20,6 +20,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
+    assert_select ".tool-explainer p:not(.eyebrow)", count: 1
     assert_select "[data-search-navigation]", count: 0
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i

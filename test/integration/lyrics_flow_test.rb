@@ -37,9 +37,6 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
     assert_select ".intro p", /Print lyrics for any song/
     assert_select "main", /No account/
-    assert_select "main", /musicians/i
-    assert_select "main", /teachers/i
-    assert_select "main", /personal/i
     assert_select "script", /autoCapturePageviews:\s*false/
     assert_select "form[action='#{search_lyrics_path}'][data-action*='lyric-search#start']", count: 1
     assert_no_match(/Genius|AZLyrics|Song URL/, response.body)

@@ -651,6 +651,12 @@ textarea:focus-visible {
   color: var(--accent);
 }
 
+.catalog-shell > .resource-navigation {
+  margin-top: 1.25rem;
+  border-top: 0;
+  padding-top: 0;
+}
+
 .pagination {
   display: flex;
   align-items: center;

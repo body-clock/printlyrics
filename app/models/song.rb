@@ -1,4 +1,6 @@
 class Song < ApplicationRecord
+  PUBLIC_PRINT_PAGE_THRESHOLD = 3
+
   has_many :lyrics
 
   before_validation :set_slug, on: :create
@@ -21,13 +23,14 @@ class Song < ApplicationRecord
   end
 
   def promote!(metadata, verified_at: Time.current)
+    next_print_page_count = print_page_count + 1
     public_state = metadata.slice(:title, :artist, :album, :duration_seconds).merge(
-      indexable_at: indexable_at || verified_at,
+      indexable_at: indexable_at || threshold_reached_at(next_print_page_count, verified_at),
       unavailable_at: nil
     )
     counters = {
       last_verified_at: verified_at,
-      print_page_count: print_page_count + 1
+      print_page_count: next_print_page_count
     }
 
     return update_columns(counters) unless attributes_changed?(public_state)
@@ -59,6 +62,12 @@ class Song < ApplicationRecord
 
   def attributes_changed?(attributes)
     attributes.any? { |attribute, value| public_send(attribute) != value }
+  end
+
+  def threshold_reached_at(next_print_page_count, verified_at)
+    return unless next_print_page_count >= PUBLIC_PRINT_PAGE_THRESHOLD
+
+    verified_at
   end
 
   def set_slug
