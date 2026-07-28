@@ -30,7 +30,7 @@ class SongsController < ApplicationController
     @song.refresh_from_result!(lookup.result)
     @lyric = lookup.lyric
     @catalog_token = lookup.catalog_token
-    @loaded_status = "Lyrics loaded. Review and edit them before generating your print page."
+    @loaded_status = t("lyrics.status.loaded")
     render "lyrics/new"
   end
 

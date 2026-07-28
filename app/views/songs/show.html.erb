@@ -1,5 +1,5 @@
 <%
-  description = "Load and print lyrics for #{@song.title} by #{@song.artist} on a clean, customizable page."
+  description = t(".seo.description", title: @song.title, artist: @song.artist)
   structured_data = {
     "@context": "https://schema.org",
     "@type": "MusicRecording",
@@ -10,7 +10,7 @@
     url: song_url(@song)
   }.compact
 %>
-<% content_for :title, "Print #{@song.title} Lyrics by #{@song.artist} | PrintLyrics" %>
+<% content_for :title, t(".seo.title", title: @song.title, artist: @song.artist) %>
 <% content_for :description, description %>
 <% content_for :canonical_url, song_url(@song) %>
 <% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
@@ -21,24 +21,24 @@
 
 <div class="song-shell">
   <%= turbo_frame_tag "lyric_entry" do %>
-    <nav class="breadcrumbs" aria-label="Breadcrumb">
-      <%= link_to "PrintLyrics", root_path %>
+    <nav class="breadcrumbs" aria-label="<%= t(".breadcrumb_label") %>">
+      <%= link_to t("application.name"), root_path %>
       <span aria-hidden="true">/</span>
-      <%= link_to "Songs", songs_path %>
+      <%= link_to t(".songs_link"), songs_path %>
     </nav>
 
     <article class="song-card">
-      <p class="eyebrow">Printable song page</p>
+      <p class="eyebrow"><%= t(".eyebrow") %></p>
       <h1><%= @song.title %></h1>
       <p class="song-artist" data-song-artist><%= @song.artist %></p>
 
       <% if @song.album.present? || @song.duration_seconds.present? %>
         <dl class="song-metadata">
           <% if @song.album.present? %>
-            <div><dt>Album</dt><dd><%= @song.album %></dd></div>
+            <div><dt><%= t(".metadata.album") %></dt><dd><%= @song.album %></dd></div>
           <% end %>
           <% if @song.duration_seconds.present? %>
-            <div><dt>Length</dt><dd><%= song_duration(@song.duration_seconds) %></dd></div>
+            <div><dt><%= t(".metadata.length") %></dt><dd><%= song_duration(@song.duration_seconds) %></dd></div>
           <% end %>
         </dl>
       <% end %>
@@ -47,7 +47,7 @@
         <p class="song-load-error" role="alert"><%= @load_error %></p>
       <% end %>
 
-      <p>Load the available lyrics, review the words, then choose the size and column layout that works for your page.</p>
+      <p><%= t(".introduction") %></p>
 
       <%= form_with url: load_song_path(@song),
         method: :post,
@@ -58,13 +58,13 @@
         },
         html: { aria: { busy: "false" } } do |form| %>
         <%= form.button class: "button button-primary", data: { song_load_target: "button" } do %>
-          <span data-song-load-target="idleLabel">Load lyrics to print</span>
-          <span data-song-load-target="busyLabel" hidden>Loading lyrics…</span>
+          <span data-song-load-target="idleLabel"><%= t(".load") %></span>
+          <span data-song-load-target="busyLabel" hidden><%= t(".loading") %></span>
         <% end %>
       <% end %>
 
       <% if @load_error.present? %>
-        <%= link_to "Search manually instead", root_path, class: "manual-fallback" %>
+        <%= link_to t(".manual_fallback"), root_path, class: "manual-fallback" %>
       <% end %>
     </article>
   <% end %>

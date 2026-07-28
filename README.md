@@ -57,8 +57,9 @@ KAMAL_REGISTRY_PASSWORD=...
 
 The `printlyrics-prod` GitHub environment also requires `KAMAL_SSH_KEY`.
 CI runs for pull requests and pushes to `main`. Release Please maintains a
-release pull request; merging that pull request publishes a release and
-dispatches the production deployment.
+release pull request and updates `version.txt`; merging that pull request
+publishes a release and dispatches the production deployment. The application
+shows that version in its footer.
 
 ## Operations
 

@@ -14,11 +14,11 @@ class SongLookup
     @http_status = :ok
     :ok
   rescue LrcLibClient::NotFoundError
-    @error = "That song is no longer available"
+    @error = I18n.t("songs.errors.unavailable")
     @http_status = :unprocessable_content
     nil
   rescue LrcLibClient::ServiceError
-    @error = "Song search is temporarily unavailable. You can still paste lyrics below."
+    @error = I18n.t("songs.errors.service")
     @http_status = :service_unavailable
     nil
   end

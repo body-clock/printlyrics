@@ -1,6 +1,6 @@
 <%
-  title = @page == 1 ? "Printable Song Lyrics | PrintLyrics" : "Printable Song Lyrics – Page #{@page} | PrintLyrics"
-  description = "Browse popular songs, then load the available lyrics into an editable, customizable print page."
+  title = @page == 1 ? t(".seo.title") : t(".seo.paginated_title", page: @page)
+  description = t(".seo.description")
   canonical = @page == 1 ? songs_url : songs_url(page: @page)
 %>
 <% content_for :title, title %>
@@ -10,9 +10,9 @@
 
 <div class="catalog-shell">
   <header class="catalog-header">
-    <p class="eyebrow">Popular songs</p>
-    <h1>Songs ready to print</h1>
-    <p>Choose a song to load its available lyrics, review the words, and make your own print sheet.</p>
+    <p class="eyebrow"><%= t(".eyebrow") %></p>
+    <h1><%= t(".heading") %></h1>
+    <p><%= t(".introduction") %></p>
   </header>
 
   <% if @songs.any? %>
@@ -31,21 +31,21 @@
     </ol>
 
     <% if @total_pages > 1 %>
-      <nav class="pagination" aria-label="Song pages">
+      <nav class="pagination" aria-label="<%= t(".pagination.label") %>">
         <% if @page > 1 %>
-          <%= link_to "Previous", songs_path(page: @page == 2 ? nil : @page - 1), rel: "prev" %>
+          <%= link_to t(".pagination.previous"), songs_path(page: @page == 2 ? nil : @page - 1), rel: "prev" %>
         <% end %>
-        <span>Page <%= @page %> of <%= @total_pages %></span>
+        <span><%= t(".pagination.status", page: @page, total_pages: @total_pages) %></span>
         <% if @page < @total_pages %>
-          <%= link_to "Next", songs_path(page: @page + 1), rel: "next" %>
+          <%= link_to t(".pagination.next"), songs_path(page: @page + 1), rel: "next" %>
         <% end %>
       </nav>
     <% end %>
   <% else %>
     <section class="catalog-empty" data-empty-catalog>
-      <h2>No songs are available yet</h2>
-      <p>Search for a song to create a clean, customizable print sheet.</p>
-      <%= link_to "Find a song to print", root_path, class: "button button-primary" %>
+      <h2><%= t(".empty.heading") %></h2>
+      <p><%= t(".empty.body") %></p>
+      <%= link_to t(".empty.link"), root_path, class: "button button-primary" %>
     </section>
   <% end %>
 

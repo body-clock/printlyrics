@@ -16,7 +16,8 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "link[rel='icon'][href='/favicon.svg'][sizes='any']", 1
     assert_select "link[rel='icon'][href='/favicon.ico'][sizes='48x48']", 1
     assert_select "link[rel='apple-touch-icon'][href='/apple-touch-icon.png']", 1
-    assert_select "link[rel='manifest'][href='/site.webmanifest'][type='application/manifest+json']", 1
+    assert_select "html[lang='#{I18n.locale}']", 1
+    assert_select "link[rel='manifest'][href='#{pwa_manifest_path(format: :json)}'][type='application/manifest+json']", 1
     assert_select "form[action='#{lyrics_path}']", count: 1
     assert_select "turbo-frame#lyric_entry" do
       assert_select "[data-controller='lyric-search']" do
@@ -35,7 +36,9 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", /WebApplication/
     assert_select "script[type='application/ld+json']", /UtilitiesApplication/
     assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
-    assert_select ".intro p", /Print lyrics for any song/
+    assert_select ".intro p", /clean, editable, print-ready lyric sheet/
+    assert_select ".intro p", /No fighting with Word/
+    assert_select ".landing-footer .app-version[aria-label='PrintLyrics version #{app_version}']", "v#{app_version}"
     assert_select "main", /No account/
     assert_select "script", /autoCapturePageviews:\s*false/
     assert_select "form[action='#{search_lyrics_path}'][data-action*='lyric-search#start']", count: 1
@@ -46,6 +49,15 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     get lyrics_path
 
     assert_redirected_to root_path
+  end
+
+  test "web app manifest uses translation-backed metadata" do
+    get pwa_manifest_path(format: :json)
+
+    assert_response :success
+    manifest = JSON.parse(response.body)
+    assert_equal I18n.t("application.name"), manifest.fetch("name")
+    assert_equal I18n.t("pwa.manifest.description"), manifest.fetch("description")
   end
 
   test "manual submission persists lyrics without trusting a source URL" do
@@ -257,6 +269,26 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "meta[name='robots'][content='noindex, nofollow']", 1
     assert_select "body[data-generated-page-key]", count: 0
     assert_select "button[data-action='preview#print']", count: 1
+    assert_select "[data-controller='print-feedback']", count: 0
+  end
+
+  test "newly generated page asks for an optional print use case" do
+    post lyrics_path, params: {
+      lyric: { title: "Practice Song", artist: "Home Singer", lyrics: "A printable line" }
+    }
+
+    follow_redirect!
+
+    assert_response :success
+    assert_select "body[data-generated-page-key]", count: 1
+    assert_select "[data-controller='print-feedback']", count: 1 do
+      assert_select "legend", /What are you making this lyric sheet for/
+      assert_select "button[data-use-case]", count: 4
+      assert_select "button[data-use-case='performance']", /Performance or rehearsal/
+      assert_select "button[data-use-case='worship_community']", /Worship or community/
+      assert_select "button[data-use-case='teaching']", /Teaching or learning/
+      assert_select "button[data-use-case='personal']", /Personal use/
+    end
   end
 
   test "visiting a shareable page renews its retention" do
@@ -303,5 +335,9 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
   ensure
     LyricsController.alias_method :lrc_lib_client, :__original_lrc_lib_client
     LyricsController.remove_method :__original_lrc_lib_client
+  end
+
+  def app_version
+    Rails.root.join("version.txt").read.strip
   end
 end

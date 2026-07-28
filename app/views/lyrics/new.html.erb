@@ -1,5 +1,5 @@
 <%
-  seo_description = "Search by song or artist, customize the layout, and print lyrics for any song on a clean page. Free to use with no account required."
+  seo_description = t(".seo.description")
   structured_data = {
     "@context": "https://schema.org",
     "@graph": [
@@ -7,18 +7,18 @@
         "@type": "WebSite",
         "@id": "#{root_url}#website",
         url: root_url,
-        name: "PrintLyrics",
-        alternateName: "Print Lyrics",
+        name: t("application.name"),
+        alternateName: t("application.alternate_name"),
         description: seo_description
       },
       {
         "@type": "WebApplication",
         "@id": "#{root_url}#application",
         url: root_url,
-        name: "PrintLyrics",
+        name: t("application.name"),
         description: seo_description,
         applicationCategory: "UtilitiesApplication",
-        operatingSystem: "Any",
+        operatingSystem: t(".structured_data.operating_system"),
         offers: {
           "@type": "Offer",
           price: "0",
@@ -29,7 +29,7 @@
     ]
   }
 %>
-<% content_for :title, "Print Lyrics for Any Song | PrintLyrics" %>
+<% content_for :title, t(".seo.title") %>
 <% content_for :description, seo_description %>
 <% content_for :canonical_url, root_url %>
 <% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
@@ -43,14 +43,14 @@
 
     <section class="entry-panel" aria-labelledby="page-heading">
       <div class="intro">
-        <h1 id="page-heading">PrintLyrics</h1>
-        <p>Print lyrics for any song on a clean, customizable page.</p>
+        <h1 id="page-heading"><%= t("application.name") %></h1>
+        <p><%= t(".intro") %></p>
       </div>
 
       <div class="search-section">
         <div class="section-heading">
-          <h2>Find song lyrics</h2>
-          <p>via LRCLIB</p>
+          <h2><%= t(".search.heading") %></h2>
+          <p><%= t(".search.provider") %></p>
         </div>
 
         <div class="search-composer"
@@ -65,20 +65,20 @@
             html: { aria: { busy: "false" } },
             class: "search-form" do |form| %>
             <div class="field grow">
-              <%= form.label :query, "Song title or artist", class: "sr-only" %>
+              <%= form.label :query, t(".search.query"), class: "sr-only" %>
               <%= form.search_field :query,
                 value: @query,
-                placeholder: "Song title or artist",
+                placeholder: t(".search.query"),
                 autocomplete: "off",
                 required: true,
                 aria: (@results.present? || @search_error.present? ? { controls: "song-search-results" } : {}),
                 data: { lyric_search_target: "query" } %>
             </div>
             <%= form.button class: "button button-secondary search-submit" do %>
-              <span data-lyric-search-target="idleLabel">Search</span>
+              <span data-lyric-search-target="idleLabel"><%= t(".search.submit") %></span>
               <span class="search-busy-label" data-lyric-search-target="busyLabel" hidden>
                 <span class="search-spinner" aria-hidden="true"></span>
-                Searching...
+                <%= t(".search.busy") %>
               </span>
             <% end %>
           <% end %>
@@ -86,7 +86,7 @@
           <% if @results.present? || @search_error.present? %>
             <section id="song-search-results"
               class="search-results-panel"
-              aria-label="Song search results"
+              aria-label="<%= t(".search.results_label") %>"
               data-lyric-search-target="panel">
               <div class="search-results-header">
                 <% if @search_error.present? %>
@@ -96,13 +96,13 @@
                 <% end %>
                 <button type="button"
                   class="search-results-close"
-                  aria-label="Close search results"
-                  title="Close search results"
+                  aria-label="<%= t(".search.close") %>"
+                  title="<%= t(".search.close") %>"
                   data-action="lyric-search#close">&times;</button>
               </div>
 
               <% if @results.present? %>
-                <div class="search-results" role="list" aria-label="Song matches">
+                <div class="search-results" role="list" aria-label="<%= t(".search.matches_label") %>">
                   <% @results.each do |result| %>
                     <%= form_with url: select_lyrics_path,
                       method: :post,
@@ -133,7 +133,7 @@
         </div>
       </div>
 
-      <div class="divider"><span>or enter lyrics manually</span></div>
+      <div class="divider"><span><%= t(".manual_divider") %></span></div>
 
       <%= form_with model: @lyric, url: lyrics_path, data: { turbo: false }, class: "lyrics-form" do |form| %>
         <% if @loaded_status.present? %>
@@ -144,40 +144,42 @@
 
         <div class="metadata-grid">
           <div class="field">
-            <%= form.label :title, "Song title" %>
-            <%= form.text_field :title, placeholder: "Optional", autocomplete: "off" %>
+            <%= form.label :title, t(".form.title") %>
+            <%= form.text_field :title, placeholder: t(".form.optional"), autocomplete: "off" %>
           </div>
           <div class="field">
-            <%= form.label :artist, "Artist" %>
-            <%= form.text_field :artist, placeholder: "Optional", autocomplete: "off" %>
+            <%= form.label :artist, t(".form.artist") %>
+            <%= form.text_field :artist, placeholder: t(".form.optional"), autocomplete: "off" %>
           </div>
         </div>
 
         <div class="field">
           <div class="field-label-row">
-            <%= form.label :lyrics, "Lyrics" %>
-            <span>Required</span>
+            <%= form.label :lyrics, t(".form.lyrics") %>
+            <span><%= t(".form.required") %></span>
           </div>
           <%= form.text_area :lyrics,
             rows: 15,
-            placeholder: "[Verse 1]\nFirst line\nSecond line\n\n[Chorus]\n...",
+            placeholder: t(".form.lyrics_placeholder"),
             required: true %>
         </div>
 
-        <%= form.button "Generate print page", class: "button button-primary button-wide" %>
+        <%= form.button t(".form.submit"), class: "button button-primary button-wide" %>
       <% end %>
     </section>
   <% end %>
 
   <section class="tool-explainer" aria-labelledby="how-it-works">
-    <p class="eyebrow">Simple by design</p>
-    <h2 id="how-it-works">From song to paper</h2>
-    <p>Search for a song or paste lyrics you already have. Review the words, generate the print page, then choose a readable size and one or two columns before printing. No account is required.</p>
+    <p class="eyebrow"><%= t(".explainer.eyebrow") %></p>
+    <h2 id="how-it-works"><%= t(".explainer.heading") %></h2>
+    <p><%= t(".explainer.body") %></p>
   </section>
 
   <%= render "shared/resource_navigation", current_section: :tool %>
 
   <footer class="landing-footer">
-    <p>Share links remain available for 180 days after their last visit.</p>
+    <p><%= t(".footer.retention") %></p>
+    <p class="app-version"
+       aria-label="<%= t(".footer.version", version: app_version) %>"><%= t(".footer.version_display", version: app_version) %></p>
   </footer>
 </div>

@@ -1,31 +1,175 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  application:
+    name: "PrintLyrics"
+    alternate_name: "Print Lyrics"
+    og_locale: "en_US"
+    meta:
+      default_title: "Print Lyrics for Any Song | PrintLyrics"
+      default_description: "Search by song or artist, customize the layout, and print lyrics for any song on a clean page."
+      image_alt: "PrintLyrics - print lyrics for any song"
+
+  lyrics:
+    status:
+      loaded: "Lyrics loaded. Review and edit them before generating your print page."
+    errors:
+      blank: "Please paste your lyrics"
+      expired: "That lyric page expired or wasn't found"
+    search:
+      status:
+        one: "1 match found. Choose a song."
+        other: "%{count} matches found. Choose a song."
+    new:
+      seo:
+        title: "Print Lyrics for Any Song | PrintLyrics"
+        description: "Search by song or artist, customize the layout, and print lyrics for any song on a clean page. Free to use with no account required."
+      structured_data:
+        operating_system: "Any"
+      intro: "Turn any song into a clean, editable, print-ready lyric sheet. No account. No fighting with Word."
+      search:
+        heading: "Find song lyrics"
+        provider: "via LRCLIB"
+        query: "Song title or artist"
+        submit: "Search"
+        busy: "Searching..."
+        results_label: "Song search results"
+        close: "Close search results"
+        matches_label: "Song matches"
+      manual_divider: "or enter lyrics manually"
+      form:
+        title: "Song title"
+        artist: "Artist"
+        lyrics: "Lyrics"
+        optional: "Optional"
+        required: "Required"
+        lyrics_placeholder: |-
+          [Verse 1]
+          First line
+          Second line
+
+          [Chorus]
+          ...
+        submit: "Generate print page"
+      explainer:
+        eyebrow: "Simple by design"
+        heading: "From song to paper"
+        body: "Search for a song or paste lyrics you already have. Review the words, generate the print page, then choose a readable size and one or two columns before printing. No account is required."
+      footer:
+        retention: "Share links remain available for 180 days after their last visit."
+        version: "PrintLyrics version %{version}"
+        version_display: "v%{version}"
+    show:
+      untitled: "Untitled lyrics"
+      seo:
+        title_with_artist: "%{title} lyrics by %{artist}"
+        title_without_artist: "%{title} | PrintLyrics"
+        description_with_artist: "Print-friendly lyrics for %{title} by %{artist}."
+        description_without_artist: "A clean, print-friendly lyric sheet."
+      controls:
+        label: "Print page controls"
+        back: "Back"
+        size: "Size"
+        sizes:
+          s: "S"
+          m: "M"
+          l: "L"
+          xl: "XL"
+        columns: "Columns"
+        print: "Print"
+        two_columns_note: "Two columns will be used when printing."
+      feedback:
+        question: "What are you making this lyric sheet for?"
+        explanation: "Your answer helps us improve the parts people actually use."
+        performance: "Performance or rehearsal"
+        worship_community: "Worship or community"
+        teaching: "Teaching or learning"
+        personal: "Personal use"
+        thanks: "Thanks. That helps us keep PrintLyrics useful and focused."
+
+  printing_guides:
+    one_page:
+      seo:
+        title: "Print Lyrics on One Page | PrintLyrics"
+        description: "Learn how to fit song lyrics on one page using font size, columns, spacing, and print preview, then create a clean lyric sheet."
+      eyebrow: "A practical printing guide"
+      heading: "Print lyrics on one page"
+      introduction: "Start with the clearest layout you can read comfortably, then make small adjustments until the print preview fits."
+      steps:
+        complete:
+          heading: "Start with the complete lyrics"
+          body: "Search for the song or paste your own text. Remove repeated notes or extra blank lines only when they are not useful while playing, teaching, or singing."
+        columns:
+          heading: "Try two columns"
+          body: "Two columns often fit verses and choruses more naturally than one long column. They also reduce the distance your eyes travel across the page."
+        font_size:
+          heading: "Reduce font size gradually"
+          body: "Choose the smallest font size that remains easy to read from where the page will sit. Avoid shrinking everything before trying columns."
+        preview:
+          heading: "Check print preview"
+          body: "Browser and printer margins vary. Open print preview before printing and confirm that the final lines remain on the first sheet."
+      callout:
+        heading: "Make your lyric sheet"
+        body: "PrintLyrics lets you search or paste lyrics, review the text, choose a size and column layout, and print. No account is required."
+        link: "Open the lyric printing tool"
+
+  songs:
+    errors:
+      unavailable: "That song is no longer available"
+      service: "Song search is temporarily unavailable. You can still paste lyrics below."
+    index:
+      seo:
+        title: "Printable Song Lyrics | PrintLyrics"
+        paginated_title: "Printable Song Lyrics - Page %{page} | PrintLyrics"
+        description: "Browse popular songs, then load the available lyrics into an editable, customizable print page."
+      eyebrow: "Popular songs"
+      heading: "Songs ready to print"
+      introduction: "Choose a song to load its available lyrics, review the words, and make your own print sheet."
+      pagination:
+        label: "Song pages"
+        previous: "Previous"
+        status: "Page %{page} of %{total_pages}"
+        next: "Next"
+      empty:
+        heading: "No songs are available yet"
+        body: "Search for a song to create a clean, customizable print sheet."
+        link: "Find a song to print"
+    show:
+      seo:
+        title: "Print %{title} Lyrics by %{artist} | PrintLyrics"
+        description: "Load and print lyrics for %{title} by %{artist} on a clean, customizable page."
+      breadcrumb_label: "Breadcrumb"
+      songs_link: "Songs"
+      eyebrow: "Printable song page"
+      metadata:
+        album: "Album"
+        length: "Length"
+      introduction: "Load the available lyrics, review the words, then choose the size and column layout that works for your page."
+      load: "Load lyrics to print"
+      loading: "Loading lyrics…"
+      manual_fallback: "Search manually instead"
+    gone:
+      seo:
+        title: "%{title} is unavailable | PrintLyrics"
+        description: "This song is no longer available to load from the lyrics source."
+      eyebrow: "Song unavailable"
+      body: "The source no longer has printable lyrics for this song. You can search again or paste lyrics you already have."
+      link: "Search or enter lyrics"
+
+  shared:
+    resource_navigation:
+      label: "More from PrintLyrics"
+      tool: "Print song lyrics"
+      guide: "One-page printing guide"
+      songs: "Browse printable songs"
+
+  pwa:
+    manifest:
+      description: "Search, format, and print lyrics for any song."
+
+  activemodel:
+    errors:
+      models:
+        song_search:
+          attributes:
+            query:
+              blank: "Enter a song title or artist"
+              too_long: "Keep your search under 200 characters"

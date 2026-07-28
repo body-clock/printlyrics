@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= I18n.locale %>">
   <head>
     <meta charset="utf-8">
     <title><%= page_title %></title>
@@ -13,18 +13,18 @@
     <meta property="og:description" content="<%= page_description %>">
     <meta property="og:type" content="<%= content_for?(:og_type) ? content_for(:og_type) : "website" %>">
     <meta property="og:url" content="<%= canonical_url %>">
-    <meta property="og:site_name" content="PrintLyrics">
-    <meta property="og:locale" content="en_US">
+    <meta property="og:site_name" content="<%= t("application.name") %>">
+    <meta property="og:locale" content="<%= t("application.og_locale") %>">
     <meta property="og:image" content="<%= root_url %>social-card.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="PrintLyrics - print lyrics for any song">
+    <meta property="og:image:alt" content="<%= t("application.meta.image_alt") %>">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="<%= page_title %>">
     <meta name="twitter:description" content="<%= page_description %>">
     <meta name="twitter:image" content="<%= root_url %>social-card.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="PrintLyrics">
+    <meta name="application-name" content="<%= t("application.name") %>">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#f4f0e8" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#1d1d1b" media="(prefers-color-scheme: dark)">
@@ -43,7 +43,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest" type="application/manifest+json">
+    <link rel="manifest" href="<%= pwa_manifest_path(format: :json) %>" type="application/manifest+json">
 
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>

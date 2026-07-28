@@ -473,9 +473,17 @@ textarea:focus-visible {
 }
 
 .landing-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
   margin: 1.25rem 0 0;
   color: var(--ink-muted);
   font-size: 0.7rem;
+}
+
+.app-version {
+  flex: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .tool-explainer {
@@ -995,6 +1003,63 @@ textarea:focus-visible {
   text-align: center;
 }
 
+.preview-feedback {
+  width: min(100%, 40rem);
+  margin: 1.5rem auto 0;
+  color: var(--ink);
+}
+
+.preview-feedback fieldset {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.preview-feedback legend {
+  padding: 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.preview-feedback fieldset > p,
+.feedback-thanks {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+}
+
+.feedback-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.feedback-options button {
+  min-height: 2.25rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.feedback-options button:hover {
+  border-color: var(--ink-muted);
+  color: var(--accent);
+}
+
+.feedback-thanks {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-align: center;
+}
+
 @media (max-width: 700px) {
   .landing-shell {
     width: min(100% - 2rem, 43rem);
@@ -1104,6 +1169,10 @@ textarea:focus-visible {
     min-height: calc(100vh - 8.25rem);
     padding: 2rem 1.35rem 2.5rem;
     box-shadow: none;
+  }
+
+  .preview-feedback {
+    width: calc(100% - 1.5rem);
   }
 
   .lyric-header {

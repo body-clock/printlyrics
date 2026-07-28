@@ -1,15 +1,15 @@
-<% content_for :title, "#{@song.title} is unavailable | PrintLyrics" %>
-<% content_for :description, "This song is no longer available to load from the lyrics source." %>
+<% content_for :title, t(".seo.title", title: @song.title) %>
+<% content_for :description, t(".seo.description") %>
 <% content_for :canonical_url, song_url(@song) %>
 <% content_for :robots, "noindex, follow" %>
 
 <div class="song-shell">
   <%= turbo_frame_tag "lyric_entry" do %>
     <article class="song-card">
-      <p class="eyebrow">Song unavailable</p>
+      <p class="eyebrow"><%= t(".eyebrow") %></p>
       <h1><%= @song.title %></h1>
-      <p>The source no longer has printable lyrics for this song. You can search again or paste lyrics you already have.</p>
-      <%= link_to "Search or enter lyrics", root_path, class: "button button-primary" %>
+      <p><%= t(".body") %></p>
+      <%= link_to t(".link"), root_path, class: "button button-primary" %>
     </article>
   <% end %>
 

@@ -16,7 +16,7 @@ class LyricsController < ApplicationController
     unless creation.save
       @lyric = creation.lyric
       @catalog_token = params[:catalog_token]
-      flash.now[:alert] = "Please paste your lyrics"
+      flash.now[:alert] = t("lyrics.errors.blank")
       return render :new, status: :unprocessable_content
     end
 
@@ -34,7 +34,7 @@ class LyricsController < ApplicationController
 
     @results = search.results || []
     @search_error = search.error_message
-    @search_status = "#{helpers.pluralize(@results.size, "match")} found. Choose a song." if search.success?
+    @search_status = t("lyrics.search.status", count: @results.size) if search.success?
 
     render :new, status: search.http_status
   end
@@ -46,7 +46,7 @@ class LyricsController < ApplicationController
     lookup.perform(params[:result_id], client: lrc_lib_client)
 
     @lyric = lookup.lyric || Lyric.new
-    @loaded_status = "Lyrics loaded. Review and edit them before generating your print page." if lookup.success?
+    @loaded_status = t("lyrics.status.loaded") if lookup.success?
     @catalog_token = lookup.catalog_token
     @search_error = lookup.error
 
@@ -70,6 +70,6 @@ class LyricsController < ApplicationController
   end
 
   def lyric_not_found
-    redirect_to root_path, alert: "That lyric page expired or wasn't found"
+    redirect_to root_path, alert: t("lyrics.errors.expired")
   end
 end
