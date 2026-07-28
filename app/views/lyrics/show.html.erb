@@ -1,8 +1,16 @@
 <%
-  display_title = @lyric.title.presence || "Untitled lyrics"
+  display_title = @lyric.title.presence || t(".untitled")
   display_artist = @lyric.artist.presence
-  seo_title = display_artist ? "#{display_title} lyrics by #{display_artist}" : "#{display_title} | PrintLyrics"
-  description = display_artist ? "Print-friendly lyrics for #{display_title} by #{display_artist}." : "A clean, print-friendly lyric sheet."
+  seo_title = if display_artist
+    t(".seo.title_with_artist", title: display_title, artist: display_artist)
+  else
+    t(".seo.title_without_artist", title: display_title)
+  end
+  description = if display_artist
+    t(".seo.description_with_artist", title: display_title, artist: display_artist)
+  else
+    t(".seo.description_without_artist")
+  end
   structured_data = {
     "@context": "https://schema.org",
     "@type": "MusicRecording",
@@ -23,28 +31,28 @@
 <% end %>
 
 <div class="preview-shell" data-controller="preview">
-  <nav class="control-bar no-print" aria-label="Print page controls">
+  <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
       <%= link_to root_path, class: "back-link" do %>
         <span aria-hidden="true">←</span>
-        <span>Back</span>
+        <span><%= t(".controls.back") %></span>
       <% end %>
 
       <div class="control-groups">
         <fieldset class="segmented-control">
-          <legend>Size</legend>
-          <% %w[S M L XL].each do |size| %>
+          <legend><%= t(".controls.size") %></legend>
+          <% %w[s m l xl].each do |size| %>
             <button type="button"
-                    class="<%= size == "M" ? "is-active" : nil %>"
-                    aria-pressed="<%= size == "M" %>"
+                    class="<%= size == "m" ? "is-active" : nil %>"
+                    aria-pressed="<%= size == "m" %>"
                     data-preview-target="sizeButton"
                     data-action="preview#setSize"
-                    data-size="<%= size.downcase %>"><%= size %></button>
+                    data-size="<%= size %>"><%= t(".controls.sizes.#{size}") %></button>
           <% end %>
         </fieldset>
 
         <fieldset class="segmented-control columns-control">
-          <legend>Columns</legend>
+          <legend><%= t(".controls.columns") %></legend>
           <% [1, 2].each do |columns| %>
             <button type="button"
                     class="<%= columns == 1 ? "is-active" : nil %>"
@@ -57,7 +65,7 @@
 
         <button type="button" class="button button-print" data-action="preview#print">
           <span aria-hidden="true">↗</span>
-          <span>Print</span>
+          <span><%= t(".controls.print") %></span>
         </button>
       </div>
     </div>
@@ -80,5 +88,34 @@
 
   <p class="mobile-print-note no-print"
      data-preview-target="mobileNote"
-     hidden>Two columns will be used when printing.</p>
+     hidden><%= t(".controls.two_columns_note") %></p>
+
+  <% if @generated_page_key %>
+    <aside class="preview-feedback no-print"
+           aria-labelledby="print-use-case-heading"
+           data-controller="print-feedback">
+      <fieldset data-print-feedback-target="question">
+        <legend id="print-use-case-heading"><%= t(".feedback.question") %></legend>
+        <p><%= t(".feedback.explanation") %></p>
+        <div class="feedback-options">
+          <button type="button"
+                  data-action="print-feedback#select"
+                  data-use-case="performance"><%= t(".feedback.performance") %></button>
+          <button type="button"
+                  data-action="print-feedback#select"
+                  data-use-case="worship_community"><%= t(".feedback.worship_community") %></button>
+          <button type="button"
+                  data-action="print-feedback#select"
+                  data-use-case="teaching"><%= t(".feedback.teaching") %></button>
+          <button type="button"
+                  data-action="print-feedback#select"
+                  data-use-case="personal"><%= t(".feedback.personal") %></button>
+        </div>
+      </fieldset>
+      <p class="feedback-thanks"
+         role="status"
+         data-print-feedback-target="thanks"
+         hidden><%= t(".feedback.thanks") %></p>
+    </aside>
+  <% end %>
 </div>

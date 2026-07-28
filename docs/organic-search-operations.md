@@ -15,7 +15,7 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All four exact event names exist | |
+| Plausible goals | Site owner | All five exact event names exist | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch catalog seed | Site owner | Twenty metadata-only song pages exist | |
 | Verifier first run | Site owner | Command exits successfully and prints counts | |
@@ -66,10 +66,32 @@ custom-event goal for each exact, case-sensitive name:
 2. `Song Selected`
 3. `Print Page Generated`
 4. `Print Dialog Opened`
+5. `Print Use Case Selected`
 
 Do not constrain these goals with song titles, artist names, source IDs, lyric
-tokens, or URLs. The only custom property the application sends is the
-low-cardinality `entry_method` workflow context.
+tokens, or URLs. The application sends only low-cardinality workflow properties:
+`entry_method`, `use_case`, `campaign_source`, and `campaign_name`.
+
+The optional use-case prompt appears only after someone creates a print page.
+Its `use_case` property is one of `performance`, `worship_community`, `teaching`,
+or `personal`. It is not part of the core conversion funnel.
+
+Campaign properties are retained in session storage after a visitor arrives on
+an allowlisted campaign URL. Supported launch values are:
+
+- `utm_source`: `church`, `email`, `facebook`, `musician`, `outreach`, `reddit`,
+  or `teacher`
+- `utm_campaign`: `large_print`, `singer_rehearsal`, `teacher_handouts`, or
+  `worship_handouts`
+
+For example:
+
+```text
+https://printlyrics.app/?utm_source=outreach&utm_campaign=worship_handouts
+```
+
+Unknown values are ignored so arbitrary query-string content cannot become an
+analytics property.
 
 Plausible requires received events to be configured as goals before they appear
 as conversions; see its [custom-event goal documentation](https://plausible.io/docs/custom-event-goals).
@@ -102,10 +124,13 @@ filter for Plausible event requests and preserve the log across navigation.
    first three custom events arrive once and in order.
 4. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
    browser invokes its native print dialog. Canceling the dialog is sufficient.
-5. Inspect every event payload. A saved page must report the synthetic location
+5. Select one optional use case. Confirm `Print Use Case Selected` is sent once
+   and carries only the selected `use_case` plus any allowlisted campaign
+   properties.
+6. Inspect every event payload. A saved page must report the synthetic location
    `/lyrics/:token`, never the real token. No payload may contain lyrics, song
    title, artist, album, or source ID.
-6. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
+7. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
    Search** segment after a genuine organic visit and confirm its attribution.
 
 `Print Dialog Opened` is the product's **organic print completion** proxy. It

@@ -1,6 +1,6 @@
 {
-  "name": "PrintLyrics",
-  "short_name": "PrintLyrics",
+  "name": <%= raw json_escape(t("application.name").to_json) %>,
+  "short_name": <%= raw json_escape(t("application.name").to_json) %>,
   "icons": [
     {
       "src": "/app-icon.png",
@@ -17,7 +17,7 @@
   "start_url": "/",
   "display": "standalone",
   "scope": "/",
-  "description": "Search, format, and print lyrics for any song.",
+  "description": <%= raw json_escape(t(".description").to_json) %>,
   "theme_color": "#292722",
   "background_color": "#f4f0e8"
 }

@@ -1,13 +1,13 @@
 <footer class="resource-navigation" data-resource-navigation>
-  <nav aria-label="More from PrintLyrics">
+  <nav aria-label="<%= t(".label") %>">
     <% unless current_section == :tool %>
-      <%= link_to "Print song lyrics", root_path %>
+      <%= link_to t(".tool"), root_path %>
     <% end %>
     <% unless current_section == :guide %>
-      <%= link_to "One-page printing guide", print_lyrics_on_one_page_path %>
+      <%= link_to t(".guide"), print_lyrics_on_one_page_path %>
     <% end %>
     <% unless current_section == :songs %>
-      <%= link_to "Browse printable songs", songs_path %>
+      <%= link_to t(".songs"), songs_path %>
     <% end %>
   </nav>
 </footer>

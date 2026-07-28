@@ -4,8 +4,8 @@ class SongSearch
 
   attribute :query, :string
 
-  validates :query, presence: { message: "Enter a song title or artist" }
-  validates :query, length: { maximum: 200, message: "Keep your search under 200 characters" }
+  validates :query, presence: true
+  validates :query, length: { maximum: 200 }
 
   attr_reader :results
 
@@ -15,7 +15,7 @@ class SongSearch
     @results = client.search(query)
     true
   rescue LrcLibClient::ServiceError
-    @error = "Song search is temporarily unavailable. You can still paste lyrics below."
+    @error = I18n.t("songs.errors.service")
     @service_error = true
     false
   end

@@ -35,7 +35,10 @@ class OrganicConversionTest < ApplicationSystemTestCase
     )
     client = Object.new
     client.define_singleton_method(:search) { |_| [ result ] }
-    client.define_singleton_method(:find) { |_| result }
+    client.define_singleton_method(:find) do |_|
+      sleep 0.05
+      result
+    end
 
     with_lrc_lib_client(client) do
       visit root_path
@@ -48,6 +51,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
       assert_text "1 match found"
 
       click_button "The Kiss"
+      assert_button "Loading lyrics…", disabled: true
       assert_field "Song title", with: "The Kiss"
       assert_field "Artist", with: "Judee Sill"
       assert_field "Lyrics", with: "Love, rising"
@@ -174,6 +178,31 @@ class OrganicConversionTest < ApplicationSystemTestCase
         ".filter((call) => call[0] === 'Print Page Generated').length"
     )
     assert_equal 1, count
+  end
+
+  test "campaign attribution follows generation and optional use-case feedback" do
+    visit "#{root_path}?utm_source=outreach&utm_campaign=worship_handouts"
+    install_persistent_analytics_capture
+    assert_equal(
+      { "campaign_source" => "outreach", "campaign_name" => "worship_handouts" },
+      JSON.parse(page.evaluate_script("sessionStorage.getItem('printlyrics:campaign') || '{}'"))
+    )
+
+    fill_in "Lyrics", with: "A congregation line"
+    click_button "Generate print page"
+    assert_text "What are you making this lyric sheet for?"
+
+    generated = captured_analytics_calls.find { |call| call[0] == "Print Page Generated" }
+    assert_equal "outreach", generated.dig(1, "props", "campaign_source")
+    assert_equal "worship_handouts", generated.dig(1, "props", "campaign_name")
+
+    click_button "Worship or community"
+
+    assert_text "Thanks. That helps us keep PrintLyrics useful and focused."
+    feedback = captured_analytics_calls.find { |call| call[0] == "Print Use Case Selected" }
+    assert_equal "worship_community", feedback.dig(1, "props", "use_case")
+    assert_equal "outreach", feedback.dig(1, "props", "campaign_source")
+    assert_equal "worship_handouts", feedback.dig(1, "props", "campaign_name")
   end
 
   test "opening an existing shared page does not record a generation" do
