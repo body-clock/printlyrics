@@ -786,8 +786,9 @@ textarea:focus-visible {
     height: 1.9rem;
   }
 
-  .columns-control {
-    display: none;
+  .lyrics,
+  .lyrics.cols-2 {
+    column-count: 1;
   }
 
   .button-print {
@@ -800,11 +801,6 @@ textarea:focus-visible {
     min-height: calc(100vh - 8.25rem);
     padding: 2rem 1.35rem 2.5rem;
     box-shadow: none;
-  }
-
-  .lyrics,
-  .lyrics.cols-2 {
-    column-count: 1;
   }
 
   .lyric-header {

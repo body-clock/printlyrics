@@ -21,8 +21,10 @@ class Lyric < ApplicationRecord
     update_column(:expires_at, RETENTION_PERIOD.from_now)
   end
 
+  STANZA_SEPARATOR = /\r?\n(?:[ \t]*\r?\n)+/
+
   def stanzas
-    lyrics.to_s.strip.split(/\r?\n(?:[ \t]*\r?\n)+/).map(&:strip)
+    lyrics.to_s.strip.split(STANZA_SEPARATOR).map(&:strip)
   end
 
   private
