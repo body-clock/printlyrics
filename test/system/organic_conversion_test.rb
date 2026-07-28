@@ -66,6 +66,55 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert Song.last.indexable?
   end
 
+  test "public song page loads lyrics into the editable form" do
+    song = Song.create!(
+      source_id: 42,
+      title: "The Kiss",
+      artist: "Judee Sill",
+      indexable_at: 1.day.ago
+    )
+    result = LrcLibResult.new(
+      id: 42,
+      title: "The Kiss",
+      artist: "Judee Sill",
+      album: "Heart Food",
+      duration: 214,
+      plain_lyrics: "Love, rising",
+      synced_lyrics: nil,
+      instrumental: false
+    )
+    client = Object.new
+    client.define_singleton_method(:find) { |_| result }
+
+    with_song_lrc_lib_client(client) do
+      visit song_path(song)
+      click_button "Load lyrics to print"
+
+      assert_field "Song title", with: "The Kiss"
+      assert_field "Artist", with: "Judee Sill"
+      assert_field "Lyrics", with: "Love, rising"
+    end
+  end
+
+  test "public song page shows when lyrics become unavailable" do
+    song = Song.create!(
+      source_id: 42,
+      title: "The Kiss",
+      artist: "Judee Sill",
+      indexable_at: 1.day.ago
+    )
+    client = Object.new
+    client.define_singleton_method(:find) { |_| raise LrcLibClient::NotFoundError }
+
+    with_song_lrc_lib_client(client) do
+      visit song_path(song)
+      click_button "Load lyrics to print"
+
+      assert_text(/Song unavailable/i)
+      assert_text "The source no longer has printable lyrics for this song."
+    end
+  end
+
   test "token page analytics redact the token and print event precedes print" do
     visit root_path
     install_persistent_analytics_capture
@@ -179,5 +228,14 @@ class OrganicConversionTest < ApplicationSystemTestCase
   ensure
     LyricsController.alias_method :lrc_lib_client, :__original_lrc_lib_client
     LyricsController.remove_method :__original_lrc_lib_client
+  end
+
+  def with_song_lrc_lib_client(client)
+    SongsController.alias_method :__original_lrc_lib_client, :lrc_lib_client
+    SongsController.define_method(:lrc_lib_client) { client }
+    yield
+  ensure
+    SongsController.alias_method :lrc_lib_client, :__original_lrc_lib_client
+    SongsController.remove_method :__original_lrc_lib_client
   end
 end

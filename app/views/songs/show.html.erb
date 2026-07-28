@@ -20,52 +20,54 @@
 <% end %>
 
 <div class="song-shell">
-  <nav class="breadcrumbs" aria-label="Breadcrumb">
-    <%= link_to "PrintLyrics", root_path %>
-    <span aria-hidden="true">/</span>
-    <%= link_to "Songs", songs_path %>
-  </nav>
+  <%= turbo_frame_tag "lyric_entry" do %>
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <%= link_to "PrintLyrics", root_path %>
+      <span aria-hidden="true">/</span>
+      <%= link_to "Songs", songs_path %>
+    </nav>
 
-  <article class="song-card">
-    <p class="eyebrow">Printable song page</p>
-    <h1><%= @song.title %></h1>
-    <p class="song-artist" data-song-artist><%= @song.artist %></p>
+    <article class="song-card">
+      <p class="eyebrow">Printable song page</p>
+      <h1><%= @song.title %></h1>
+      <p class="song-artist" data-song-artist><%= @song.artist %></p>
 
-    <% if @song.album.present? || @song.duration_seconds.present? %>
-      <dl class="song-metadata">
-        <% if @song.album.present? %>
-          <div><dt>Album</dt><dd><%= @song.album %></dd></div>
-        <% end %>
-        <% if @song.duration_seconds.present? %>
-          <div><dt>Length</dt><dd><%= song_duration(@song.duration_seconds) %></dd></div>
-        <% end %>
-      </dl>
-    <% end %>
-
-    <% if @load_error.present? %>
-      <p class="song-load-error" role="alert"><%= @load_error %></p>
-    <% end %>
-
-    <p>Load the available lyrics, review the words, then choose the size and column layout that works for your page.</p>
-
-    <%= form_with url: load_song_path(@song),
-      method: :post,
-      class: "song-load-form",
-      data: {
-        controller: "song-load",
-        action: "turbo:submit-start->song-load#start turbo:submit-end->song-load#finish"
-      },
-      html: { aria: { busy: "false" } } do |form| %>
-      <%= form.button class: "button button-primary", data: { song_load_target: "button" } do %>
-        <span data-song-load-target="idleLabel">Load lyrics to print</span>
-        <span data-song-load-target="busyLabel" hidden>Loading lyrics…</span>
+      <% if @song.album.present? || @song.duration_seconds.present? %>
+        <dl class="song-metadata">
+          <% if @song.album.present? %>
+            <div><dt>Album</dt><dd><%= @song.album %></dd></div>
+          <% end %>
+          <% if @song.duration_seconds.present? %>
+            <div><dt>Length</dt><dd><%= song_duration(@song.duration_seconds) %></dd></div>
+          <% end %>
+        </dl>
       <% end %>
-    <% end %>
 
-    <% if @load_error.present? %>
-      <%= link_to "Search manually instead", root_path, class: "manual-fallback" %>
-    <% end %>
-  </article>
+      <% if @load_error.present? %>
+        <p class="song-load-error" role="alert"><%= @load_error %></p>
+      <% end %>
+
+      <p>Load the available lyrics, review the words, then choose the size and column layout that works for your page.</p>
+
+      <%= form_with url: load_song_path(@song),
+        method: :post,
+        class: "song-load-form",
+        data: {
+          controller: "song-load",
+          action: "turbo:submit-start->song-load#start turbo:submit-end->song-load#finish"
+        },
+        html: { aria: { busy: "false" } } do |form| %>
+        <%= form.button class: "button button-primary", data: { song_load_target: "button" } do %>
+          <span data-song-load-target="idleLabel">Load lyrics to print</span>
+          <span data-song-load-target="busyLabel" hidden>Loading lyrics…</span>
+        <% end %>
+      <% end %>
+
+      <% if @load_error.present? %>
+        <%= link_to "Search manually instead", root_path, class: "manual-fallback" %>
+      <% end %>
+    </article>
+  <% end %>
 
   <%= render "shared/resource_navigation", current_section: :songs %>
 </div>

@@ -4,12 +4,14 @@
 <% content_for :robots, "noindex, follow" %>
 
 <div class="song-shell">
-  <article class="song-card">
-    <p class="eyebrow">Song unavailable</p>
-    <h1><%= @song.title %></h1>
-    <p>The source no longer has printable lyrics for this song. You can search again or paste lyrics you already have.</p>
-    <%= link_to "Search or enter lyrics", root_path, class: "button button-primary" %>
-  </article>
+  <%= turbo_frame_tag "lyric_entry" do %>
+    <article class="song-card">
+      <p class="eyebrow">Song unavailable</p>
+      <h1><%= @song.title %></h1>
+      <p>The source no longer has printable lyrics for this song. You can search again or paste lyrics you already have.</p>
+      <%= link_to "Search or enter lyrics", root_path, class: "button button-primary" %>
+    </article>
+  <% end %>
 
   <%= render "shared/resource_navigation", current_section: :songs %>
 </div>
