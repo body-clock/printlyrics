@@ -1,4 +1,6 @@
 class LyricsController < ApplicationController
+  attr_writer :lrc_lib_client
+
   rescue_from ActiveRecord::RecordNotFound, with: :lyric_not_found
 
   def new
@@ -6,73 +8,65 @@ class LyricsController < ApplicationController
   end
 
   def create
-    Lyric.purge_expired!
-    @lyric = Lyric.new(lyric_params)
-    if @lyric.save
-      redirect_to @lyric
-    else
+    creation = LyricPageCreation.new(
+      attributes: lyric_params,
+      catalog_token: params[:catalog_token]
+    )
+
+    unless creation.save
+      @lyric = creation.lyric
+      @catalog_token = params[:catalog_token]
       flash.now[:alert] = "Please paste your lyrics"
-      render :new, status: :unprocessable_content
+      return render :new, status: :unprocessable_content
     end
+
+    @lyric = creation.lyric
+    session[:generated_lyric_token] = @lyric.token
+    redirect_to @lyric
   end
 
   def search
     @lyric = Lyric.new
     @query = params[:query].to_s.strip
-    return render_search_error("Enter a song title or artist") if @query.blank?
-    return render_search_error("Keep your search under 200 characters") if @query.length > 200
 
-    @results = LrcLibClient.new.search(@query)
-    if @results.empty?
-      @search_error = "No matching songs found"
-    else
-      @search_status = "#{helpers.pluralize(@results.size, "match")} found. Choose a song."
-    end
-    render :new
-  rescue LrcLibClient::ServiceError
-    render_service_error
+    search = SongSearch.new(query: @query)
+    search.perform(client: lrc_lib_client)
+
+    @results = search.results || []
+    @search_error = search.error_message
+    @search_status = "#{helpers.pluralize(@results.size, "match")} found. Choose a song." if search.success?
+
+    render :new, status: search.http_status
   end
 
   def select
     @query = params[:query].to_s.strip
-    result = LrcLibClient.new.find(params[:result_id])
-    @lyric = Lyric.new(
-      title: result.title,
-      artist: result.artist,
-      lyrics: result.lyrics,
-      source_url: result.source_url
-    )
-    @loaded_status = "Lyrics loaded. Review and edit them before generating your print page."
-    render :new
-  rescue LrcLibClient::NotFoundError
-    @lyric = Lyric.new
-    render_search_error("That song is no longer available")
-  rescue LrcLibClient::ServiceError
-    @lyric = Lyric.new
-    render_service_error
+
+    lookup = SongLookup.new
+    lookup.perform(params[:result_id], client: lrc_lib_client)
+
+    @lyric = lookup.lyric || Lyric.new
+    @loaded_status = "Lyrics loaded. Review and edit them before generating your print page." if lookup.success?
+    @catalog_token = lookup.catalog_token
+    @search_error = lookup.error
+
+    render :new, status: lookup.http_status
   end
 
   def show
     @lyric = Lyric.active.find_by!(token: params[:token])
+    @generated_page_key = @lyric.token if session.delete(:generated_lyric_token) == @lyric.token
     @lyric.renew_retention!
   end
 
   private
 
-  def render_search_error(message)
-    @lyric ||= Lyric.new
-    @search_error = message
-    render :new, status: :unprocessable_content
-  end
-
-  def render_service_error
-    @lyric ||= Lyric.new
-    @search_error = "Song search is temporarily unavailable. You can still paste lyrics below."
-    render :new, status: :service_unavailable
+  def lrc_lib_client
+    @lrc_lib_client ||= LrcLibClient.new
   end
 
   def lyric_params
-    params.require(:lyric).permit(:title, :artist, :lyrics, :source_url)
+    params.require(:lyric).permit(:title, :artist, :lyrics)
   end
 
   def lyric_not_found

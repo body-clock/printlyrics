@@ -1,9 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
+import { trackEvent } from "lib/analytics"
 
 export default class extends Controller {
   static targets = ["query", "panel", "idleLabel", "busyLabel"]
 
   start(event) {
+    trackEvent("Song Search Submitted", { entry_method: "search" })
     event.currentTarget.setAttribute("aria-busy", "true")
     this.idleLabelTarget.hidden = true
     this.busyLabelTarget.hidden = false
@@ -14,6 +16,12 @@ export default class extends Controller {
     event.currentTarget.setAttribute("aria-busy", "false")
     this.idleLabelTarget.hidden = false
     this.busyLabelTarget.hidden = true
+  }
+
+  selected(event) {
+    if (!event.detail.success) return
+
+    trackEvent("Song Selected", { entry_method: "search" })
   }
 
   close(event) {

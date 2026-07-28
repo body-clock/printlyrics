@@ -60,10 +60,8 @@ CI runs for pull requests and pushes to `main`. Release Please maintains a
 release pull request; merging that pull request publishes a release and
 dispatches the production deployment.
 
-For the first deployment, point the Cloudflare `A` record for
-`printlyrics.app` to `46.225.21.111` as DNS-only so Kamal can obtain the origin
-certificate. After deployment, proxy the record through Cloudflare and use
-Full (strict) SSL mode.
+## Operations
 
-The production database lives in the `printlyrics_storage` Docker volume.
-Back up that volume before server replacement or destructive maintenance.
+Use the [organic search operations runbook](docs/organic-search-operations.md)
+to configure Search Console and Plausible, schedule catalog verification, record
+launch baselines, and run the 30- and 90-day reviews.

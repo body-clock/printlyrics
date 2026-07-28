@@ -81,4 +81,4 @@ jobs:
           bundler-cache: true
 
       - name: Run tests
-        run: bin/rails db:test:prepare test
+        run: bin/rails db:test:prepare test test:system
