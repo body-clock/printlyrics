@@ -35,17 +35,13 @@ class LyricsController < ApplicationController
     @query = params[:query].to_s.strip
 
     lookup = SongLookup.new
-    status = lookup.perform(params[:result_id], client: lrc_lib_client)
+    lookup.perform(params[:result_id], client: lrc_lib_client)
 
-    if lookup.success?
-      @lyric = lookup.lyric
-      @loaded_status = "Lyrics loaded. Review and edit them before generating your print page."
-    else
-      @lyric = Lyric.new
-      @search_error = lookup.error
-    end
+    @lyric = lookup.lyric || Lyric.new
+    @loaded_status = "Lyrics loaded. Review and edit them before generating your print page." if lookup.success?
+    @search_error = lookup.error
 
-    render :new, status: (status || :unprocessable_content)
+    render :new, status: lookup.http_status
   end
 
   def show

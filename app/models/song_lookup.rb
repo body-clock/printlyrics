@@ -9,13 +9,14 @@ class SongLookup
       lyrics: result.lyrics,
       source_url: result.source_url
     )
+    @http_status = :ok
     :ok
   rescue LrcLibClient::NotFoundError
     @error = "That song is no longer available"
     @http_status = :unprocessable_content
     nil
   rescue LrcLibClient::ServiceError
-    @error = "Song search is temporarily unavailable. You can still paste lyrics below."
+    @error = LrcLibClient::SERVICE_UNAVAILABLE_MESSAGE
     @http_status = :service_unavailable
     nil
   end

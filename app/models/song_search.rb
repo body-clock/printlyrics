@@ -15,7 +15,7 @@ class SongSearch
     @results = client.search(query)
     true
   rescue LrcLibClient::ServiceError
-    @error = "Song search is temporarily unavailable. You can still paste lyrics below."
+    @error = LrcLibClient::SERVICE_UNAVAILABLE_MESSAGE
     @service_error = true
     false
   end
@@ -25,7 +25,7 @@ class SongSearch
   end
 
   def error_message
-    @error || (errors.full_messages.first unless valid?)
+    @error || (errors.first&.message unless valid?)
   end
 
   def http_status

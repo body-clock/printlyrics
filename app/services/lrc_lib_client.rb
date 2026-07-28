@@ -3,6 +3,8 @@ class LrcLibClient
   class NotFoundError < Error; end
   class ServiceError < Error; end
 
+  SERVICE_UNAVAILABLE_MESSAGE = "Song search is temporarily unavailable. You can still paste lyrics below."
+
   SEARCH_LIMIT = 5
 
   def initialize(connection: nil)
