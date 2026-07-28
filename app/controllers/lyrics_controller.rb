@@ -8,7 +8,6 @@ class LyricsController < ApplicationController
   end
 
   def create
-    Lyric.purge_expired!
     @lyric = Lyric.new(lyric_params)
     if @lyric.save
       redirect_to @lyric
