@@ -16,7 +16,7 @@ class SongLookup
     @http_status = :unprocessable_content
     nil
   rescue LrcLibClient::ServiceError
-    @error = LrcLibClient::SERVICE_UNAVAILABLE_MESSAGE
+    @error = "Song search is temporarily unavailable. You can still paste lyrics below."
     @http_status = :service_unavailable
     nil
   end
