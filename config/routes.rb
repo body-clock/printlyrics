@@ -1,10 +1,16 @@
 Rails.application.routes.draw do
   root "lyrics#new"
+  get "print-lyrics-on-one-page", to: "printing_guides#one_page", as: :print_lyrics_on_one_page
   get "lyrics", to: redirect("/")
   resources :lyrics, only: %i[create show], param: :token do
     collection do
       post :search
       post :select
+    end
+  end
+  resources :songs, only: %i[index show], param: :slug do
+    member do
+      post :load
     end
   end
   get "sitemap", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap

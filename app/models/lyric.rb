@@ -1,4 +1,6 @@
 class Lyric < ApplicationRecord
+  belongs_to :song, optional: true
+
   RETENTION_PERIOD = 180.days
 
   before_validation :generate_token, :set_expiration, on: :create

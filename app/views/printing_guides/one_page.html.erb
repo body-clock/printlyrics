@@ -1,0 +1,44 @@
+<%
+  description = "Learn how to fit song lyrics on one page using font size, columns, spacing, and print preview, then create a clean lyric sheet."
+%>
+<% content_for :title, "Print Lyrics on One Page | PrintLyrics" %>
+<% content_for :description, description %>
+<% content_for :canonical_url, print_lyrics_on_one_page_url %>
+<% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
+
+<div class="guide-shell">
+  <%= render "shared/search_navigation" %>
+
+  <article class="guide">
+    <header>
+      <p class="eyebrow">A practical printing guide</p>
+      <h1>Print lyrics on one page</h1>
+      <p>Start with the clearest layout you can read comfortably, then make small adjustments until the print preview fits.</p>
+    </header>
+
+    <ol class="guide-steps">
+      <li>
+        <h2>Start with the complete lyrics</h2>
+        <p>Search for the song or paste your own text. Remove repeated notes or extra blank lines only when they are not useful while playing, teaching, or singing.</p>
+      </li>
+      <li>
+        <h2>Try two columns</h2>
+        <p>Two columns often fit verses and choruses more naturally than one long column. They also reduce the distance your eyes travel across the page.</p>
+      </li>
+      <li>
+        <h2>Reduce font size gradually</h2>
+        <p>Choose the smallest font size that remains easy to read from where the page will sit. Avoid shrinking everything before trying columns.</p>
+      </li>
+      <li>
+        <h2>Check print preview</h2>
+        <p>Browser and printer margins vary. Open print preview before printing and confirm that the final lines remain on the first sheet.</p>
+      </li>
+    </ol>
+
+    <section class="guide-callout" aria-labelledby="guide-tool-heading">
+      <h2 id="guide-tool-heading">Make your lyric sheet</h2>
+      <p>PrintLyrics lets you search or paste lyrics, review the text, choose a size and column layout, and print. No account is required.</p>
+      <%= link_to "Open the lyric printing tool", root_path, class: "button button-primary" %>
+    </section>
+  </article>
+</div>

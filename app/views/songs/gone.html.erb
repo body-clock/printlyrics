@@ -1,0 +1,15 @@
+<% content_for :title, "#{@song.title} is unavailable | PrintLyrics" %>
+<% content_for :description, "This song is no longer available to load from the lyrics source." %>
+<% content_for :canonical_url, song_url(@song) %>
+<% content_for :robots, "noindex, follow" %>
+
+<div class="song-shell">
+  <%= render "shared/search_navigation" %>
+
+  <article class="song-card">
+    <p class="eyebrow">Song unavailable</p>
+    <h1><%= @song.title %></h1>
+    <p>The source no longer has printable lyrics for this song. You can search again or paste lyrics you already have.</p>
+    <%= link_to "Search or enter lyrics", root_path, class: "button button-primary" %>
+  </article>
+</div>

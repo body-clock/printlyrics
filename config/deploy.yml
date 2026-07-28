@@ -32,6 +32,7 @@ aliases:
   logs: app logs -f
   dbc: app exec --interactive --reuse "bin/rails dbconsole"
   purge: app exec --reuse "bin/rails lyrics:purge_expired"
+  verify_catalog: app exec --reuse "bin/rails songs:verify_catalog"
 
 asset_path: /rails/public/assets
 
