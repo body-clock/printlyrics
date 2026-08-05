@@ -1080,7 +1080,7 @@ textarea:focus-visible {
   text-align: center;
 }
 
-@media (max-width: 700px) {
+@media screen and (max-width: 700px) {
   .landing-shell {
     width: min(100% - 2rem, 43rem);
     padding-top: 2.5rem;

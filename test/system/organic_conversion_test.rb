@@ -16,6 +16,17 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_text "First line"
     assert_button "Print"
     assert_selector "meta[name='robots'][content*='noindex']", visible: false
+    find("[data-columns='2']").click
+    assert_selector ".lyrics.cols-2"
+    assert_equal "1", page.evaluate_script("getComputedStyle(document.querySelector('.lyrics')).columnCount")
+
+    page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "print")
+    begin
+      assert_equal "2", page.evaluate_script("getComputedStyle(document.querySelector('.lyrics')).columnCount")
+    ensure
+      page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "screen")
+    end
+
     assert_equal(
       [ "Print Page Generated" ],
       captured_analytics_calls.map(&:first).reject { |name| name == "pageview" }
