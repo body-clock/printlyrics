@@ -15,11 +15,13 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All five exact event names exist | |
+| Plausible goals | Site owner | All six exact event names exist | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch catalog seed | Site owner | Twenty metadata-only song pages exist | |
 | Verifier first run | Site owner | Command exits successfully and prints counts | |
 | Verifier next run | Site owner | Scheduler shows the next daily run | |
+| Popular catalog first run | Site owner | One to twenty ranked songs and a refresh date appear | |
+| Popular catalog next run | Site owner | Scheduler shows the next weekly run | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
 
@@ -67,10 +69,15 @@ custom-event goal for each exact, case-sensitive name:
 3. `Print Page Generated`
 4. `Print Dialog Opened`
 5. `Print Use Case Selected`
+6. `Song Lyrics Load Started`
 
 Do not constrain these goals with song titles, artist names, source IDs, lyric
 tokens, or URLs. The application sends only low-cardinality workflow properties:
 `entry_method`, `use_case`, `campaign_source`, and `campaign_name`.
+
+`Song Lyrics Load Started` uses `entry_method` values `popular`, `archive`, or
+`direct`. These values distinguish the `/songs` sections and direct song-page
+entry without sending song metadata.
 
 The optional use-case prompt appears only after someone creates a print page.
 Its `use_case` property is one of `performance`, `worship_community`, `teaching`,
@@ -122,15 +129,18 @@ filter for Plausible event requests and preserve the log across navigation.
    visit must send exactly one pageview.
 3. Search for a song, select a result, and generate its print page. Confirm the
    first three custom events arrive once and in order.
-4. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
+4. Open one Popular Now song, select **Load lyrics to print**, and confirm
+   `Song Lyrics Load Started` arrives once with `entry_method=popular` and no
+   song metadata. Repeat from the archive with `entry_method=archive`.
+5. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
    browser invokes its native print dialog. Canceling the dialog is sufficient.
-5. Select one optional use case. Confirm `Print Use Case Selected` is sent once
+6. Select one optional use case. Confirm `Print Use Case Selected` is sent once
    and carries only the selected `use_case` plus any allowlisted campaign
    properties.
-6. Inspect every event payload. A saved page must report the synthetic location
+7. Inspect every event payload. A saved page must report the synthetic location
    `/lyrics/:token`, never the real token. No payload may contain lyrics, song
    title, artist, album, or source ID.
-7. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
+8. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
    Search** segment after a genuine organic visit and confirm its attribution.
 
 `Print Dialog Opened` is the product's **organic print completion** proxy. It
@@ -202,6 +212,32 @@ recovers; repeated checks are safe. If failures persist, reduce `LIMIT`, verify
 LRCLIB outside the application, and leave existing pages in their last known
 state. Never respond to a transient outage by bulk-marking songs unavailable.
 
+### Refresh Popular Now weekly
+
+After migrations are complete, run the first popularity refresh before relying
+on the Popular Now section in launch checks:
+
+```sh
+bin/kamal refresh_popular
+```
+
+The task fetches Apple's credential-free US top-25 song feed, evaluates
+candidates against printable LRCLIB results, and publishes the first 20
+confident matches. A successful run prints `candidates`, `matched`, `skipped`,
+and `published`. It stores metadata and Apple destinations only; it never stores
+lyrics.
+
+Configure the host scheduler for Monday at 09:00 UTC. Prevent overlapping runs,
+retain stdout/stderr, and alert on a nonzero exit. A timeout, invalid Apple
+response, LRCLIB service failure, or zero-match result exits nonzero and leaves
+the last successful list and refresh date unchanged. Retry once after the
+provider recovers; repeated runs are idempotent.
+
+Songs that leave Popular Now remain in the alphabetical archive while LRCLIB
+still verifies them. Do not clear ranks manually or demote departed songs. Pause
+the weekly schedule if Apple's feed terms or destination-link requirements
+change, then review the accepted operating assumption before resuming.
+
 ## 4. Capture baselines and review outcomes
 
 On launch day, record zero or current values for the previous 30 days:
@@ -244,6 +280,9 @@ Review these symptoms weekly during the first 90 days:
 | Impressions rise but completions do not | Compare entry pages and funnel drop-off; improve the tool path |
 | Events disappear or duplicate | Repeat production smoke test and repair measurement before analysis |
 | Verifier has repeated failures | Reduce batch, inspect source health, retry safely after recovery |
+| Popular refresh exits nonzero | Confirm Apple and LRCLIB health; preserve the prior list and retry once after recovery |
+| Popular matched count drops sharply | Inspect candidate/match drift before changing the strict matching rules |
+| Popular refresh date is stale | Inspect scheduler history, last exit status, and retained task output |
 | Takedown or source complaint | Remove the affected public song from discovery and preserve the private saved-page contract pending review |
 
 Keeping lyrics out of indexable responses reduces exposure; it is not legal

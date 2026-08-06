@@ -5,13 +5,16 @@ class SongsController < ApplicationController
 
   def index
     @page = [ Integer(params[:page], exception: false).to_i, 1 ].max
-    scope = Song.indexable.order(:artist, :title, :source_id)
+    @popular_songs = @page == 1 ? Song.popular.to_a : []
+    @popular_refreshed_at = @popular_songs.first&.popular_refreshed_at
+    scope = Song.archive
     @total_pages = (scope.count.to_f / PAGE_SIZE).ceil
-    @songs = scope.limit(PAGE_SIZE).offset((@page - 1) * PAGE_SIZE)
+    @archive_songs = scope.limit(PAGE_SIZE).offset((@page - 1) * PAGE_SIZE)
   end
 
   def show
     @song = find_song
+    @entry_method = catalog_entry
     return render_gone if @song.unavailable_at?
 
     raise ActiveRecord::RecordNotFound unless @song.indexable?
@@ -19,6 +22,7 @@ class SongsController < ApplicationController
 
   def load
     @song = find_song
+    @entry_method = catalog_entry
     return render_gone if @song.unavailable_at?
 
     lookup = SongLookup.new
@@ -56,5 +60,9 @@ class SongsController < ApplicationController
 
   def lrc_lib_client
     @lrc_lib_client ||= LrcLibClient.new
+  end
+
+  def catalog_entry
+    params[:entry].in?(%w[popular archive]) ? params[:entry] : "direct"
   end
 end

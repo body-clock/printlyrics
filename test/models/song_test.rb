@@ -32,4 +32,21 @@ class SongTest < ActiveSupport::TestCase
     song.unavailable_at = Time.current
     refute song.indexable?
   end
+
+  test "popular and archive scopes separate current eligible songs" do
+    current = Song.create!(source_id: 1, title: "Current", artist: "Zulu", indexable_at: Time.current, popular_rank: 1)
+    archived = Song.create!(source_id: 2, title: "Archived", artist: "Alpha", indexable_at: Time.current)
+    Song.create!(source_id: 3, title: "Private", artist: "Beta", popular_rank: 2)
+    Song.create!(source_id: 4, title: "Gone", artist: "Gamma", indexable_at: Time.current, unavailable_at: Time.current, popular_rank: 3)
+
+    assert_equal [ current ], Song.popular.to_a
+    assert_equal [ archived ], Song.archive.to_a
+  end
+
+  test "popular rank is limited to the visible chart" do
+    song = Song.new(source_id: 1, title: "Song", artist: "Artist", popular_rank: 21)
+
+    refute song.valid?
+    assert_includes song.errors[:popular_rank], "is not included in the list"
+  end
 end

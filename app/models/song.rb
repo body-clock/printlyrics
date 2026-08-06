@@ -11,8 +11,13 @@ class Song < ApplicationRecord
   validates :album, length: { maximum: 300 }, allow_blank: true
   validates :duration_seconds, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :print_page_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :apple_music_id, length: { maximum: 100 }, allow_nil: true
+  validates :apple_music_url, length: { maximum: 500 }, allow_nil: true
+  validates :popular_rank, inclusion: { in: 1..20 }, allow_nil: true
 
   scope :indexable, -> { where.not(indexable_at: nil).where(unavailable_at: nil) }
+  scope :popular, -> { indexable.where.not(popular_rank: nil).order(:popular_rank) }
+  scope :archive, -> { indexable.where(popular_rank: nil).order(:artist, :title, :source_id) }
 
   def indexable?
     indexable_at.present? && unavailable_at.nil?

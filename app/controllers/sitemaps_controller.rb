@@ -30,6 +30,6 @@ class SitemapsController < ApplicationController
   private
 
   def song_page_count
-    [ (Song.indexable.count.to_f / SongsController::PAGE_SIZE).ceil, 1 ].max
+    [ (Song.archive.count.to_f / SongsController::PAGE_SIZE).ceil, 1 ].max
   end
 end

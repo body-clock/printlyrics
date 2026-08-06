@@ -655,8 +655,9 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--line);
 }
 
-.song-list a {
+.song-list .song-primary-link {
   display: flex;
+  flex: 1;
   min-height: 4.5rem;
   align-items: center;
   justify-content: space-between;
@@ -665,18 +666,78 @@ textarea:focus-visible {
   text-decoration: none;
 }
 
-.song-list a > span:first-child {
+.song-list .song-primary-link > span:first-child {
   display: grid;
   gap: 0.15rem;
 }
 
-.song-list a span span {
+.song-list .song-primary-link span span {
   color: var(--ink-muted);
   font-size: 0.78rem;
 }
 
-.song-list a:hover strong {
+.song-list .song-primary-link:hover strong {
   color: var(--accent);
+}
+
+.catalog-section {
+  padding-top: 2rem;
+}
+
+.catalog-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.catalog-section-heading h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 500;
+}
+
+.catalog-section-heading > p,
+.catalog-source,
+.catalog-muted {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
+.catalog-source {
+  margin: 0 0 0.75rem;
+}
+
+.catalog-source a,
+.apple-song-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
+.popular-song-list li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.song-rank {
+  color: var(--ink-muted);
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.apple-song-link {
+  padding: 0.75rem 0;
+  font-size: 0.72rem;
+}
+
+.catalog-muted {
+  margin: 1rem 0 0;
 }
 
 .catalog-shell > .resource-navigation {
@@ -1099,6 +1160,23 @@ textarea:focus-visible {
 
   .intro h1 {
     font-size: 2rem;
+  }
+
+  .catalog-section-heading {
+    display: block;
+  }
+
+  .catalog-section-heading > p {
+    margin: 0.4rem 0 0;
+  }
+
+  .popular-song-list li {
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+  }
+
+  .apple-song-link {
+    grid-column: 2;
+    padding: 0 0 0.85rem;
   }
 
   .divider {

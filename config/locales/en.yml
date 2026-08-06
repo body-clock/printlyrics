@@ -124,6 +124,20 @@ en:
       eyebrow: "Popular songs"
       heading: "Songs ready to print"
       introduction: "Choose a song to load its available lyrics, review the words, and make your own print sheet."
+      popular:
+        eyebrow: "United States chart"
+        heading: "Popular Now"
+        updated: "Updated"
+        source_html: "Rankings from %{apple}."
+        apple: "Apple Music"
+        apple_link: "Apple Music"
+        apple_link_label: "View %{title} on Apple Music"
+        rank: "Rank %{rank}"
+        empty: "The next weekly chart refresh will appear here."
+      archive:
+        eyebrow: "More songs"
+        heading: "Printable song archive"
+        empty: "There are no more songs on this page."
       pagination:
         label: "Song pages"
         previous: "Previous"

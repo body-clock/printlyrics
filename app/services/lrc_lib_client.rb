@@ -20,14 +20,11 @@ class LrcLibClient
   end
 
   def search(query)
-    rows = request_json("/api/search", { q: query })
-    raise ServiceError unless rows.is_a?(Array)
+    search_results(query).first(SEARCH_LIMIT)
+  end
 
-    rows
-      .filter_map { |row| build_result(row) }
-      .select(&:printable?)
-      .uniq(&:deduplication_key)
-      .first(SEARCH_LIMIT)
+  def search_catalog(query, limit: 20)
+    search_results(query).first(limit.clamp(1, 20))
   end
 
   def find(id)
@@ -41,6 +38,16 @@ class LrcLibClient
   end
 
   private
+
+  def search_results(query)
+    rows = request_json("/api/search", { q: query })
+    raise ServiceError unless rows.is_a?(Array)
+
+    rows
+      .filter_map { |row| build_result(row) }
+      .select(&:printable?)
+      .uniq(&:deduplication_key)
+  end
 
   def request_json(path, params = {}, not_found: false)
     response = @connection.get(path, params)

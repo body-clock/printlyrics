@@ -55,4 +55,18 @@ class SitemapTest < ActionDispatch::IntegrationTest
     end
     assert_equal song.updated_at.iso8601, node.at_xpath("./*[local-name()='lastmod']").text
   end
+
+
+  test "browse pagination counts the archive without duplicating current songs" do
+    Song.create!(source_id: 100, title: "Popular", artist: "Chart", indexable_at: Time.current, popular_rank: 1)
+    50.times do |number|
+      Song.create!(source_id: number + 1, title: "Archive #{number}", artist: "Artist", indexable_at: Time.current)
+    end
+
+    get sitemap_path(format: :xml)
+
+    locations = Nokogiri::XML(response.body).xpath("//*[local-name()='loc']").map(&:text)
+    assert_includes locations, songs_url
+    refute_includes locations, songs_url(page: 2)
+  end
 end
