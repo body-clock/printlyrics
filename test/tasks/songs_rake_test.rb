@@ -6,6 +6,8 @@ class SongsRakeTest < ActiveSupport::TestCase
     Rails.application.load_tasks unless Rake::Task.task_defined?("songs:verify_catalog")
     @task = Rake::Task["songs:verify_catalog"]
     @task.reenable
+    @refresh_task = Rake::Task["songs:refresh_popular"]
+    @refresh_task.reenable
   end
 
   test "verifies a bounded catalog batch and reports the result" do
@@ -33,6 +35,39 @@ class SongsRakeTest < ActiveSupport::TestCase
     error = with_limit("many") do
       assert_raises(SystemExit) do
         capture_io { @task.invoke }
+      end
+    end
+
+    assert_equal 1, error.status
+  end
+
+  test "refreshes the popularity catalog and reports bounded counters" do
+    refresher = Object.new
+    refresher.define_singleton_method(:call) { { candidates: 25, matched: 20, skipped: 5, published: 20 } }
+
+    output = with_replaced_constructor(AppleTopSongsClient, Object.new) do
+      with_replaced_constructor(PopularSongMatcher, Object.new) do
+        with_replaced_constructor(PopularSongCatalogRefresh, refresher) do
+          capture_io { @refresh_task.invoke }.first
+        end
+      end
+    end
+
+    assert_includes output, "candidates=25"
+    assert_includes output, "matched=20"
+    assert_includes output, "skipped=5"
+    assert_includes output, "published=20"
+  end
+
+  test "refresh task exits nonzero without clearing the prior snapshot" do
+    refresher = Object.new
+    refresher.define_singleton_method(:call) { raise PopularSongCatalogRefresh::RefreshError, "feed unavailable" }
+
+    error = with_replaced_constructor(AppleTopSongsClient, Object.new) do
+      with_replaced_constructor(PopularSongMatcher, Object.new) do
+        with_replaced_constructor(PopularSongCatalogRefresh, refresher) do
+          assert_raises(SystemExit) { capture_io { @refresh_task.invoke } }
+        end
       end
     end
 

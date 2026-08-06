@@ -15,39 +15,88 @@
     <p><%= t(".introduction") %></p>
   </header>
 
-  <% if @songs.any? %>
-    <ol class="song-list">
-      <% @songs.each do |song| %>
-        <li>
-          <%= link_to song_path(song), data: { song_link: true } do %>
-            <span>
-              <strong><%= song.title %></strong>
-              <span><%= song.artist %></span>
-            </span>
-            <span aria-hidden="true">→</span>
-          <% end %>
-        </li>
-      <% end %>
-    </ol>
+  <% if @page == 1 %>
+    <section class="catalog-section popular-catalog" data-popular-songs>
+      <div class="catalog-section-heading">
+        <div>
+          <p class="eyebrow"><%= t(".popular.eyebrow") %></p>
+          <h2><%= t(".popular.heading") %></h2>
+        </div>
+        <% if @popular_refreshed_at.present? %>
+          <p><%= t(".popular.updated") %> <time datetime="<%= @popular_refreshed_at.to_date.iso8601 %>"><%= l(@popular_refreshed_at.to_date, format: :long) %></time></p>
+        <% end %>
+      </div>
 
-    <% if @total_pages > 1 %>
-      <nav class="pagination" aria-label="<%= t(".pagination.label") %>">
-        <% if @page > 1 %>
-          <%= link_to t(".pagination.previous"), songs_path(page: @page == 2 ? nil : @page - 1), rel: "prev" %>
-        <% end %>
-        <span><%= t(".pagination.status", page: @page, total_pages: @total_pages) %></span>
-        <% if @page < @total_pages %>
-          <%= link_to t(".pagination.next"), songs_path(page: @page + 1), rel: "next" %>
-        <% end %>
-      </nav>
-    <% end %>
-  <% else %>
-    <section class="catalog-empty" data-empty-catalog>
-      <h2><%= t(".empty.heading") %></h2>
-      <p><%= t(".empty.body") %></p>
-      <%= link_to t(".empty.link"), root_path, class: "button button-primary" %>
+      <% if @popular_songs.any? %>
+        <p class="catalog-source"><%= t(".popular.source_html", apple: link_to(t(".popular.apple"), "https://music.apple.com/us/new/top-charts/songs", rel: "nofollow")) %></p>
+        <ol class="song-list popular-song-list">
+          <% @popular_songs.each do |song| %>
+            <li data-popular-song>
+              <span class="song-rank" aria-label="<%= t(".popular.rank", rank: song.popular_rank) %>"><%= song.popular_rank %></span>
+              <%= link_to song_path(song, entry: "popular"), class: "song-primary-link", data: { song_link: true } do %>
+                <span>
+                  <strong><%= song.title %></strong>
+                  <span><%= song.artist %></span>
+                </span>
+                <span aria-hidden="true">→</span>
+              <% end %>
+              <%= link_to t(".popular.apple_link"), song.apple_music_url,
+                class: "apple-song-link",
+                aria: { label: t(".popular.apple_link_label", title: song.title) },
+                rel: "nofollow" %>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="catalog-muted"><%= t(".popular.empty") %></p>
+      <% end %>
     </section>
   <% end %>
+
+  <section class="catalog-section archive-catalog">
+    <div class="catalog-section-heading">
+      <div>
+        <p class="eyebrow"><%= t(".archive.eyebrow") %></p>
+        <h2><%= t(".archive.heading") %></h2>
+      </div>
+    </div>
+
+    <% if @archive_songs.any? %>
+      <ol class="song-list archive-song-list">
+        <% @archive_songs.each do |song| %>
+          <li data-archive-song>
+            <%= link_to song_path(song, entry: "archive"), class: "song-primary-link", data: { song_link: true } do %>
+              <span>
+                <strong><%= song.title %></strong>
+                <span><%= song.artist %></span>
+              </span>
+              <span aria-hidden="true">→</span>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+
+      <% if @total_pages > 1 %>
+        <nav class="pagination" aria-label="<%= t(".pagination.label") %>">
+          <% if @page > 1 %>
+            <%= link_to t(".pagination.previous"), songs_path(page: @page == 2 ? nil : @page - 1), rel: "prev" %>
+          <% end %>
+          <span><%= t(".pagination.status", page: @page, total_pages: @total_pages) %></span>
+          <% if @page < @total_pages %>
+            <%= link_to t(".pagination.next"), songs_path(page: @page + 1), rel: "next" %>
+          <% end %>
+        </nav>
+      <% end %>
+    <% elsif @page == 1 && @popular_songs.none? %>
+      <section class="catalog-empty" data-empty-catalog>
+        <h2><%= t(".empty.heading") %></h2>
+        <p><%= t(".empty.body") %></p>
+        <%= link_to t(".empty.link"), root_path, class: "button button-primary" %>
+      </section>
+    <% else %>
+      <p class="catalog-muted"><%= t(".archive.empty") %></p>
+    <% end %>
+  </section>
 
   <%= render "shared/resource_navigation", current_section: :songs %>
 </div>

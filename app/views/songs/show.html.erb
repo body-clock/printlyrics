@@ -54,6 +54,7 @@
         class: "song-load-form",
         data: {
           controller: "song-load",
+          song_load_entry_value: @entry_method,
           action: "turbo:submit-start->song-load#start turbo:submit-end->song-load#finish"
         },
         html: { aria: { busy: "false" } } do |form| %>

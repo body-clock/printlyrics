@@ -113,17 +113,44 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
     assert_select "[aria-label='Song pages']", count: 0
   end
 
-  test "catalog introduces popular songs as a direct printing path" do
-    create_song
+  test "catalog leads with ranked Apple songs and keeps them out of the archive" do
+    refreshed_at = Time.zone.parse("2026-08-04 09:00:00")
+    popular = create_song(
+      source_id: 7,
+      title: "Current Song",
+      artist: "Current Artist",
+      popular_rank: 1,
+      popular_refreshed_at: refreshed_at,
+      apple_music_id: "apple-7",
+      apple_music_url: "https://music.apple.com/us/album/current-song/7"
+    )
+    archived = create_song(source_id: 8, title: "Archive Song", artist: "Archive Artist")
 
     get "/songs"
 
     assert_response :success
-    assert_select ".catalog-header .eyebrow", "Popular songs"
-    assert_select ".catalog-header", /Choose a song to load/i
+    assert_select "[data-popular-songs] h2", "Popular Now"
+    assert_select "[data-popular-song]", count: 1 do
+      assert_select "a[href='#{song_path(popular, entry: "popular")}']", text: /Current Song/
+      assert_select "a[href='#{popular.apple_music_url}'][aria-label*='Apple Music']", count: 1
+    end
+    assert_select "time[datetime='2026-08-04']", text: /August 04, 2026/
+    assert_select "[data-archive-song]", count: 1 do
+      assert_select "a[href='#{song_path(archived, entry: "archive")}']", text: /Archive Song/
+    end
+    assert_select "[data-archive-song]", text: /Current Song/, count: 0
   end
 
   test "browse paginates eligible songs with crawlable links" do
+    popular = create_song(
+      source_id: 200,
+      title: "Popular",
+      artist: "Chart",
+      popular_rank: 1,
+      popular_refreshed_at: Time.current,
+      apple_music_id: "apple-200",
+      apple_music_url: "https://music.apple.com/us/album/popular/200"
+    )
     51.times do |number|
       create_song(
         source_id: number + 1,
@@ -136,7 +163,8 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
     get "/songs"
 
     assert_response :success
-    assert_select "[data-song-link]", count: 50
+    assert_select "[data-popular-song]", count: 1
+    assert_select "[data-archive-song]", count: 50
     assert_select "link[rel='canonical'][href='#{request.base_url}/songs']", 1
     assert_select "a[rel='next'][href='/songs?page=2']", count: 1
     assert_no_match unavailable.title, response.body
@@ -144,7 +172,9 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
     get "/songs?page=2"
 
     assert_response :success
-    assert_select "[data-song-link]", count: 1
+    assert_select "[data-popular-songs]", count: 0
+    assert_select "[data-archive-song]", count: 1
+    assert_select "a[href='#{song_path(popular, entry: "popular")}']", count: 0
     assert_select "link[rel='canonical']", count: 1 do |elements|
       assert_equal songs_url(page: 2), elements.first["href"]
     end
@@ -153,7 +183,7 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
 
   private
 
-  def create_song(source_id: 42, title: "The Kiss", artist: "Judee Sill", unavailable_at: nil)
+  def create_song(source_id: 42, title: "The Kiss", artist: "Judee Sill", unavailable_at: nil, **attributes)
     Song.create!(
       source_id: source_id,
       title: title,
@@ -162,7 +192,8 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
       duration_seconds: 214,
       indexable_at: 1.day.ago,
       last_verified_at: 1.day.ago,
-      unavailable_at: unavailable_at
+      unavailable_at: unavailable_at,
+      **attributes
     )
   end
 

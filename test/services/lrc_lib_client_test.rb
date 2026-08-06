@@ -56,6 +56,17 @@ class LrcLibClientTest < ActiveSupport::TestCase
     end
   end
 
+  test "catalog search can return a larger bounded result set" do
+    rows = 10.times.map { |index| result(id: index + 1, title: "Song #{index}") }
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 200, json_headers, JSON.generate(rows) ] }
+    end
+
+    results = LrcLibClient.new(connection: connection).search_catalog("songs", limit: 8)
+
+    assert_equal 8, results.size
+  end
+
   test "raises a service error when LRCLIB is unavailable" do
     connection = connection_with do |stub|
       stub.get("/api/search") { [ 503, json_headers, "{}" ] }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_28_130100) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_05_120000) do
   create_table "lyrics", force: :cascade do |t|
     t.string "artist"
     t.datetime "created_at", null: false
@@ -28,19 +28,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_28_130100) do
 
   create_table "songs", force: :cascade do |t|
     t.string "album"
+    t.string "apple_music_id"
+    t.string "apple_music_url"
     t.string "artist", null: false
     t.datetime "created_at", null: false
     t.integer "duration_seconds"
     t.datetime "indexable_at"
     t.datetime "last_verified_at"
+    t.integer "popular_rank"
+    t.datetime "popular_refreshed_at"
     t.integer "print_page_count", default: 0, null: false
     t.string "slug", null: false
     t.integer "source_id", null: false
     t.string "title", null: false
     t.datetime "unavailable_at"
     t.datetime "updated_at", null: false
+    t.index ["apple_music_id"], name: "index_songs_on_apple_music_id"
     t.index ["indexable_at", "unavailable_at"], name: "index_songs_on_indexable_at_and_unavailable_at"
     t.index ["last_verified_at"], name: "index_songs_on_last_verified_at"
+    t.index ["popular_rank"], name: "index_songs_on_popular_rank", unique: true, where: "popular_rank IS NOT NULL"
     t.index ["slug"], name: "index_songs_on_slug", unique: true
     t.index ["source_id"], name: "index_songs_on_source_id", unique: true
   end

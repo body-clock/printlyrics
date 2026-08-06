@@ -1,4 +1,17 @@
 namespace :songs do
+  desc "Refresh the current popularity-led catalog from Apple and LRCLIB"
+  task refresh_popular: :environment do
+    client = LrcLibClient.new
+    result = PopularSongCatalogRefresh.new(
+      apple_client: AppleTopSongsClient.new,
+      matcher: PopularSongMatcher.new(client: client)
+    ).call
+
+    puts result.map { |name, count| "#{name}=#{count}" }.join(" ")
+  rescue PopularSongCatalogRefresh::RefreshError => error
+    abort "Popularity refresh failed: #{error.message}"
+  end
+
   desc "Recheck promoted songs and remove unavailable pages from public discovery"
   task verify_catalog: :environment do
     limit = Integer(ENV.fetch("LIMIT", 100), exception: false)

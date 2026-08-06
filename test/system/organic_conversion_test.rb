@@ -102,12 +102,16 @@ class OrganicConversionTest < ApplicationSystemTestCase
     client.define_singleton_method(:find) { |_| result }
 
     with_song_lrc_lib_client(client) do
-      visit song_path(song)
+      visit song_path(song, entry: "popular")
+      install_persistent_analytics_capture
       click_button "Load lyrics to print"
 
       assert_field "Song title", with: "The Kiss"
       assert_field "Artist", with: "Judee Sill"
       assert_field "Lyrics", with: "Love, rising"
+      event = captured_analytics_calls.find { |name, _| name == "Song Lyrics Load Started" }
+      assert_equal "popular", event.dig(1, "props", "entry_method")
+      assert_equal [ "entry_method" ], event.dig(1, "props").keys
     end
   end
 
