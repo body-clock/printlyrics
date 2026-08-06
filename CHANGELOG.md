@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/body-clock/printlyrics/compare/v1.3.0...v1.4.0) (2026-07-28)
+
+
+### Features
+
+* add i18n support, campaign tracking, and print use-case feedback ([#20](https://github.com/body-clock/printlyrics/issues/20)) ([c9e6764](https://github.com/body-clock/printlyrics/commit/c9e6764d2fb3d5afe2b7108957baf625efb2593f))
+
 ## [1.3.0](https://github.com/body-clock/printlyrics/compare/v1.2.2...v1.3.0) (2026-07-28)
 
 
