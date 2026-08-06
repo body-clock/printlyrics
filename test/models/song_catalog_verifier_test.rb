@@ -58,7 +58,8 @@ class SongCatalogVerifierTest < ActiveSupport::TestCase
   end
 
   test "processes the least recently verified records up to the limit" do
-    newest = create_song(source_id: 1, last_verified_at: 1.hour.ago)
+    newest_verified_at = 1.hour.ago
+    newest = create_song(source_id: 1, last_verified_at: newest_verified_at)
     oldest = create_song(source_id: 2, last_verified_at: 3.days.ago)
     unverified = create_song(source_id: 3, last_verified_at: nil)
     seen = []
@@ -84,7 +85,7 @@ class SongCatalogVerifierTest < ActiveSupport::TestCase
 
     assert_equal [ unverified.source_id, oldest.source_id ], seen
     assert_equal 2, result[:checked]
-    assert_equal 1.hour.ago.to_i, newest.reload.last_verified_at.to_i
+    assert_equal newest_verified_at.to_i, newest.reload.last_verified_at.to_i
   end
 
   private
