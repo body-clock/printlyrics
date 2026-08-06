@@ -684,11 +684,6 @@ textarea:focus-visible {
   padding-top: 2rem;
 }
 
-.catalog-section + .catalog-section {
-  margin-top: 1rem;
-  border-top: 1px solid var(--line);
-}
-
 .catalog-section-heading {
   display: flex;
   align-items: end;
