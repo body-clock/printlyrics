@@ -22,16 +22,34 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_selector ".lyrics.cols-2"
 
     screen_layout = preview_layout
+    mobile_preview_scale = page.evaluate_script(
+      "document.querySelector('.paper').style.getPropertyValue('--preview-scale')"
+    )
+    mobile_preview_height = page.evaluate_script(
+      "document.querySelector('.paper-frame').style.height"
+    )
 
+    page.execute_script("window.dispatchEvent(new Event('beforeprint'))")
     page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "print")
     begin
       print_layout = preview_layout
+      page.execute_script("window.dispatchEvent(new Event('resize'))")
     ensure
       page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "screen")
+      page.execute_script("window.dispatchEvent(new Event('afterprint'))")
     end
+    page.evaluate_async_script("requestAnimationFrame(arguments[0])")
 
     assert_equal "2", screen_layout.fetch("columnCount")
     assert_equal print_layout, screen_layout
+    assert_equal mobile_preview_scale, page.evaluate_script(
+      "document.querySelector('.paper').style.getPropertyValue('--preview-scale')"
+    )
+    assert_equal mobile_preview_height, page.evaluate_script(
+      "document.querySelector('.paper-frame').style.height"
+    )
+    assert_operator page.evaluate_script("document.querySelector('.paper').getBoundingClientRect().width"),
+      :<=, page.evaluate_script("document.querySelector('.paper-frame').clientWidth")
     assert_operator page.evaluate_script("document.querySelector('.paper').getBoundingClientRect().width"),
       :<=, page.evaluate_script("window.innerWidth")
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"),
