@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/body-clock/printlyrics/compare/v1.4.1...v1.4.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* release search and print improvements ([#29](https://github.com/body-clock/printlyrics/issues/29)) ([2725aa1](https://github.com/body-clock/printlyrics/commit/2725aa14338dcc80173497b9d6552b7058c6e83f))
+
 ## [1.4.1](https://github.com/body-clock/printlyrics/compare/v1.4.0...v1.4.1) (2026-08-06)
 
 
