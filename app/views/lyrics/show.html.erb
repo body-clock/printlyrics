@@ -30,7 +30,9 @@
   <script type="application/ld+json"><%= raw json_escape(structured_data.to_json) %></script>
 <% end %>
 
-<div class="preview-shell" data-controller="preview">
+<div class="preview-shell"
+     data-controller="preview"
+     data-action="resize@window->preview#fitPagePreview">
   <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
       <%= link_to root_path, class: "back-link" do %>
@@ -71,24 +73,22 @@
     </div>
   </nav>
 
-  <article class="paper size-m" data-preview-target="page">
-    <header class="lyric-header">
-      <h1><%= display_title %></h1>
-      <% if display_artist %>
-        <p><%= display_artist %></p>
-      <% end %>
-    </header>
+  <div class="paper-frame" data-preview-target="pageFrame">
+    <article class="paper size-m" data-preview-target="page">
+      <header class="lyric-header">
+        <h1><%= display_title %></h1>
+        <% if display_artist %>
+          <p><%= display_artist %></p>
+        <% end %>
+      </header>
 
-    <div class="lyrics" data-preview-target="lyrics">
-      <% @lyric.stanzas.each do |stanza| %>
-        <section class="stanza"><%= stanza %></section>
-      <% end %>
-    </div>
-  </article>
-
-  <p class="mobile-print-note no-print"
-     data-preview-target="mobileNote"
-     hidden><%= t(".controls.two_columns_note") %></p>
+      <div class="lyrics" data-preview-target="lyrics">
+        <% @lyric.stanzas.each do |stanza| %>
+          <section class="stanza"><%= stanza %></section>
+        <% end %>
+      </div>
+    </article>
+  </div>
 
   <% if @generated_page_key %>
     <aside class="preview-feedback no-print"

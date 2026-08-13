@@ -5,10 +5,10 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
-    assert_select "h1", "PrintLyrics"
-    assert_select "title", "Print Lyrics for Any Song | PrintLyrics"
+    assert_select "h1", "Find, format, and print song lyrics"
+    assert_select "title", "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
     assert_select "meta[name='application-name'][content='PrintLyrics']", 1
-    assert_select "meta[name='description'][content*='print lyrics for any song']"
+    assert_select "meta[name='description'][content*='Find lyrics by song or artist']"
     assert_select "meta[name='robots'][content*='index, follow']", 1
     assert_select "meta[property='og:site_name'][content='PrintLyrics']", 1
     assert_select "meta[property='og:image'][content='#{root_url}social-card.png']", 1
@@ -36,7 +36,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", /WebApplication/
     assert_select "script[type='application/ld+json']", /UtilitiesApplication/
     assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
-    assert_select ".intro p", /clean, editable, print-ready lyric sheet/
+    assert_select ".intro p", /no copying from another lyrics site/i
     assert_select ".landing-footer .app-version[aria-label='PrintLyrics version #{app_version}']", "v#{app_version}"
     assert_select "main", /No account/
     assert_select "script", /autoCapturePageviews:\s*false/

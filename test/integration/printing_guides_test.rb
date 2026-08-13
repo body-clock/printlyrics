@@ -1,11 +1,32 @@
 require "test_helper"
 
 class PrintingGuidesTest < ActionDispatch::IntegrationTest
+  test "homepage clearly owns the song lyric printing intent" do
+    get root_path
+
+    assert_response :success
+    assert_select "title", "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
+    assert_select "meta[name='description'][content*='Find lyrics by song or artist']", 1
+    assert_select "meta[name='description'][content*='save as PDF']", 1
+    assert_select "h1", "Find, format, and print song lyrics"
+    assert_select "main", /no copying from another lyrics site/i
+    assert_select "main", /one or two columns/i
+    assert_select "main", /save as PDF/i
+    assert_select "section[aria-labelledby='why-printlyrics']", 1
+    assert_select "section[aria-labelledby='common-questions'] details", minimum: 3
+
+    structured_data = JSON.parse(css_select("script[type='application/ld+json']").first.text)
+    application = structured_data.fetch("@graph").find { |node| node["@type"] == "WebApplication" }
+    assert_equal true, application.fetch("isAccessibleForFree")
+    assert_includes application.fetch("featureList"), "Search for lyrics by song title or artist"
+    assert_includes application.fetch("featureList"), "Print or save as PDF"
+  end
+
   test "one-page guide owns its intent and links into the tool" do
     get print_lyrics_on_one_page_path
 
     assert_response :success
-    assert_select "title", "Print Lyrics on One Page | PrintLyrics"
+    assert_select "title", "How to Print Song Lyrics on One Page | PrintLyrics"
     assert_select "meta[name='description'][content*='fit song lyrics on one page']", 1
     assert_select "meta[name='robots'][content*='index, follow']", 1
     assert_select "link[rel='canonical'][href='#{print_lyrics_on_one_page_url}']", 1
@@ -14,13 +35,16 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "main", /font size/i
     assert_select "main", /two columns/i
     assert_select "main", /print preview/i
+    assert_select "main", /headers and footers/i
+    assert_select "main", /100%/i
+    assert_select "section[aria-labelledby='one-page-questions'] details", minimum: 3
   end
 
   test "indexable pages link to each other with descriptive anchors" do
     get root_path
 
     assert_response :success
-    assert_select ".tool-explainer p:not(.eyebrow)", count: 1
+    assert_select ".tool-explainer", count: 1
     assert_select "[data-search-navigation]", count: 0
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i

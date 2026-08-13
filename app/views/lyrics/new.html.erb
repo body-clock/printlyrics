@@ -19,6 +19,12 @@
         description: seo_description,
         applicationCategory: "UtilitiesApplication",
         operatingSystem: t(".structured_data.operating_system"),
+        isAccessibleForFree: true,
+        featureList: t(".structured_data.features"),
+        audience: {
+          "@type": "Audience",
+          audienceType: t(".structured_data.audience")
+        },
         offers: {
           "@type": "Offer",
           price: "0",
@@ -43,9 +49,16 @@
 
     <section class="entry-panel" aria-labelledby="page-heading">
       <div class="intro">
-        <h1 id="page-heading"><%= t("application.name") %></h1>
+        <p class="eyebrow"><%= t("application.name") %></p>
+        <h1 id="page-heading"><%= t(".heading") %></h1>
         <p><%= t(".intro") %></p>
       </div>
+
+      <ul class="tool-benefits" aria-label="<%= t(".benefits.label") %>">
+        <% t(".benefits.items").each do |benefit| %>
+          <li><%= benefit %></li>
+        <% end %>
+      </ul>
 
       <div class="search-section">
         <div class="section-heading">
@@ -178,10 +191,36 @@
     </section>
   <% end %>
 
-  <section class="tool-explainer" aria-labelledby="how-it-works">
+  <section class="tool-explainer" aria-labelledby="why-printlyrics">
     <p class="eyebrow"><%= t(".explainer.eyebrow") %></p>
-    <h2 id="how-it-works"><%= t(".explainer.heading") %></h2>
-    <p><%= t(".explainer.body") %></p>
+    <h2 id="why-printlyrics"><%= t(".explainer.heading") %></h2>
+    <p class="explainer-intro"><%= t(".explainer.introduction") %></p>
+
+    <ol class="explainer-steps">
+      <% %i[find edit print].each do |step| %>
+        <li>
+          <h3><%= t(".explainer.steps.#{step}.heading") %></h3>
+          <p><%= t(".explainer.steps.#{step}.body") %></p>
+        </li>
+      <% end %>
+    </ol>
+
+    <div class="use-cases">
+      <h3><%= t(".explainer.use_cases.heading") %></h3>
+      <p><%= t(".explainer.use_cases.body") %></p>
+    </div>
+  </section>
+
+  <section class="faq" aria-labelledby="common-questions">
+    <p class="eyebrow"><%= t(".faq.eyebrow") %></p>
+    <h2 id="common-questions"><%= t(".faq.heading") %></h2>
+
+    <% %i[source pdf one_page privacy].each do |question| %>
+      <details>
+        <summary><%= t(".faq.questions.#{question}.heading") %></summary>
+        <p><%= t(".faq.questions.#{question}.body") %></p>
+      </details>
+    <% end %>
   </section>
 
   <%= render "shared/resource_navigation", current_section: :tool %>

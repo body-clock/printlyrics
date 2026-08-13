@@ -4,8 +4,8 @@ en:
     alternate_name: "Print Lyrics"
     og_locale: "en_US"
     meta:
-      default_title: "Print Lyrics for Any Song | PrintLyrics"
-      default_description: "Search by song or artist, customize the layout, and print lyrics for any song on a clean page."
+      default_title: "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
+      default_description: "Find lyrics by song or artist, edit every line, fit them into one or two columns, then print or save as PDF. Free with no account required."
       image_alt: "PrintLyrics - print lyrics for any song"
 
   lyrics:
@@ -20,11 +20,26 @@ en:
         other: "%{count} matches found. Choose a song."
     new:
       seo:
-        title: "Print Lyrics for Any Song | PrintLyrics"
-        description: "Search by song or artist, customize the layout, and print lyrics for any song on a clean page. Free to use with no account required."
+        title: "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
+        description: "Find lyrics by song or artist, edit every line, fit them into one or two columns, then print or save as PDF. Free with no account required."
       structured_data:
         operating_system: "Any"
-      intro: "Turn any song into a clean, editable, print-ready lyric sheet."
+        audience: "Musicians, singers, teachers, and listeners"
+        features:
+          - "Search for lyrics by song title or artist"
+          - "Edit lyrics before printing"
+          - "Choose one or two columns"
+          - "Adjust the print font size"
+          - "Print or save as PDF"
+      heading: "Find, format, and print song lyrics"
+      intro: "Search by song or artist—no copying from another lyrics site. Review the words, fit them on the page, and print or save as PDF. Free, with no account required."
+      benefits:
+        label: "What PrintLyrics does"
+        items:
+          - "Find the song"
+          - "Edit any line"
+          - "Fit one or two columns"
+          - "Print or save as PDF"
       search:
         heading: "Find song lyrics"
         provider: "via LRCLIB"
@@ -51,9 +66,38 @@ en:
           ...
         submit: "Generate print page"
       explainer:
-        eyebrow: "Simple by design"
-        heading: "From song to paper"
-        body: "Search for a song or paste lyrics you already have. Review the words, generate the print page, then choose a readable size and one or two columns before printing. No account is required."
+        eyebrow: "From song to paper"
+        heading: "A quicker way to make a readable lyric sheet"
+        introduction: "PrintLyrics brings the search, cleanup, layout, and print preview into one short workflow."
+        steps:
+          find:
+            heading: "1. Find or paste the lyrics"
+            body: "Search by song title or artist, choose the right recording, or paste lyrics you already have."
+          edit:
+            heading: "2. Review every word"
+            body: "Correct a line, add section labels, or remove notes you do not need before making the print page."
+          print:
+            heading: "3. Fit the page and print"
+            body: "Choose a readable font size and one or two columns, then print directly or save the finished lyric sheet as a PDF."
+        use_cases:
+          heading: "Made for practical use"
+          body: "Create a clear reference sheet for rehearsal, a singer's music stand, a classroom handout, or personal reading without learning a page-layout tool."
+      faq:
+        eyebrow: "Good to know"
+        heading: "Questions about printing song lyrics"
+        questions:
+          source:
+            heading: "Do I need to find and copy the lyrics first?"
+            body: "No. Search by song title or artist and PrintLyrics will show available matches from LRCLIB. You can also paste your own text when you already have the words."
+          pdf:
+            heading: "Can I save the lyric sheet as a PDF?"
+            body: "Yes. Open Print, then choose your browser's Save as PDF option instead of a physical printer. The same page layout is used for either choice."
+          one_page:
+            heading: "How do I fit long lyrics on one page?"
+            body: "Try two columns first, then reduce the font size gradually and check print preview. The one-page printing guide explains the most reliable order."
+          privacy:
+            heading: "Do I need an account?"
+            body: "No account is required. Generated sheets use an unlisted share link and remain available for 180 days after their last visit."
       footer:
         retention: "Share links remain available for 180 days after their last visit."
         version: "PrintLyrics version %{version}"
@@ -76,7 +120,6 @@ en:
           xl: "XL"
         columns: "Columns"
         print: "Print"
-        two_columns_note: "Two columns will be used when printing."
       feedback:
         question: "What are you making this lyric sheet for?"
         explanation: "Your answer helps us improve the parts people actually use."
@@ -89,11 +132,14 @@ en:
   printing_guides:
     one_page:
       seo:
-        title: "Print Lyrics on One Page | PrintLyrics"
-        description: "Learn how to fit song lyrics on one page using font size, columns, spacing, and print preview, then create a clean lyric sheet."
+        title: "How to Print Song Lyrics on One Page | PrintLyrics"
+        description: "Learn how to fit song lyrics on one page using two columns, readable font sizing, print settings, and preview, then make a clean lyric sheet."
       eyebrow: "A practical printing guide"
       heading: "Print lyrics on one page"
       introduction: "Start with the clearest layout you can read comfortably, then make small adjustments until the print preview fits."
+      answer:
+        heading: "The short answer"
+        body: "Use the complete lyrics, switch to two columns, reduce the font only as much as needed, and check the browser's print preview with scale set to 100%. Turn off headers and footers if they take up space."
       steps:
         complete:
           heading: "Start with the complete lyrics"
@@ -107,6 +153,22 @@ en:
         preview:
           heading: "Check print preview"
           body: "Browser and printer margins vary. Open print preview before printing and confirm that the final lines remain on the first sheet."
+        print_settings:
+          heading: "Keep print settings predictable"
+          body: "Start at 100% scale and use the correct paper size, usually US Letter or A4. Turn off browser headers and footers, then adjust margins only if the final lines still spill onto a second page."
+      faq:
+        eyebrow: "Common problems"
+        heading: "One-page lyric printing questions"
+        questions:
+          columns:
+            heading: "Should I use one column or two?"
+            body: "Use one column for short songs and two columns for longer lyrics. Two columns usually save more vertical space without making the text uncomfortably small."
+          font_size:
+            heading: "How small should the lyrics be?"
+            body: "Keep the largest size that fits and remains readable from where the paper will sit. For a music stand or classroom, readability matters more than forcing every song onto one sheet."
+          overflow:
+            heading: "Why does one line still print on page two?"
+            body: "Check that the paper size is correct, scale is 100%, and browser headers and footers are off. Printer margins vary, so use print preview before making a final margin adjustment."
       callout:
         heading: "Make your lyric sheet"
         body: "PrintLyrics lets you search or paste lyrics, review the text, choose a size and column layout, and print. No account is required."
