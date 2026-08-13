@@ -1044,19 +1044,27 @@ textarea:focus-visible {
   background: var(--accent);
 }
 
+.paper-frame,
+.paper {
+  width: 8.5in;
+  min-height: 11in;
+}
+
+.paper-frame {
+  margin: 0 auto;
+}
+
 .paper {
   --lyric-body-size: 11pt;
   --lyric-line-height: 1.42;
   --lyric-title-size: 25pt;
   --lyric-artist-size: 11pt;
   --stanza-gap: 1.15em;
-  width: 8.5in;
-  min-height: 11in;
-  margin: 0 auto;
+  margin: 0;
   padding: 0.72in 0.75in 0.75in;
-  background: var(--paper);
+  background: white;
   box-shadow: var(--shadow);
-  color: oklch(0.2 0.008 70);
+  color: black;
   font-family: var(--font-serif);
 }
 
@@ -1123,14 +1131,6 @@ textarea:focus-visible {
   orphans: 2;
   white-space: pre-wrap;
   widows: 2;
-}
-
-.mobile-print-note {
-  width: min(100%, 30rem);
-  margin: 1rem auto 0;
-  color: var(--ink-muted);
-  font-size: 0.72rem;
-  text-align: center;
 }
 
 .preview-feedback {
@@ -1304,30 +1304,24 @@ textarea:focus-visible {
     height: 1.9rem;
   }
 
-  .lyrics,
-  .lyrics.cols-2 {
-    column-count: 1;
-  }
-
   .button-print {
     min-height: 2.35rem;
     padding-inline: 0.8rem;
   }
 
+  .paper-frame {
+    width: calc(100% - 1rem);
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .paper {
-    width: 100%;
-    min-height: calc(100vh - 8.25rem);
-    padding: 2rem 1.35rem 2.5rem;
-    box-shadow: none;
+    transform: scale(var(--preview-scale, 1));
+    transform-origin: top left;
   }
 
   .preview-feedback {
     width: calc(100% - 1.5rem);
-  }
-
-  .lyric-header {
-    margin-bottom: 1.7rem;
-    padding-bottom: 1rem;
   }
 }
 
@@ -1351,10 +1345,6 @@ textarea:focus-visible {
 
   .preview-body {
     background: oklch(0.16 0.008 165);
-  }
-
-  .paper {
-    color: oklch(0.2 0.008 70);
   }
 }
 
@@ -1398,13 +1388,12 @@ textarea:focus-visible {
     padding: 0;
   }
 
-  .paper {
-    width: 8.5in;
-    min-height: 11in;
+  .paper-frame {
+    height: auto !important;
     margin: 0;
-    padding: 0.72in 0.75in 0.75in;
-    background: white;
+  }
+
+  .paper {
     box-shadow: none;
-    color: black;
   }
 }

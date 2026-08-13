@@ -6,24 +6,27 @@ const SIZE_KEY = "printlyrics-size"
 const COLUMNS_KEY = "printlyrics-columns"
 
 export default class extends Controller {
-  static targets = ["page", "lyrics", "sizeButton", "columnButton", "mobileNote"]
+  static targets = ["pageFrame", "page", "lyrics", "sizeButton", "columnButton"]
 
   connect() {
     this.settings = new SettingsStore()
     this.setSizeState(this.settings.get(SIZE_KEY, "m"))
     this.setColumnState(this.settings.get(COLUMNS_KEY, "1"))
+    this.fitPagePreview()
   }
 
   setSize(event) {
     const size = event.currentTarget.dataset.size
     this.setSizeState(size)
     this.settings.set(SIZE_KEY, size)
+    this.fitPagePreview()
   }
 
   setColumns(event) {
     const columns = event.currentTarget.dataset.columns
     this.setColumnState(columns)
     this.settings.set(COLUMNS_KEY, columns)
+    this.fitPagePreview()
   }
 
   print() {
@@ -40,7 +43,18 @@ export default class extends Controller {
   setColumnState(columns) {
     this.lyricsTarget.classList.toggle("cols-2", columns === "2")
     this.updatePressedState(this.columnButtonTargets, "columns", columns)
-    this.mobileNoteTarget.hidden = columns !== "2"
+  }
+
+  fitPagePreview() {
+    if (!window.matchMedia("(max-width: 700px)").matches) {
+      this.pageTarget.style.removeProperty("--preview-scale")
+      this.pageFrameTarget.style.removeProperty("height")
+      return
+    }
+
+    const scale = Math.min(1, this.pageFrameTarget.clientWidth / this.pageTarget.offsetWidth)
+    this.pageTarget.style.setProperty("--preview-scale", scale)
+    this.pageFrameTarget.style.height = `${this.pageTarget.scrollHeight * scale}px`
   }
 
   updatePressedState(buttons, dataKey, activeValue) {

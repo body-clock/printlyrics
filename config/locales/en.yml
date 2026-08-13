@@ -120,7 +120,6 @@ en:
           xl: "XL"
         columns: "Columns"
         print: "Print"
-        two_columns_note: "Two columns will be used when printing."
       feedback:
         question: "What are you making this lyric sheet for?"
         explanation: "Your answer helps us improve the parts people actually use."

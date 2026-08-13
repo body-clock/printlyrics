@@ -1,7 +1,7 @@
 require "application_system_test_case"
 
 class OrganicConversionTest < ApplicationSystemTestCase
-  test "manual entry generates a printable page at a narrow viewport" do
+  test "manual entry preview mirrors the printed page across viewport sizes" do
     page.current_window.resize_to(390, 844)
 
     visit root_path
@@ -20,14 +20,30 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_selector "meta[name='robots'][content*='noindex']", visible: false
     find("[data-columns='2']").click
     assert_selector ".lyrics.cols-2"
-    assert_equal "1", page.evaluate_script("getComputedStyle(document.querySelector('.lyrics')).columnCount")
+
+    screen_layout = preview_layout
 
     page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "print")
     begin
-      assert_equal "2", page.evaluate_script("getComputedStyle(document.querySelector('.lyrics')).columnCount")
+      print_layout = preview_layout
     ensure
       page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "screen")
     end
+
+    assert_equal "2", screen_layout.fetch("columnCount")
+    assert_equal print_layout, screen_layout
+    assert_operator page.evaluate_script("document.querySelector('.paper').getBoundingClientRect().width"),
+      :<=, page.evaluate_script("window.innerWidth")
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"),
+      :<=, page.evaluate_script("window.innerWidth")
+
+    page.current_window.resize_to(1200, 900)
+
+    assert_equal print_layout, preview_layout
+    assert_equal "", page.evaluate_script("document.querySelector('.paper-frame').style.height")
+    assert_equal "", page.evaluate_script(
+      "document.querySelector('.paper').style.getPropertyValue('--preview-scale')"
+    )
 
     assert_equal(
       [ "Print Page Generated" ],
@@ -238,6 +254,33 @@ class OrganicConversionTest < ApplicationSystemTestCase
   end
 
   private
+
+  def preview_layout
+    page.evaluate_script(<<~JS)
+      (() => {
+        const paper = getComputedStyle(document.querySelector(".paper"))
+        const header = getComputedStyle(document.querySelector(".lyric-header"))
+        const lyrics = getComputedStyle(document.querySelector(".lyrics"))
+
+        return {
+          columnCount: lyrics.columnCount,
+          columnGap: lyrics.columnGap,
+          fontSize: lyrics.fontSize,
+          lineHeight: lyrics.lineHeight,
+          width: paper.width,
+          minHeight: paper.minHeight,
+          paddingTop: paper.paddingTop,
+          paddingRight: paper.paddingRight,
+          paddingBottom: paper.paddingBottom,
+          paddingLeft: paper.paddingLeft,
+          backgroundColor: paper.backgroundColor,
+          color: paper.color,
+          headerMarginBottom: header.marginBottom,
+          headerPaddingBottom: header.paddingBottom
+        }
+      })()
+    JS
+  end
 
   def install_persistent_analytics_capture
     page.execute_script("sessionStorage.removeItem('test:analyticsCalls')")
