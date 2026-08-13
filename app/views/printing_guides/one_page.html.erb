@@ -14,6 +14,11 @@
       <p><%= t(".introduction") %></p>
     </header>
 
+    <section class="guide-answer" aria-labelledby="short-answer">
+      <h2 id="short-answer"><%= t(".answer.heading") %></h2>
+      <p><%= t(".answer.body") %></p>
+    </section>
+
     <ol class="guide-steps">
       <li>
         <h2><%= t(".steps.complete.heading") %></h2>
@@ -31,7 +36,23 @@
         <h2><%= t(".steps.preview.heading") %></h2>
         <p><%= t(".steps.preview.body") %></p>
       </li>
+      <li>
+        <h2><%= t(".steps.print_settings.heading") %></h2>
+        <p><%= t(".steps.print_settings.body") %></p>
+      </li>
     </ol>
+
+    <section class="faq guide-faq" aria-labelledby="one-page-questions">
+      <p class="eyebrow"><%= t(".faq.eyebrow") %></p>
+      <h2 id="one-page-questions"><%= t(".faq.heading") %></h2>
+
+      <% %i[columns font_size overflow].each do |question| %>
+        <details>
+          <summary><%= t(".faq.questions.#{question}.heading") %></summary>
+          <p><%= t(".faq.questions.#{question}.body") %></p>
+        </details>
+      <% end %>
+    </section>
 
     <section class="guide-callout" aria-labelledby="guide-tool-heading">
       <h2 id="guide-tool-heading"><%= t(".callout.heading") %></h2>

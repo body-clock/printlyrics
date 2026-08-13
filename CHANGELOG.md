@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/body-clock/printlyrics/compare/v1.4.0...v1.4.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* **deps:** update Rails to 8.1.3.1 ([c426b08](https://github.com/body-clock/printlyrics/commit/c426b081e44ae771eb60c6a597e33eec0b565a03))
+* preserve two columns in mobile PDFs ([c426b08](https://github.com/body-clock/printlyrics/commit/c426b081e44ae771eb60c6a597e33eec0b565a03))
+
 ## [1.4.0](https://github.com/body-clock/printlyrics/compare/v1.3.0...v1.4.0) (2026-07-28)
 
 

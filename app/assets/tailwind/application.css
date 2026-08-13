@@ -124,7 +124,7 @@ textarea:focus-visible {
 }
 
 .intro {
-  padding: 0 0 2.5rem;
+  padding: 0 0 1.5rem;
 }
 
 .intro h1 {
@@ -141,6 +141,29 @@ textarea:focus-visible {
   margin: 0.65rem 0 0;
   color: var(--ink-muted);
   font-size: 1rem;
+}
+
+.tool-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin: 0 0 2.5rem;
+  padding: 0;
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  list-style: none;
+}
+
+.tool-benefits li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.tool-benefits li::before {
+  color: var(--accent);
+  content: "✓";
 }
 
 .search-section,
@@ -533,9 +556,76 @@ textarea:focus-visible {
   font-size: 1.5rem;
 }
 
-.tool-explainer p:not(.eyebrow) {
+.explainer-intro {
+  max-width: 38rem;
   margin: 0.75rem 0 0;
   color: var(--ink-muted);
+}
+
+.explainer-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1.75rem 0 0;
+  border-block: 1px solid var(--line);
+  padding: 0;
+  list-style: none;
+}
+
+.explainer-steps li {
+  padding: 1.25rem 1.25rem 1.25rem 0;
+}
+
+.explainer-steps li + li {
+  border-left: 1px solid var(--line);
+  padding-left: 1.25rem;
+}
+
+.explainer-steps h3,
+.use-cases h3 {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.explainer-steps p,
+.use-cases p {
+  margin: 0.5rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
+.use-cases {
+  margin-top: 1.5rem;
+}
+
+.faq {
+  margin-top: 3.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 2rem;
+}
+
+.faq h2 {
+  margin: 0 0 1rem;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.faq details {
+  border-bottom: 1px solid var(--line);
+}
+
+.faq summary {
+  padding: 1rem 2rem 1rem 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
+.faq details p {
+  max-width: 39rem;
+  margin: -0.35rem 0 1rem;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
 }
 
 .guide-shell {
@@ -558,6 +648,22 @@ textarea:focus-visible {
 .guide header > p:last-child {
   max-width: 39rem;
   margin: 0.9rem 0 0;
+  color: var(--ink-muted);
+}
+
+.guide-answer {
+  margin-top: 1.75rem;
+  border-left: 3px solid var(--accent);
+  padding: 0.25rem 0 0.25rem 1rem;
+}
+
+.guide-answer h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.guide-answer p {
+  margin: 0.5rem 0 0;
   color: var(--ink-muted);
 }
 
@@ -611,6 +717,10 @@ textarea:focus-visible {
 .guide-callout p {
   margin: 0.65rem 0 1.25rem;
   color: var(--ink-muted);
+}
+
+.guide-faq {
+  margin-top: 2.5rem;
 }
 
 .catalog-shell,
@@ -1099,6 +1209,26 @@ textarea:focus-visible {
 
   .intro h1 {
     font-size: 2rem;
+  }
+
+  .tool-benefits {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 1rem;
+  }
+
+  .explainer-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .explainer-steps li {
+    padding: 1rem 0;
+  }
+
+  .explainer-steps li + li {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+    padding-left: 0;
   }
 
   .divider {

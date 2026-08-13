@@ -6,6 +6,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     visit root_path
     install_persistent_analytics_capture
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"),
+      :<=, page.evaluate_script("window.innerWidth")
     fill_in "Song title", with: "Practice Song"
     fill_in "Artist", with: "Home Guitarist"
     fill_in "Lyrics", with: "First line\nSecond line"
@@ -179,7 +181,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     2.times do
       page.execute_script("Turbo.visit('/')")
-      assert_selector "h1", text: "PrintLyrics"
+      assert_selector "h1", text: "Find, format, and print song lyrics"
       page.execute_script("Turbo.visit(#{generated_path.to_json})")
       assert_button "Print"
     end
