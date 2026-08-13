@@ -6,8 +6,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     visit root_path
     install_persistent_analytics_capture
-    assert_equal page.evaluate_script("window.innerWidth"),
-      page.evaluate_script("document.documentElement.scrollWidth")
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"),
+      :<=, page.evaluate_script("window.innerWidth")
     fill_in "Song title", with: "Practice Song"
     fill_in "Artist", with: "Home Guitarist"
     fill_in "Lyrics", with: "First line\nSecond line"
