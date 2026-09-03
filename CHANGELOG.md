@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.4](https://github.com/body-clock/printlyrics/compare/v1.4.3...v1.4.4) (2026-09-03)
+
+
+### Bug Fixes
+
+* release mobile print preview parity ([#32](https://github.com/body-clock/printlyrics/issues/32)) ([832e59f](https://github.com/body-clock/printlyrics/commit/832e59fc6cca8e9dd3398e09e4ecf2f7f93c4db9))
+
 ## [1.4.3](https://github.com/body-clock/printlyrics/compare/v1.4.2...v1.4.3) (2026-09-03)
 
 
