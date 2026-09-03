@@ -120,6 +120,9 @@ en:
           xl: "XL"
         columns: "Columns"
         print: "Print"
+      page_count:
+        one: "Letter · 0.75 in margins · 1 page"
+        other: "Letter · 0.75 in margins · %{count} pages"
       feedback:
         question: "What are you making this lyric sheet for?"
         explanation: "Your answer helps us improve the parts people actually use."

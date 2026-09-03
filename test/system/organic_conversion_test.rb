@@ -40,7 +40,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     end
     page.evaluate_async_script("requestAnimationFrame(arguments[0])")
 
-    assert_equal "2", screen_layout.fetch("columnCount")
+    assert_equal 2, screen_layout.fetch("columnCount")
     assert_equal print_layout, screen_layout
     assert_equal mobile_preview_scale, page.evaluate_script(
       "document.querySelector('.paper').style.getPropertyValue('--preview-scale')"
@@ -60,12 +60,40 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal print_layout, preview_layout
     assert_equal "", page.evaluate_script("document.querySelector('.paper-frame').style.height")
     assert_equal "", page.evaluate_script(
-      "document.querySelector('.paper').style.getPropertyValue('--preview-scale')"
+      "document.querySelector('.paper-pages').style.getPropertyValue('--preview-scale')"
     )
 
     assert_equal(
       [ "Print Page Generated" ],
       captured_analytics_calls.map(&:first).reject { |name| name == "pageview" }
+    )
+  end
+
+  test "long lyrics are split into the same visible sheets that are printed" do
+    lyrics = 36.times.map do |stanza|
+      "[Verse #{stanza + 1}]\nThis is a deliberately long line of lyrics for measuring the printed page.\nAnother line stays with its stanza."
+    end.join("\n\n")
+
+    visit root_path
+    fill_in "Song title", with: "A Long Song"
+    fill_in "Lyrics", with: lyrics
+    click_button "Generate print page"
+
+    assert_selector "[data-preview-page]", minimum: 2
+    assert_text(/\d+ pages/)
+    screen_pages = printed_page_geometry
+
+    page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "print")
+    begin
+      assert_equal screen_pages, printed_page_geometry
+    ensure
+      page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "screen")
+    end
+
+    find("[data-columns='2']").click
+    assert_operator all("[data-preview-page]").count, :<, screen_pages.length
+    assert_equal 2, page.evaluate_script(
+      "document.querySelector('[data-preview-page] .lyrics').children.length"
     )
   end
 
@@ -278,15 +306,16 @@ class OrganicConversionTest < ApplicationSystemTestCase
       (() => {
         const paper = getComputedStyle(document.querySelector(".paper"))
         const header = getComputedStyle(document.querySelector(".lyric-header"))
-        const lyrics = getComputedStyle(document.querySelector(".lyrics"))
+        const lyricsElement = document.querySelector(".lyrics")
+        const lyrics = getComputedStyle(lyricsElement)
 
         return {
-          columnCount: lyrics.columnCount,
+          columnCount: lyricsElement.children.length,
           columnGap: lyrics.columnGap,
           fontSize: lyrics.fontSize,
           lineHeight: lyrics.lineHeight,
           width: paper.width,
-          minHeight: paper.minHeight,
+          height: paper.height,
           paddingTop: paper.paddingTop,
           paddingRight: paper.paddingRight,
           paddingBottom: paper.paddingBottom,
@@ -297,6 +326,21 @@ class OrganicConversionTest < ApplicationSystemTestCase
           headerPaddingBottom: header.paddingBottom
         }
       })()
+    JS
+  end
+
+
+  def printed_page_geometry
+    page.evaluate_script(<<~JS)
+      [...document.querySelectorAll("[data-preview-page]")].map((paper) => {
+        const style = getComputedStyle(paper)
+        return {
+          width: style.width,
+          height: style.height,
+          padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft],
+          columns: paper.querySelector(".lyrics").children.length
+        }
+      })
     JS
   end
 
