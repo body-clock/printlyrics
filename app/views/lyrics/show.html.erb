@@ -32,7 +32,7 @@
 
 <div class="preview-shell"
      data-controller="preview"
-     data-action="resize@window->preview#fitPagePreview">
+     data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
   <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
       <%= link_to root_path, class: "back-link" do %>

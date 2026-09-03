@@ -46,6 +46,8 @@ export default class extends Controller {
   }
 
   fitPagePreview() {
+    if (window.matchMedia("print").matches) return
+
     if (!window.matchMedia("(max-width: 700px)").matches) {
       this.pageTarget.style.removeProperty("--preview-scale")
       this.pageFrameTarget.style.removeProperty("height")
@@ -55,6 +57,10 @@ export default class extends Controller {
     const scale = Math.min(1, this.pageFrameTarget.clientWidth / this.pageTarget.offsetWidth)
     this.pageTarget.style.setProperty("--preview-scale", scale)
     this.pageFrameTarget.style.height = `${this.pageTarget.scrollHeight * scale}px`
+  }
+
+  restorePagePreview() {
+    window.requestAnimationFrame(() => this.fitPagePreview())
   }
 
   updatePressedState(buttons, dataKey, activeValue) {
