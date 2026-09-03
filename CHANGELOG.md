@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.5](https://github.com/body-clock/printlyrics/compare/v1.4.4...v1.4.5) (2026-09-03)
+
+
+### Bug Fixes
+
+* paginate print preview to match printed output ([#40](https://github.com/body-clock/printlyrics/issues/40)) ([7928133](https://github.com/body-clock/printlyrics/commit/7928133d1178e6ce620ec34159bc03085edd8a3f))
+
 ## [1.4.4](https://github.com/body-clock/printlyrics/compare/v1.4.3...v1.4.4) (2026-09-03)
 
 
