@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.3](https://github.com/body-clock/printlyrics/compare/v1.4.2...v1.4.3) (2026-09-03)
+
+
+### Miscellaneous
+
+* **deps-dev:** bump selenium-webdriver from 4.46.0 to 4.48.0 ([#37](https://github.com/body-clock/printlyrics/issues/37)) ([aeb35f2](https://github.com/body-clock/printlyrics/commit/aeb35f27d7dc51a69d5bff112d4ff45cdc05ffc0))
+* **deps:** bump thruster from 0.1.23 to 0.1.26 ([#36](https://github.com/body-clock/printlyrics/issues/36)) ([692a7a5](https://github.com/body-clock/printlyrics/commit/692a7a58ff598cf2b8965e495d0ec96b93b8c48c))
+
 ## [1.4.2](https://github.com/body-clock/printlyrics/compare/v1.4.1...v1.4.2) (2026-08-13)
 
 
