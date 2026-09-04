@@ -108,10 +108,13 @@ class OrganicConversionTest < ApplicationSystemTestCase
       synced_lyrics: nil,
       instrumental: false
     )
+    lookup_started = Queue.new
+    allow_lookup_to_finish = Queue.new
     client = Object.new
     client.define_singleton_method(:search) { |_| [ result ] }
     client.define_singleton_method(:find) do |_|
-      sleep 0.05
+      lookup_started << true
+      allow_lookup_to_finish.pop
       result
     end
 
@@ -126,7 +129,12 @@ class OrganicConversionTest < ApplicationSystemTestCase
       assert_text "1 match found"
 
       click_button "The Kiss"
-      assert_button "Loading lyrics…", disabled: true
+      lookup_started.pop
+      begin
+        assert_button "Loading lyrics…", disabled: true
+      ensure
+        allow_lookup_to_finish << true
+      end
       assert_field "Song title", with: "The Kiss"
       assert_field "Artist", with: "Judee Sill"
       assert_field "Lyrics", with: "Love, rising"
