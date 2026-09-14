@@ -10,15 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_28_130100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_180018) do
   create_table "lyrics", force: :cascade do |t|
-    t.string "artist"
+    t.string "artist", limit: 200
     t.datetime "created_at", null: false
     t.datetime "expires_at", null: false
     t.text "lyrics", null: false
     t.integer "song_id"
     t.string "source_url"
-    t.string "title"
+    t.string "title", limit: 200
     t.string "token", null: false
     t.datetime "updated_at", null: false
     t.index ["expires_at"], name: "index_lyrics_on_expires_at"
