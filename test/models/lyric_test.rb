@@ -44,14 +44,37 @@ class LyricTest < ActiveSupport::TestCase
     assert_not_includes Lyric.active, expired
   end
 
-  test "renew retention extends expiry from the current time" do
+  test "touch retention extends expiry from the current time" do
     lyric = Lyric.create!(lyrics: "First line", expires_at: 1.day.from_now)
 
     travel 1.hour do
-      lyric.renew_retention!
+      lyric.touch_retention!
 
       assert_in_delta 180.days.from_now, lyric.reload.expires_at, 1.second
     end
+  end
+
+  test "declares title and artist bounds in the database schema" do
+    assert_equal 200, Lyric.columns_hash.fetch("title").limit
+    assert_equal 200, Lyric.columns_hash.fetch("artist").limit
+  end
+
+  test "renew retention finds an active page and returns it" do
+    lyric = Lyric.create!(lyrics: "First line", expires_at: 1.day.from_now)
+
+    travel 1.hour do
+      renewed = Lyric.renew_retention!(lyric.token)
+
+      assert_equal lyric.id, renewed.id
+      assert_in_delta 180.days.from_now, renewed.expires_at, 1.second
+    end
+  end
+
+  test "renew retention rejects expired and unknown tokens" do
+    lyric = Lyric.create!(lyrics: "A line", expires_at: 1.minute.ago)
+
+    assert_raises(ActiveRecord::RecordNotFound) { Lyric.renew_retention!(lyric.token) }
+    assert_raises(ActiveRecord::RecordNotFound) { Lyric.renew_retention!("missing-token") }
   end
 
   test "purge expired removes only expired lyrics" do

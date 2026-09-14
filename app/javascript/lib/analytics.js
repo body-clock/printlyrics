@@ -1,21 +1,11 @@
 const TOKEN_PATH = /^\/lyrics\/[^/]+$/
 const GENERATED_KEY_PREFIX = "printlyrics:generated:"
 const CAMPAIGN_KEY = "printlyrics:campaign"
-const CAMPAIGN_SOURCES = new Set([
-  "church",
-  "email",
-  "facebook",
-  "musician",
-  "outreach",
-  "reddit",
-  "teacher"
-])
-const CAMPAIGNS = new Set([
-  "large_print",
-  "singer_rehearsal",
-  "teacher_handouts",
-  "worship_handouts"
-])
+
+// Campaign values are allowlisted by the server (AnalyticsCampaigns) and read
+// from a data attribute, so there is one definition instead of a parallel list
+// in this file that can drift from the documented operator contract.
+let campaignAllowlist
 
 export function analyticsUrl() {
   const url = new URL(window.location.href)
@@ -58,14 +48,31 @@ function dispatch(name, props = {}) {
 
 export function captureCampaign() {
   const params = new URLSearchParams(window.location.search)
-  const source = allowedValue(params.get("utm_source"), CAMPAIGN_SOURCES)
-  const campaign = allowedValue(params.get("utm_campaign"), CAMPAIGNS)
+  const { sources, campaigns } = campaignValues()
+  const source = allowedValue(params.get("utm_source"), sources)
+  const campaign = allowedValue(params.get("utm_campaign"), campaigns)
   if (!source && !campaign) return
 
   sessionStorage.setItem(CAMPAIGN_KEY, JSON.stringify({
     ...(source && { campaign_source: source }),
     ...(campaign && { campaign_name: campaign })
   }))
+}
+
+function campaignValues() {
+  if (campaignAllowlist) return campaignAllowlist
+
+  const empty = { sources: new Set(), campaigns: new Set() }
+  try {
+    const parsed = JSON.parse(document.body.dataset.analyticsCampaigns || "")
+    campaignAllowlist = {
+      sources: new Set(parsed.sources || []),
+      campaigns: new Set(parsed.campaigns || [])
+    }
+  } catch {
+    campaignAllowlist = empty
+  }
+  return campaignAllowlist
 }
 
 function campaignProps() {

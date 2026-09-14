@@ -1,6 +1,10 @@
 module ApplicationHelper
   def app_version
-    Rails.root.join("version.txt").read.strip
+    Rails.configuration.x.app_version
+  end
+
+  def analytics_campaign_data
+    AnalyticsCampaigns.to_json
   end
 
   def page_title

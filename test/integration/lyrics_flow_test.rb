@@ -296,6 +296,17 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller='print-feedback']", count: 0
   end
 
+  test "every page exposes the allowlisted campaign values to analytics" do
+    get root_path
+
+    assert_response :success
+    config = JSON.parse(
+      assert_select("body[data-analytics-campaigns]", count: 1).first["data-analytics-campaigns"]
+    )
+    assert_equal AnalyticsCampaigns::SOURCES, config.fetch("sources")
+    assert_equal AnalyticsCampaigns::CAMPAIGNS, config.fetch("campaigns")
+  end
+
   test "newly generated page asks for an optional print use case" do
     post lyrics_path, params: {
       lyric: { title: "Practice Song", artist: "Home Singer", lyrics: "A printable line" }

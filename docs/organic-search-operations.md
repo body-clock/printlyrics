@@ -84,6 +84,10 @@ an allowlisted campaign URL. Supported launch values are:
 - `utm_campaign`: `large_print`, `singer_rehearsal`, `teacher_handouts`, or
   `worship_handouts`
 
+`AnalyticsCampaigns` is the source of truth for both lists; it is rendered into
+the page and read by `app/javascript/lib/analytics.js`. Change that object and
+this section together.
+
 For example:
 
 ```text

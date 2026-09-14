@@ -88,6 +88,12 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
     assert_response :gone
   end
 
+  test "unknown song slugs are not found" do
+    get "/songs/missing-song-999"
+
+    assert_response :not_found
+  end
+
   test "transient source failure preserves eligibility and offers retry" do
     song = create_song
     client = Object.new

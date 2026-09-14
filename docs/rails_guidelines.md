@@ -71,6 +71,11 @@
   `app/services/`. Inject clients/connections for tests. Retain finite connect
   and read timeouts, response-shape validation, and distinct not-found and
   temporary-service errors.
+- Treat `LrcLibClient::NotFoundError` and `LrcLibClient::ServiceError` as the
+  shared source vocabulary: `SongLookup`, `SongSearch`, and `SongCatalogVerifier`
+  let them propagate and callers translate them into user copy and HTTP status.
+  Do not add a parallel error hierarchy or wrap errors into status symbols inside
+  domain objects.
 - Use the fixed LRCLIB base URL and validated source IDs. A pasted source URL
   is not authorization to fetch an arbitrary destination.
 - Preserve plain-lyrics preference, synced-lyrics timestamp removal,
@@ -82,7 +87,10 @@
 - Never send lyric text, real saved-page tokens, or song metadata to analytics.
   Use the existing analytics helper, token-path redaction, allowlisted campaign
   values, and documented event names. Avoid duplicate events on Turbo visits.
-  Opening the print dialog does not prove a physical page was printed.
+  Opening the print dialog does not prove a physical page was printed. Campaign
+  values are defined by `AnalyticsCampaigns` and rendered to the client; update
+  that object and the operations document together rather than duplicating a
+  list in JavaScript.
 
 ## Hotwire, styling, and printing
 
