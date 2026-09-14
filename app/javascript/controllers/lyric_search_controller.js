@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import { trackEvent } from "lib/analytics"
 
 const MINIMUM_SELECTION_FEEDBACK_MS = 400
 
@@ -25,7 +24,6 @@ export default class extends Controller {
   }
 
   start(event) {
-    trackEvent("Song Search Submitted", { entry_method: "search" })
     event.currentTarget.setAttribute("aria-busy", "true")
     this.idleLabelTarget.hidden = true
     this.busyLabelTarget.hidden = false
@@ -52,12 +50,9 @@ export default class extends Controller {
   }
 
   selected(event) {
-    if (!event.detail.success) {
-      this.resetResultState(event.currentTarget)
-      return
-    }
+    if (event.detail.success) return
 
-    trackEvent("Song Selected", { entry_method: "search" })
+    this.resetResultState(event.currentTarget)
   }
 
   delayRender(event) {

@@ -293,7 +293,6 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "meta[name='robots'][content='noindex, nofollow']", 1
     assert_select "body[data-generated-page-key]", count: 0
     assert_select "button[data-action='preview#print']", count: 1
-    assert_select "[data-controller='print-feedback']", count: 0
   end
 
   test "every page exposes the allowlisted campaign values to analytics" do
@@ -307,7 +306,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_equal AnalyticsCampaigns::CAMPAIGNS, config.fetch("campaigns")
   end
 
-  test "newly generated page asks for an optional print use case" do
+  test "newly generated page carries the generation key without prompting for a use case" do
     post lyrics_path, params: {
       lyric: { title: "Practice Song", artist: "Home Singer", lyrics: "A printable line" }
     }
@@ -316,14 +315,8 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "body[data-generated-page-key]", count: 1
-    assert_select "[data-controller='print-feedback']", count: 1 do
-      assert_select "legend", /What are you making this lyric sheet for/
-      assert_select "button[data-use-case]", count: 4
-      assert_select "button[data-use-case='performance']", /Performance or rehearsal/
-      assert_select "button[data-use-case='worship_community']", /Worship or community/
-      assert_select "button[data-use-case='teaching']", /Teaching or learning/
-      assert_select "button[data-use-case='personal']", /Personal use/
-    end
+    assert_select "[data-use-case]", count: 0
+    assert_select "[data-controller='print-feedback']", count: 0
   end
 
   test "visiting a shareable page renews its retention" do

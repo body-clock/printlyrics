@@ -97,7 +97,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     )
   end
 
-  test "search selection loads editable lyrics and records demand without publishing it" do
+  test "search selection loads editable lyrics without publishing it" do
     result = LrcLibResult.new(
       id: 42,
       title: "The Kiss",
@@ -130,10 +130,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
       assert_field "Song title", with: "The Kiss"
       assert_field "Artist", with: "Judee Sill"
       assert_field "Lyrics", with: "Love, rising"
-      assert_equal(
-        [ "Song Search Submitted", "Song Selected" ],
-        page.evaluate_script("window.__analyticsCalls.map((call) => call[0])")
-      )
+      assert_empty page.evaluate_script("window.__analyticsCalls.map((call) => call[0])")
 
       assert_difference([ "Lyric.count", "Song.count" ], 1) do
         click_button "Generate print page"
@@ -229,6 +226,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert print_event_index
     assert native_print_index
     assert_operator print_event_index, :<, native_print_index
+    assert_equal "1", calls.dig(print_event_index, 2, "props", "page_count_in_session")
   end
 
   test "restoring a generated page does not duplicate its generation event" do
@@ -255,7 +253,33 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal 1, count
   end
 
-  test "campaign attribution follows generation and optional use-case feedback" do
+  test "generating a second sheet in one session records packet intent once" do
+    visit root_path
+    install_persistent_analytics_capture
+    page.execute_script("sessionStorage.removeItem('printlyrics:session-pages')")
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    assert_text "First song line"
+
+    2.times do |index|
+      page.execute_script("Turbo.visit('/')")
+      assert_selector "h1", text: "Find, format, and print song lyrics"
+      fill_in "Lyrics", with: "Later song line #{index}"
+      click_button "Generate print page"
+      assert_text "Later song line #{index}"
+    end
+
+    calls = captured_analytics_calls
+    assert_equal(
+      [ "1", "2", "3-5" ],
+      calls.select { |call| call[0] == "Print Page Generated" }
+        .map { |call| call.dig(1, "props", "page_count_in_session") }
+    )
+    assert_equal 1, calls.count { |call| call[0] == "Second Print Page Generated" }
+  end
+
+  test "campaign attribution follows generation" do
     visit "#{root_path}?utm_source=outreach&utm_campaign=worship_handouts"
     install_persistent_analytics_capture
     assert_equal(
@@ -265,19 +289,14 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     fill_in "Lyrics", with: "A congregation line"
     click_button "Generate print page"
-    assert_text "What are you making this lyric sheet for?"
+    assert_text "A congregation line"
 
     generated = captured_analytics_calls.find { |call| call[0] == "Print Page Generated" }
     assert_equal "outreach", generated.dig(1, "props", "campaign_source")
     assert_equal "worship_handouts", generated.dig(1, "props", "campaign_name")
 
-    click_button "Worship or community"
-
-    assert_text "Thanks. That helps us keep PrintLyrics useful and focused."
-    feedback = captured_analytics_calls.find { |call| call[0] == "Print Use Case Selected" }
-    assert_equal "worship_community", feedback.dig(1, "props", "use_case")
-    assert_equal "outreach", feedback.dig(1, "props", "campaign_source")
-    assert_equal "worship_handouts", feedback.dig(1, "props", "campaign_name")
+    refute_selector "[data-use-case]"
+    refute_includes captured_analytics_calls.to_json, "Print Use Case Selected"
   end
 
   test "opening an existing shared page does not record a generation" do

@@ -123,14 +123,6 @@ en:
       page_count:
         one: "Letter · 0.75 in margins · 1 page"
         other: "Letter · 0.75 in margins · %{count} pages"
-      feedback:
-        question: "What are you making this lyric sheet for?"
-        explanation: "Your answer helps us improve the parts people actually use."
-        performance: "Performance or rehearsal"
-        worship_community: "Worship or community"
-        teaching: "Teaching or learning"
-        personal: "Personal use"
-        thanks: "Thanks. That helps us keep PrintLyrics useful and focused."
 
   printing_guides:
     one_page:
