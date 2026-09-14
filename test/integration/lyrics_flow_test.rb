@@ -97,7 +97,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_content
     assert_select "[role='alert']", /Please paste your lyrics/
-    assert_select "input[type='hidden'][name='lyric[source_url]']", count: 0
+    assert_select "input[name='lyric[source_url]']", count: 0
   end
 
   test "search returns selectable results without persisting lyrics" do
@@ -163,7 +163,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "input[name='lyric[title]'][value='The Kiss']"
     assert_select "input[name='lyric[artist]'][value='Judee Sill']"
     assert_select "textarea[name='lyric[lyrics]']", /Love, rising/
-    assert_select "input[type='hidden'][name='lyric[source_url]'][value='https://lrclib.net/api/get/42']"
+    assert_select "input[type='hidden'][name='lyric[source_url]']", count: 0
     assert_select "input[type='hidden'][name='catalog_token']", count: 1
   end
 
@@ -220,6 +220,29 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_content
     assert_select "textarea[name='lyric[lyrics]']", /Love, rising/
+    assert_select "input[name='lyric[source_url]']", count: 0
+  end
+
+  test "sourced submission does not round trip a source URL through the form" do
+    result = LrcLibResult.new(
+      id: 42,
+      title: "The Kiss",
+      artist: "Judee Sill",
+      album: "Heart Food",
+      duration: 214,
+      plain_lyrics: "Love, rising",
+      synced_lyrics: nil,
+      instrumental: false
+    )
+    forged = "https://attacker.example/forged"
+
+    post lyrics_path, params: {
+      catalog_token: SongCatalogToken.issue(result),
+      lyric: { artist: "Judee Sill", lyrics: "Love, rising", source_url: forged }
+    }
+
+    assert_redirected_to lyric_path(Lyric.last)
+    assert_equal "https://lrclib.net/api/get/42", Lyric.last.source_url
   end
 
   test "selecting a removed song shows not-available message" do
