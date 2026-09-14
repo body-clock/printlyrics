@@ -4,9 +4,12 @@ class SongsController < ApplicationController
   attr_writer :lrc_lib_client
 
   def index
-    @page = [ Integer(params[:page], exception: false).to_i, 1 ].max
+    request = [ Integer(params[:page], exception: false).to_i, 1 ].max
     scope = Song.indexable.order(:artist, :title, :source_id)
-    @total_pages = (scope.count.to_f / PAGE_SIZE).ceil
+    @total_pages = [ (scope.count.to_f / PAGE_SIZE).ceil, 1 ].max
+    raise ActiveRecord::RecordNotFound if request > @total_pages
+
+    @page = request
     @songs = scope.limit(PAGE_SIZE).offset((@page - 1) * PAGE_SIZE)
   end
 
