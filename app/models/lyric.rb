@@ -15,11 +15,20 @@ class Lyric < ApplicationRecord
     where(expires_at: ..Time.current).delete_all
   end
 
+  # Look up an active page and extend its retention in one step, so callers
+  # never hold an expired record. Raises RecordNotFound for expired or unknown
+  # tokens, which callers present as "expired or wasn't found".
+  def self.renew_retention!(token)
+    lyric = active.find_by!(token: token)
+    lyric.touch_retention!
+    lyric
+  end
+
   def to_param
     token
   end
 
-  def renew_retention!
+  def touch_retention!
     update_column(:expires_at, RETENTION_PERIOD.from_now)
   end
 

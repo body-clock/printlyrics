@@ -57,9 +57,8 @@ class LyricsController < ApplicationController
   end
 
   def show
-    @lyric = Lyric.active.find_by!(token: params[:token])
+    @lyric = Lyric.renew_retention!(params[:token])
     @generated_page_key = @lyric.token if session.delete(:generated_lyric_token) == @lyric.token
-    @lyric.renew_retention!
   end
 
   private
