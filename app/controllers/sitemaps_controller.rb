@@ -8,7 +8,7 @@ class SitemapsController < ApplicationController
           end
         end
 
-        song_page_count.times do |index|
+        Song.indexable_page_count.times do |index|
           page = index + 1
           document.url do
             document.loc(page == 1 ? songs_url : songs_url(page: page))
@@ -25,11 +25,5 @@ class SitemapsController < ApplicationController
     end
 
     render xml: xml.to_xml
-  end
-
-  private
-
-  def song_page_count
-    [ (Song.indexable.count.to_f / SongsController::PAGE_SIZE).ceil, 1 ].max
   end
 end
