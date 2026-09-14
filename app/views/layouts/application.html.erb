@@ -35,7 +35,7 @@
 
     <!-- Privacy-friendly analytics by Plausible -->
     <script async src="https://plausible.io/js/pa-f0moCFg03qwW-u-pSexGt.js"></script>
-    <script>
+    <script nonce="<%= content_security_policy_nonce %>">
       window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
       plausible.init({ autoCapturePageviews: false })
     </script>
@@ -50,6 +50,7 @@
   </head>
 
   <body class="<%= content_for?(:body_class) ? content_for(:body_class) : nil %>"
+        data-analytics-campaigns="<%= analytics_campaign_data %>"
         <% if content_for?(:generated_page_key) %>data-generated-page-key="<%= yield :generated_page_key %>"<% end %>>
     <main>
       <%= yield %>
