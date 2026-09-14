@@ -1,8 +1,9 @@
 # Working on PrintLyrics
 
 PrintLyrics finds songs through LRCLIB or accepts pasted lyrics, then creates
-shareable, print-optimized lyric sheets. Public song pages contain metadata;
-saved lyric pages are separate, token-addressed, and excluded from indexing.
+shareable, print-optimized lyric sheets. Only the homepage and the printing
+guide are public and indexable; saved lyric pages are separate, token-addressed,
+and excluded from indexing. There is no public song catalog.
 
 The application uses Rails 8.1, Ruby 4.0.5, SQLite, server-rendered ERB,
 Turbo/Stimulus, importmaps, and Tailwind CSS. Treat `.ruby-version`, `Gemfile.lock`,
@@ -34,8 +35,8 @@ and configuration files as the source of truth for versions and tooling.
 - [Product direction](PRODUCT.md): visual design, print experience, and
   accessibility. Use current routes and tests to establish supported flows;
   references to URL extraction in product prose are not implemented features.
-- [Organic search operations](docs/organic-search-operations.md): catalog
-  promotion, indexing, analytics contracts, and operational procedures.
+- [Organic search operations](docs/organic-search-operations.md): indexing,
+  analytics contracts, and operational procedures.
 - [README.md](README.md): retention, deployment, and release workflow.
 
 ## Working conventions

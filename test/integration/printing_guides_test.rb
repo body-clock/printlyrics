@@ -40,7 +40,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-labelledby='one-page-questions'] details", minimum: 3
   end
 
-  test "indexable pages link to each other with descriptive anchors" do
+  test "crawlable pages link to each other with descriptive anchors" do
     get root_path
 
     assert_response :success
@@ -48,7 +48,6 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "[data-search-navigation]", count: 0
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i
-      assert_select "a[href='#{songs_path}']", text: /browse printable songs/i
       assert_select "a[href='#{root_path}']", count: 0
     end
 
@@ -58,7 +57,6 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "[data-search-navigation]", count: 0
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{root_path}']", text: /print song lyrics/i
-      assert_select "a[href='#{songs_path}']", text: /browse printable songs/i
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", count: 0
     end
   end

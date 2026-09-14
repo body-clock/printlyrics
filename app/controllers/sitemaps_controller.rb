@@ -7,20 +7,6 @@ class SitemapsController < ApplicationController
             document.loc(location)
           end
         end
-
-        Song.indexable_page_count.times do |index|
-          page = index + 1
-          document.url do
-            document.loc(page == 1 ? songs_url : songs_url(page: page))
-          end
-        end
-
-        Song.indexable.find_each do |song|
-          document.url do
-            document.loc(song_url(song))
-            document.lastmod(song.updated_at.iso8601)
-          end
-        end
       end
     end
 

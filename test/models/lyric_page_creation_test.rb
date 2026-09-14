@@ -28,11 +28,10 @@ class LyricPageCreationTest < ActiveSupport::TestCase
     assert_equal "Judee Sill", song.artist
     assert_equal "https://lrclib.net/api/get/42", lyric.source_url
     assert_equal 1, song.print_page_count
-    refute song.indexable?
     assert song.last_verified_at
   end
 
-  test "third generation makes the song public without changing its slug" do
+  test "repeat generation reuses the song and keeps counting demand" do
     first = build_operation
     assert first.save
     original_song = first.lyric.song.reload
@@ -45,7 +44,6 @@ class LyricPageCreationTest < ActiveSupport::TestCase
 
       song = second.lyric.song.reload
       assert_equal 2, song.print_page_count
-      refute song.indexable?
       assert_equal original_slug, song.slug
       assert_equal original_updated_at, song.updated_at
       assert_operator song.last_verified_at, :>, original_song.last_verified_at
@@ -55,7 +53,6 @@ class LyricPageCreationTest < ActiveSupport::TestCase
 
       song.reload
       assert_equal 3, song.print_page_count
-      assert song.indexable?
       assert_equal original_slug, song.slug
     end
   end
@@ -83,7 +80,6 @@ class LyricPageCreationTest < ActiveSupport::TestCase
     assert_equal 1, Song.count
     assert_equal 2, Lyric.count
     assert_equal 2, Song.first.print_page_count
-    refute Song.first.indexable?
   end
 
   test "invalid token safely degrades to manual creation" do
