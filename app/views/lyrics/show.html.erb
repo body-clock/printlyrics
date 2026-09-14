@@ -73,21 +73,29 @@
     </div>
   </nav>
 
-  <div class="paper-frame" data-preview-target="pageFrame">
-    <article class="paper size-m" data-preview-target="page">
-      <header class="lyric-header">
-        <h1><%= display_title %></h1>
-        <% if display_artist %>
-          <p><%= display_artist %></p>
-        <% end %>
-      </header>
+  <p class="page-summary no-print"
+     data-preview-target="pageSummary"
+     data-one-page-label="<%= t(".page_count.one") %>"
+     data-many-pages-label="<%= t(".page_count.other") %>"
+     aria-live="polite"></p>
 
-      <div class="lyrics" data-preview-target="lyrics">
-        <% @lyric.stanzas.each do |stanza| %>
-          <section class="stanza"><%= stanza %></section>
-        <% end %>
-      </div>
-    </article>
+  <div class="paper-frame" data-preview-target="pageFrame">
+    <div class="paper-pages" data-preview-target="pages">
+      <article class="paper size-m is-unpaginated" data-preview-target="page" data-preview-page>
+        <header class="lyric-header">
+          <h1><%= display_title %></h1>
+          <% if display_artist %>
+            <p><%= display_artist %></p>
+          <% end %>
+        </header>
+
+        <div class="lyrics">
+          <% @lyric.stanzas.each do |stanza| %>
+            <section class="stanza"><%= stanza %></section>
+          <% end %>
+        </div>
+      </article>
+    </div>
   </div>
 
   <% if @generated_page_key %>
