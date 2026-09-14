@@ -15,7 +15,7 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All five exact event names exist | |
+| Plausible goals | Site owner | All three exact event names exist, automatic goals off | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch catalog seed | Site owner | Twenty metadata-only song pages exist | |
 | Verifier first run | Site owner | Command exits successfully and prints counts | |
@@ -62,19 +62,32 @@ Recovery:
 In the Plausible site for `printlyrics.app`, open **Settings > Goals** and add a
 custom-event goal for each exact, case-sensitive name:
 
-1. `Song Search Submitted`
-2. `Song Selected`
-3. `Print Page Generated`
-4. `Print Dialog Opened`
-5. `Print Use Case Selected`
+1. `Print Page Generated`
+2. `Print Dialog Opened`
+3. `Second Print Page Generated`
+
+Keep this list short deliberately. Three goals answer three distinct questions:
+did the tool produce a sheet, did that sheet reach the printer, and is anyone
+assembling more than one. Every additional goal costs dashboard legibility and
+has to earn its place against those questions.
 
 Do not constrain these goals with song titles, artist names, source IDs, lyric
 tokens, or URLs. The application sends only low-cardinality workflow properties:
-`entry_method`, `use_case`, `campaign_source`, and `campaign_name`.
+`entry_method`, `campaign_source`, `campaign_name`, and
+`page_count_in_session`.
 
-The optional use-case prompt appears only after someone creates a print page.
-Its `use_case` property is one of `performance`, `worship_community`, `teaching`,
-or `personal`. It is not part of the core conversion funnel.
+`page_count_in_session` is a bucket — `1`, `2`, `3-5`, or `6+` — reporting how
+many distinct print pages the visit had generated when the event fired. It is a
+running count, not a final total, so read the highest bucket a session reached
+rather than the value on any single event. Both `Print Page Generated` and
+`Print Dialog Opened` carry it.
+
+Turn off Plausible's automatic goals — **Form submissions**, **File downloads**,
+**Outbound links**, and **404** — under **Settings > General > Default
+tracking**. `Form: Submission` pools every form on the site into one number (the
+search form, each result button, and the generate form all post), so it does not
+describe any single product step, and it counts toward billable pageviews.
+PrintLyrics sends none of these events from application code.
 
 Campaign properties are retained in session storage after a visitor arrives on
 an allowlisted campaign URL. Supported launch values are:
@@ -99,9 +112,15 @@ analytics property.
 
 Plausible requires received events to be configured as goals before they appear
 as conversions; see its [custom-event goal documentation](https://plausible.io/docs/custom-event-goals).
-Create a funnel with the four goals in the order above. Manual-entry visitors
-can legitimately enter at `Print Page Generated`, so review that goal and
-`Print Dialog Opened` separately as well as through the search funnel.
+Create a funnel from `Print Page Generated` to `Print Dialog Opened`. Manual-entry
+visitors can legitimately enter at `Print Page Generated`, so review that goal and
+`Print Dialog Opened` separately as well as through the funnel.
+
+`Second Print Page Generated` is deliberately outside that linear funnel. It
+fires during the second generation, which precedes the second print dialog, so
+folding it into the ordered funnel would misorder the steps. Treat it as a
+standalone goal: it is the first evidence that a visit is assembling a packet
+rather than making a single sheet.
 
 Create a shared site segment named **Organic Search**:
 
@@ -124,22 +143,33 @@ filter for Plausible event requests and preserve the log across navigation.
    launch performance.
 2. Load the homepage and navigate to the one-page guide and back. Each Turbo
    visit must send exactly one pageview.
-3. Search for a song, select a result, and generate its print page. Confirm the
-   first three custom events arrive once and in order.
+3. Search for a song and select a result. Confirm neither action sends a custom
+   event. Generate the print page and confirm `Print Page Generated` arrives
+   once and carries `page_count_in_session: "1"`.
 4. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
-   browser invokes its native print dialog. Canceling the dialog is sufficient.
-5. Select one optional use case. Confirm `Print Use Case Selected` is sent once
-   and carries only the selected `use_case` plus any allowlisted campaign
-   properties.
-6. Inspect every event payload. A saved page must report the synthetic location
+   browser invokes its native print dialog, and that it carries the same
+   bucket. Canceling the dialog is sufficient.
+5. Without closing the tab, generate a second song's print page. Confirm
+   `Print Page Generated` now carries `page_count_in_session: "2"` and that
+   `Second Print Page Generated` arrives exactly once. Generate a third song and
+   confirm it does not arrive again. Reloading the first page must not add a
+   count either.
+6. Confirm no other custom event arrives. The application emits exactly three
+   event names, so an unexpected one means stale instrumentation or an automatic
+   goal still enabled in site settings.
+7. Inspect every event payload. A saved page must report the synthetic location
    `/lyrics/:token`, never the real token. No payload may contain lyrics, song
    title, artist, album, or source ID.
-7. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
+8. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
    Search** segment after a genuine organic visit and confirm its attribution.
 
 `Print Dialog Opened` is the product's **organic print completion** proxy. It
 means the visitor opened the browser dialog; it does not prove that a physical
 page was printed.
+
+`Second Print Page Generated` is the **packet-intent** signal: the visit produced
+a second distinct print page. It is a leading indicator that someone is preparing
+several songs at once, which is the case a single-sheet tool serves poorly.
 
 If an event is missing, first check the browser request, content blocking, the
 exact goal spelling, and whether the production asset release is current. If
@@ -218,11 +248,13 @@ On launch day, record zero or current values for the previous 30 days:
 | `Print Page Generated` from organic visits | Plausible goal |
 | `Print Dialog Opened` from organic visits | Plausible goal |
 | Generated-to-dialog conversion rate | Plausible goals/funnel |
+| `Second Print Page Generated` from organic visits | Plausible goal |
+| Share of generating sessions that reach a second sheet | `page_count_in_session` on `Print Page Generated` |
 
 At 30 days, confirm the instrumentation is reliable before changing any target.
 Review query intent, indexed surfaces, impressions, clicks, both completion
-events, conversion, device mix, and catalog-verifier health together. Visibility
-without usable print pages is not success.
+events, packet intent, conversion, device mix, and catalog-verifier health
+together. Visibility without usable print pages is not success.
 
 At 90 days, the calibration target is:
 

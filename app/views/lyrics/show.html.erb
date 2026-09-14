@@ -98,32 +98,4 @@
     </div>
   </div>
 
-  <% if @generated_page_key %>
-    <aside class="preview-feedback no-print"
-           aria-labelledby="print-use-case-heading"
-           data-controller="print-feedback">
-      <fieldset data-print-feedback-target="question">
-        <legend id="print-use-case-heading"><%= t(".feedback.question") %></legend>
-        <p><%= t(".feedback.explanation") %></p>
-        <div class="feedback-options">
-          <button type="button"
-                  data-action="print-feedback#select"
-                  data-use-case="performance"><%= t(".feedback.performance") %></button>
-          <button type="button"
-                  data-action="print-feedback#select"
-                  data-use-case="worship_community"><%= t(".feedback.worship_community") %></button>
-          <button type="button"
-                  data-action="print-feedback#select"
-                  data-use-case="teaching"><%= t(".feedback.teaching") %></button>
-          <button type="button"
-                  data-action="print-feedback#select"
-                  data-use-case="personal"><%= t(".feedback.personal") %></button>
-        </div>
-      </fieldset>
-      <p class="feedback-thanks"
-         role="status"
-         data-print-feedback-target="thanks"
-         hidden><%= t(".feedback.thanks") %></p>
-    </aside>
-  <% end %>
 </div>
