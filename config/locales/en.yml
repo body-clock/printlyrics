@@ -82,6 +82,8 @@ en:
         use_cases:
           heading: "Made for practical use"
           body: "Create a clear reference sheet for rehearsal, a singer's music stand, a classroom handout, or personal reading without learning a page-layout tool."
+        guide_note_html: "Have a song that runs long? The %{guide_link} walks through the order that keeps every line on one sheet."
+        guide_link: "one-page printing guide"
       faq:
         eyebrow: "Good to know"
         heading: "Questions about printing song lyrics"
@@ -134,7 +136,8 @@ en:
       introduction: "Start with the clearest layout you can read comfortably, then make small adjustments until the print preview fits."
       answer:
         heading: "The short answer"
-        body: "Use the complete lyrics, switch to two columns, reduce the font only as much as needed, and check the browser's print preview with scale set to 100%. Turn off headers and footers if they take up space."
+        body_html: "Use the complete lyrics, switch to two columns, reduce the font only as much as needed, and check the browser's print preview with scale set to 100%. Turn off headers and footers if they take up space. To skip the manual setup, %{tool_link}."
+        tool_link: "print your lyrics with PrintLyrics"
       steps:
         complete:
           heading: "Start with the complete lyrics"

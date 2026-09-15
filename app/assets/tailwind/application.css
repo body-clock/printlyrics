@@ -593,6 +593,18 @@ textarea:focus-visible {
   font-size: 0.78rem;
 }
 
+.explainer-note {
+  margin: 1.5rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
+.explainer-note a {
+  color: var(--accent);
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
 .use-cases {
   margin-top: 1.5rem;
 }

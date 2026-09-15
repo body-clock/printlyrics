@@ -14,6 +14,9 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "main", /save as PDF/i
     assert_select "section[aria-labelledby='why-printlyrics']", 1
     assert_select "section[aria-labelledby='common-questions'] details", minimum: 3
+    # A contextual in-body link, not just the footer navigation.
+    assert_select ".explainer-note a[href='#{print_lyrics_on_one_page_path}']",
+      text: /one-page printing guide/i
 
     structured_data = JSON.parse(css_select("script[type='application/ld+json']").first.text)
     application = structured_data.fetch("@graph").find { |node| node["@type"] == "WebApplication" }
@@ -32,6 +35,8 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "link[rel='canonical'][href='#{print_lyrics_on_one_page_url}']", 1
     assert_select "h1", "Print lyrics on one page"
     assert_select "a[href='#{root_path}']", text: /open the lyric printing tool/i
+    # A contextual in-body link carrying head-query anchor text.
+    assert_select ".guide-answer a[href='#{root_path}']", text: /print your lyrics/i
     assert_select "main", /font size/i
     assert_select "main", /two columns/i
     assert_select "main", /print preview/i
