@@ -8,11 +8,6 @@ Rails.application.routes.draw do
       post :select
     end
   end
-  resources :songs, only: %i[index show], param: :slug do
-    member do
-      post :load
-    end
-  end
   get "sitemap", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 

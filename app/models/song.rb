@@ -1,7 +1,4 @@
 class Song < ApplicationRecord
-  PUBLIC_PRINT_PAGE_THRESHOLD = 3
-  PAGE_SIZE = 50
-
   has_many :lyrics
 
   before_validation :set_slug, on: :create
@@ -13,66 +10,30 @@ class Song < ApplicationRecord
   validates :duration_seconds, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :print_page_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
-  scope :indexable, -> { where.not(indexable_at: nil).where(unavailable_at: nil) }
-
-  def self.indexable_page_count
-    [ (indexable.count.to_f / PAGE_SIZE).ceil, 1 ].max
-  end
-
-  def indexable?
-    indexable_at.present? && unavailable_at.nil?
-  end
-
   def to_param
     slug
   end
 
+  # One row per sourced LRCLIB record, so repeated prints reuse a single
+  # metadata row and accumulate a demand count. Nothing here is published: the
+  # public song catalog was removed after it earned impressions but no clicks.
   def promote!(metadata, verified_at: Time.current)
     next_print_page_count = print_page_count + 1
-    public_state = metadata.slice(:title, :artist, :album, :duration_seconds).merge(
-      indexable_at: indexable_at || threshold_reached_at(next_print_page_count, verified_at),
-      unavailable_at: nil
-    )
+    source_state = metadata.slice(:title, :artist, :album, :duration_seconds)
     counters = {
       last_verified_at: verified_at,
       print_page_count: next_print_page_count
     }
 
-    return update_columns(counters) unless attributes_changed?(public_state)
+    return update_columns(counters) unless attributes_changed?(source_state)
 
-    update!(public_state.merge(counters))
-  end
-
-  def refresh_from_result!(result, verified_at: Time.current)
-    metadata = {
-      title: result.title,
-      artist: result.artist,
-      album: result.album.presence,
-      duration_seconds: result.duration.round,
-      unavailable_at: nil
-    }
-
-    return update_column(:last_verified_at, verified_at) unless attributes_changed?(metadata)
-
-    update!(metadata.merge(last_verified_at: verified_at))
-  end
-
-  def mark_unavailable!(verified_at: Time.current)
-    return update_column(:last_verified_at, verified_at) if unavailable_at?
-
-    update!(unavailable_at: verified_at, last_verified_at: verified_at)
+    update!(source_state.merge(counters))
   end
 
   private
 
   def attributes_changed?(attributes)
     attributes.any? { |attribute, value| public_send(attribute) != value }
-  end
-
-  def threshold_reached_at(next_print_page_count, verified_at)
-    return unless next_print_page_count >= PUBLIC_PRINT_PAGE_THRESHOLD
-
-    verified_at
   end
 
   def set_slug

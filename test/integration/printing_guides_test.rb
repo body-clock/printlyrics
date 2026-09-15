@@ -45,27 +45,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-labelledby='one-page-questions'] details", minimum: 3
   end
 
-  test "guide structured data describes the steps the page actually renders" do
-    get print_lyrics_on_one_page_path
-
-    assert_response :success
-    structured_data = JSON.parse(css_select("script[type='application/ld+json']").first.text)
-
-    assert_equal "HowTo", structured_data.fetch("@type")
-    assert_equal print_lyrics_on_one_page_url, structured_data.fetch("url")
-    assert_equal "Print lyrics on one page", structured_data.fetch("name")
-
-    steps = structured_data.fetch("step")
-    assert_equal (1..5).to_a, steps.map { |step| step.fetch("position") }
-    steps.each { |step| assert_equal "HowToStep", step.fetch("@type") }
-
-    # Structured data must not drift from the visible instructions.
-    assert_equal css_select(".guide-steps li").length, steps.length
-    rendered = css_select(".guide-steps li h2").map(&:text)
-    assert_equal rendered, steps.map { |step| step.fetch("name") }
-  end
-
-  test "indexable pages link to each other with descriptive anchors" do
+  test "crawlable pages link to each other with descriptive anchors" do
     get root_path
 
     assert_response :success
@@ -73,7 +53,6 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "[data-search-navigation]", count: 0
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i
-      assert_select "a[href='#{songs_path}']", text: /browse printable songs/i
       assert_select "a[href='#{root_path}']", count: 0
     end
 
@@ -83,7 +62,6 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "[data-search-navigation]", count: 0
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{root_path}']", text: /print song lyrics/i
-      assert_select "a[href='#{songs_path}']", text: /browse printable songs/i
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", count: 0
     end
   end

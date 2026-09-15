@@ -7,8 +7,8 @@
   and domain invariants in Active Record models; use plain Ruby objects for
   behavior that does not need a table.
 - Existing examples include `Lyric` for stanzas and retention, `Song` for
-  catalog state, `LrcLibResult` for source data, and `LyricPageCreation` for
-  coordinating saved pages and catalog promotion. `app/models/` also contains
+  sourced-song demand, `LrcLibResult` for source data, and `LyricPageCreation`
+  for coordinating saved pages. `app/models/` also contains
   form and workflow objects; directory placement alone does not define a layer.
 - Controllers and forms handle input and responses; application workflows
   coordinate domain operations; domain objects own business rules; clients
@@ -57,13 +57,12 @@
 - Active page visits renew the 180-day retention window. Expired or unknown
   tokens return to the form. Keep cleanup in the explicit purge operation/task;
   do not revive expired pages during lookup.
-- Public song pages, structured data, and seeds contain metadata rather than
-  lyric text. Ordinary catalog promotion requires three successful sourced
-  page generations; curated seeds are an explicit exception. This count does
-  not represent distinct users. Manual pages do not promote catalog entries.
-- Keep catalog slugs stable. Confirmed unavailable songs return `410 Gone`
-  and leave public discovery; temporary LRCLIB failures preserve their prior
-  availability. Preserve `Song.indexable` filtering and sitemap pagination.
+- Public pages, structured data, and seeds contain metadata rather than lyric
+  text. The homepage and the printing guide are the only crawlable surfaces; the
+  public song catalog was removed, so do not reintroduce song URLs, browse
+  pagination, or `Song` publication state without a new decision.
+- Songs record sourced demand only. Keep `Song` free of publication state and
+  keep the sitemap limited to the homepage and guide.
 
 ## External input and integrations
 
@@ -120,10 +119,10 @@
 - Use short transactions with bang writes or explicit failure handling for
   atomic changes. Keep external network calls outside database transactions.
 - Keep simple reusable filters in scopes and complex queries in cohesive
-  objects. Bound catalog work and pagination; check for N+1 queries.
+  objects. Bound query work and pagination; check for N+1 queries.
 - Use `update_column(s)` or `delete_all` only deliberately: they bypass model
   lifecycle behavior. Preserve the distinction between verification timestamps
-  and public metadata changes used for sitemap `lastmod`.
+  and metadata refreshes when changing `Song#promote!`.
 - Keep seeds idempotent and metadata-only. Do not overwrite later source
   refreshes or use database reset/replant commands against retained user data.
 
@@ -144,7 +143,7 @@
   installed or that the suite globally blocks network access.
 - Cover relevant failure paths: malformed or unavailable source data, invalid
   catalog tokens, failed atomic saves, expiration boundaries, and transient
-  verification failures. Use Rails time helpers for deterministic time tests.
+  source failures. Use Rails time helpers for deterministic time tests.
 - Run focused tests and Ruby lint for changed behavior. Run system tests for
   browser changes and asset compilation for asset changes; broaden checks for
   shared code. Browser assertions do not replace print-preview inspection.
