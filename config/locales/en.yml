@@ -82,6 +82,8 @@ en:
         use_cases:
           heading: "Made for practical use"
           body: "Create a clear reference sheet for rehearsal, a singer's music stand, a classroom handout, or personal reading without learning a page-layout tool."
+        guide_note_html: "Have a song that runs long? The %{guide_link} walks through the order that keeps every line on one sheet."
+        guide_link: "one-page printing guide"
       faq:
         eyebrow: "Good to know"
         heading: "Questions about printing song lyrics"
@@ -134,7 +136,8 @@ en:
       introduction: "Start with the clearest layout you can read comfortably, then make small adjustments until the print preview fits."
       answer:
         heading: "The short answer"
-        body: "Use the complete lyrics, switch to two columns, reduce the font only as much as needed, and check the browser's print preview with scale set to 100%. Turn off headers and footers if they take up space."
+        body_html: "Use the complete lyrics, switch to two columns, reduce the font only as much as needed, and check the browser's print preview with scale set to 100%. Turn off headers and footers if they take up space. To skip the manual setup, %{tool_link}."
+        tool_link: "print your lyrics with PrintLyrics"
       steps:
         complete:
           heading: "Start with the complete lyrics"
@@ -173,51 +176,12 @@ en:
     errors:
       unavailable: "That song is no longer available"
       service: "Song search is temporarily unavailable. You can still paste lyrics below."
-    index:
-      seo:
-        title: "Printable Song Lyrics | PrintLyrics"
-        paginated_title: "Printable Song Lyrics - Page %{page} | PrintLyrics"
-        description: "Browse popular songs, then load the available lyrics into an editable, customizable print page."
-      eyebrow: "Popular songs"
-      heading: "Songs ready to print"
-      introduction: "Choose a song to load its available lyrics, review the words, and make your own print sheet."
-      pagination:
-        label: "Song pages"
-        previous: "Previous"
-        status: "Page %{page} of %{total_pages}"
-        next: "Next"
-      empty:
-        heading: "No songs are available yet"
-        body: "Search for a song to create a clean, customizable print sheet."
-        link: "Find a song to print"
-    show:
-      seo:
-        title: "Print %{title} Lyrics by %{artist} | PrintLyrics"
-        description: "Load and print lyrics for %{title} by %{artist} on a clean, customizable page."
-      breadcrumb_label: "Breadcrumb"
-      songs_link: "Songs"
-      eyebrow: "Printable song page"
-      metadata:
-        album: "Album"
-        length: "Length"
-      introduction: "Load the available lyrics, review the words, then choose the size and column layout that works for your page."
-      load: "Load lyrics to print"
-      loading: "Loading lyrics…"
-      manual_fallback: "Search manually instead"
-    gone:
-      seo:
-        title: "%{title} is unavailable | PrintLyrics"
-        description: "This song is no longer available to load from the lyrics source."
-      eyebrow: "Song unavailable"
-      body: "The source no longer has printable lyrics for this song. You can search again or paste lyrics you already have."
-      link: "Search or enter lyrics"
 
   shared:
     resource_navigation:
       label: "More from PrintLyrics"
       tool: "Print song lyrics"
       guide: "One-page printing guide"
-      songs: "Browse printable songs"
 
   pwa:
     manifest:

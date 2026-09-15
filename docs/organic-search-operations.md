@@ -2,7 +2,7 @@
 
 This runbook starts and operates PrintLyrics' organic-search measurement window.
 It does not promise a search ranking. The site owner owns every external-console
-step, the recurring catalog check, and the 30- and 90-day reviews.
+step and the 30- and 90-day reviews.
 
 Do not start the 90-day window until the launch checklist is complete.
 
@@ -17,9 +17,6 @@ Copy this table into the launch issue and fill every field.
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
 | Plausible goals | Site owner | All three exact event names exist, automatic goals off | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
-| Launch catalog seed | Site owner | Twenty metadata-only song pages exist | |
-| Verifier first run | Site owner | Command exits successfully and prints counts | |
-| Verifier next run | Site owner | Scheduler shows the next daily run | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
 
@@ -41,8 +38,7 @@ require DNS verification and cover protocols and subdomains.
    submits a URL; it does not receive an uploaded file. Record the submission
    time and wait for status `Success`.
 7. In **Page indexing**, filter by the submitted sitemap. Record indexed and
-   non-indexed counts. Inspect the homepage, guide, `/songs`, and one eligible
-   song with URL Inspection.
+   non-indexed counts. Inspect the homepage and the guide with URL Inspection.
 
 Recovery:
 
@@ -178,63 +174,28 @@ lifecycle before collecting a baseline. If a real token or song metadata is
 present, treat it as a privacy incident: disable the affected instrumentation,
 deploy the redaction fix, and exclude the contaminated test period.
 
-## 3. Schedule catalog verification
+## 3. Song catalog removed
 
-Seed the initial catalog once on an existing production database:
+Earlier releases published a browsable catalog at `/songs` plus one page per
+sourced song, populated by `db/seeds.rb` and refreshed daily by
+`bin/rails songs:verify_catalog`. That surface is gone.
 
-```sh
-bin/kamal app exec --reuse "bin/rails db:seed"
-```
+It was removed after the September 2026 Search Console export showed the whole
+catalog earning impressions but no clicks: the queries it targeted want to read
+lyrics, and PrintLyrics deliberately publishes no lyric text. The pages ranked
+in about position 50, and roughly 160 impressions produced zero clicks.
 
-The seed is idempotent. It adds 20 metadata-only songs selected from entries
-near the top of the Genius global chart on July 16, 2026, makes those curated
-pages public, and does not overwrite metadata later refreshed from LRCLIB.
-It never stores lyrics.
+Nothing needs seeding or verifying now:
 
-Outside this curated set, a sourced song becomes public only after three
-successful print-page generations. This threshold reduces the chance that one
-visitor's action is immediately disclosed; it does not represent three distinct
-people. Manually entered lyrics never enter the song catalog.
+- `db/seeds.rb` keeps only an explanatory comment;
+- the `songs:verify_catalog` task and its `kamal verify_catalog` alias are gone;
+- `bin/ci` still runs `db:seed:replant` so the file stays loadable.
 
-Run a bounded batch daily. The task checks unverified and least-recently checked
-promoted songs first. A confirmed source not-found removes a song from public
-discovery; a transient source failure leaves its prior status intact for retry.
+Songs are still recorded on demand when someone generates a sourced lyric sheet.
+That preserves the private demand count without publishing anything. If a public
+catalog is ever reintroduced, treat it as a new decision with its own
+measurement plan rather than reviving these pages.
 
-From a production application context:
-
-```sh
-LIMIT=100 bin/rails songs:verify_catalog
-```
-
-From the deployment checkout:
-
-```sh
-bin/kamal verify_catalog
-```
-
-The Kamal alias uses the default limit of 100. For a smaller manual batch:
-
-```sh
-bin/kamal app exec --reuse "env LIMIT=25 bin/rails songs:verify_catalog"
-```
-
-Configure the host scheduler for one daily invocation. Prevent overlapping
-runs, retain stdout/stderr, and alert on a nonzero exit. A successful run prints
-`checked`, `available`, `unavailable`, and `failed` counts. The scheduler record
-must show:
-
-- owner: site owner;
-- exact command and working directory;
-- daily cadence and timezone;
-- last exit status and captured output;
-- first successful run time;
-- next scheduled run time.
-
-`failed` can be nonzero when LRCLIB has transient errors even though the command
-completes. Review it daily. Retry the same bounded command once after the source
-recovers; repeated checks are safe. If failures persist, reduce `LIMIT`, verify
-LRCLIB outside the application, and leave existing pages in their last known
-state. Never respond to a transient outage by bulk-marking songs unavailable.
 
 ## 4. Capture baselines and review outcomes
 
@@ -253,8 +214,8 @@ On launch day, record zero or current values for the previous 30 days:
 
 At 30 days, confirm the instrumentation is reliable before changing any target.
 Review query intent, indexed surfaces, impressions, clicks, both completion
-events, packet intent, conversion, device mix, and catalog-verifier health
-together. Visibility without usable print pages is not success.
+events, packet intent, conversion, and device mix together. Visibility without
+usable print pages is not success.
 
 At 90 days, the calibration target is:
 
@@ -267,6 +228,51 @@ measurement problem, fix it and restart the window; do not reinterpret broken
 data. Once reliable conversion data exists, the site owner may replace the
 calibration target with a conversion-informed target without expanding product
 scope.
+
+### Recorded baseline, 2026-09-14
+
+Taken from the Search Console performance export (three months to 2026-09-12)
+and the Plausible export (49 days to 2026-09-14). Use these as the comparison
+point for the 30- and 90-day reviews.
+
+Google Search Console, whole period: 1,347 impressions, 64 clicks, 4.4% CTR.
+
+| Window | Impressions/day | Clicks/day | Average position |
+| --- | --- | --- | --- |
+| August | 20.1 | 1.03 | 24.0 |
+| September (to 09-12) | 50.3 | 2.17 | 9.6 |
+
+| Device | Clicks | Impressions | CTR | Average position |
+| --- | --- | --- | --- | --- |
+| Mobile | 40 | 577 | 6.93% | 6.08 |
+| Desktop | 23 | 749 | 3.07% | 26.71 |
+
+| Page | Impressions | Clicks | CTR | Average position |
+| --- | --- | --- | --- | --- |
+| `/` | 973 | 54 | 5.55% | 16.79 |
+| `/print-lyrics-on-one-page` | 323 | 10 | 3.10% | 17.21 |
+
+Head queries, and the positions to beat:
+
+| Query | Impressions | Clicks | CTR | Average position |
+| --- | --- | --- | --- | --- |
+| `printable lyrics` | 132 | 6 | 4.55% | 10.21 |
+| `print lyrics` | 56 | 7 | 12.50% | 9.16 |
+| `printable song lyrics` | 56 | 5 | 8.93% | 14.36 |
+| `print song lyrics` | 12 | 2 | 16.67% | 11.58 |
+
+Plausible: 725 visitors over 49 days, of which 36 days drew 10 visitors or
+fewer. The last measured week (09-08 to 09-14) drew 334 visitors against 291
+the week before.
+
+Two properties of this baseline matter when reading the next review:
+
+- The site sits on the page-one/page-two boundary. At position 16.79 the
+  homepage earns impressions but few clicks. Position, not conversion, is the
+  constraint, so judge changes by average position on the four head queries.
+- Mobile ranks far better than desktop (6.08 against 26.71) and supplies 63% of
+  clicks. Printing is a desktop task, so check whether mobile Google traffic
+  converts into generated sheets before counting it as progress.
 
 ## 5. Monitor and recover
 
@@ -284,21 +290,22 @@ Review these symptoms weekly during the first 90 days:
 
 Keeping lyrics out of indexable responses reduces exposure; it is not legal
 clearance. Escalate source-policy or takedown questions to the site owner and do
-not publish lyric text in public catalog HTML, structured data, or analytics.
+not publish lyric text in public HTML, structured data, or analytics.
 
 ## 6. Roll back public discovery safely
 
-If the catalog or guide must be withdrawn:
+Only two pages are offered to crawlers: the homepage and the printing guide.
 
-1. Stop submitting new public URLs and pause the verifier schedule.
-2. Deploy a change that removes the affected guide, browse, and song URLs from
-   the sitemap.
-3. Return `noindex` or `410 Gone` from withdrawn public catalog pages as
-   appropriate. Keep the homepage available.
-4. Do not delete `Song` records merely to remove discovery.
-5. Do not change or delete saved `/lyrics/<token>` pages. Their URL, retention,
+If either must be withdrawn:
+
+1. Deploy a change that removes the affected URL from `SitemapsController`.
+2. Return `noindex` or `410 Gone` from the withdrawn page as appropriate. Keep
+   the homepage available unless the whole tool must come down.
+3. Do not delete `Song` records to remove discovery. They hold no public URL and
+   carry the private demand count.
+4. Do not change or delete saved `/lyrics/<token>` pages. Their URL, retention,
    print controls, and `noindex` behavior remain intact.
-6. Validate the new sitemap signed out, submit it in Search Console, and record
+5. Validate the new sitemap signed out, submit it in Search Console, and record
    the rollback release and recovery status.
 
 Removing a URL from a sitemap alone is not an immediate removal mechanism.
@@ -310,6 +317,6 @@ the withdrawn URLs leave the index.
 A second operator, or the site owner in a separate walkthrough, checks each
 launch-record row using only this document. Record their name, date, omissions,
 and corrections in the launch issue. U6 is operationally ready when that person
-can reproduce the Search Console property and sitemap submission, all four
-Plausible goals, the organic segment, a bounded verifier run, the baseline, the
-review dates, and every recovery path without undocumented knowledge.
+can reproduce the Search Console property and sitemap submission, all three
+Plausible goals, the organic segment, the baseline, the review dates, and every
+recovery path without undocumented knowledge.

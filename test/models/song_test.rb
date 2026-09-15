@@ -24,38 +24,26 @@ class SongTest < ActiveSupport::TestCase
     assert_includes song.errors[:artist], "is too long (maximum is 200 characters)"
   end
 
-  test "is indexable only while promoted and available" do
-    song = Song.new(indexable_at: Time.current)
+  test "promote counts demand and refreshes source metadata" do
+    song = Song.create!(source_id: 42, title: "Old", artist: "Artist")
 
-    assert song.indexable?
+    assert_equal 0, song.print_page_count
 
-    song.unavailable_at = Time.current
-    refute song.indexable?
+    song.promote!({ title: "New", artist: "Artist", album: "Record", duration_seconds: 214 })
+
+    assert_equal 1, song.print_page_count
+    assert_equal "New", song.reload.title
+    assert_equal "Record", song.album
+    assert_equal 214, song.duration_seconds
+    assert_not_nil song.last_verified_at
   end
 
-  test "counts indexable pages for the shared catalog page size" do
-    assert_equal 1, Song.indexable_page_count
+  test "promote keeps counting when metadata is unchanged" do
+    song = Song.create!(source_id: 42, title: "Same", artist: "Artist")
 
-    create_song(source_id: 1)
-    assert_equal 1, Song.indexable_page_count
+    song.promote!({ title: "Same", artist: "Artist" })
+    song.promote!({ title: "Same", artist: "Artist" })
 
-    create_song(source_id: 2)
-    create_song(source_id: 3, unavailable_at: Time.current)
-    assert_equal 1, Song.indexable_page_count
-
-    (4..(Song::PAGE_SIZE + 2)).each { |source_id| create_song(source_id: source_id) }
-    assert_equal 2, Song.indexable_page_count
-  end
-
-  private
-
-  def create_song(source_id:, unavailable_at: nil)
-    Song.create!(
-      source_id: source_id,
-      title: "Song #{source_id}",
-      artist: "Artist",
-      indexable_at: 1.day.ago,
-      unavailable_at: unavailable_at
-    )
+    assert_equal 2, song.reload.print_page_count
   end
 end
