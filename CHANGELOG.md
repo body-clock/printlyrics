@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/body-clock/printlyrics/compare/v1.4.5...v1.5.0) (2026-09-15)
+
+
+### Features
+
+* add multi-song analytics, a real CSP, and catalog fixes ([#50](https://github.com/body-clock/printlyrics/issues/50)) ([49e3563](https://github.com/body-clock/printlyrics/commit/49e35635e144750b93b1160767b1d3974fdca5a1))
+
 ## [1.4.5](https://github.com/body-clock/printlyrics/compare/v1.4.4...v1.4.5) (2026-09-03)
 
 
