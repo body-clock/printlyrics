@@ -62,6 +62,7 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "textarea[name='lyric[lyrics]']", /Love, rising/
     assert_select "input[name='catalog_token']", count: 1
+    assert_select "input[name='lyric[source_url]']", count: 0
     assert_select "form[action='#{lyrics_path}']", count: 1
     song.reload
     assert_equal "The Kiss", song.title
@@ -85,6 +86,12 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
 
     get "/songs/#{song.slug}"
     assert_response :gone
+  end
+
+  test "unknown song slugs are not found" do
+    get "/songs/missing-song-999"
+
+    assert_response :not_found
   end
 
   test "transient source failure preserves eligibility and offers retry" do
@@ -149,6 +156,28 @@ class SongsFlowTest < ActionDispatch::IntegrationTest
       assert_equal songs_url(page: 2), elements.first["href"]
     end
     assert_select "a[rel='prev'][href='/songs']", count: 1
+  end
+
+  test "pages beyond the catalog are not found instead of empty and indexable" do
+    create_song
+
+    get "/songs?page=2"
+
+    assert_response :not_found
+    assert_select "[data-empty-catalog]", count: 0
+    assert_select "[data-song-link]", count: 0
+  end
+
+  test "non-numeric and sub-first page numbers resolve to the first page" do
+    create_song
+
+    [ "/songs?page=abc", "/songs?page=0", "/songs?page=-3" ].each do |path|
+      get path
+
+      assert_response :success, "expected #{path} to render"
+      assert_select "[data-song-link]", count: 1
+      assert_select "[data-empty-catalog]", count: 0
+    end
   end
 
   private

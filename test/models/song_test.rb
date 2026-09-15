@@ -32,4 +32,30 @@ class SongTest < ActiveSupport::TestCase
     song.unavailable_at = Time.current
     refute song.indexable?
   end
+
+  test "counts indexable pages for the shared catalog page size" do
+    assert_equal 1, Song.indexable_page_count
+
+    create_song(source_id: 1)
+    assert_equal 1, Song.indexable_page_count
+
+    create_song(source_id: 2)
+    create_song(source_id: 3, unavailable_at: Time.current)
+    assert_equal 1, Song.indexable_page_count
+
+    (4..(Song::PAGE_SIZE + 2)).each { |source_id| create_song(source_id: source_id) }
+    assert_equal 2, Song.indexable_page_count
+  end
+
+  private
+
+  def create_song(source_id:, unavailable_at: nil)
+    Song.create!(
+      source_id: source_id,
+      title: "Song #{source_id}",
+      artist: "Artist",
+      indexable_at: 1.day.ago,
+      unavailable_at: unavailable_at
+    )
+  end
 end

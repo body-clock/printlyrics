@@ -161,7 +161,6 @@
         <% if @loaded_status.present? %>
           <p class="sr-only" role="status" aria-live="polite"><%= @loaded_status %></p>
         <% end %>
-        <%= form.hidden_field :source_url if @lyric.source_url.present? %>
         <%= hidden_field_tag :catalog_token, @catalog_token if @catalog_token.present? %>
 
         <div class="metadata-grid">

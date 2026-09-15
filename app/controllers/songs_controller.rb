@@ -1,13 +1,14 @@
 class SongsController < ApplicationController
-  PAGE_SIZE = 50
-
   attr_writer :lrc_lib_client
 
   def index
-    @page = [ Integer(params[:page], exception: false).to_i, 1 ].max
+    request = [ Integer(params[:page], exception: false).to_i, 1 ].max
+    @total_pages = Song.indexable_page_count
+    raise ActiveRecord::RecordNotFound if request > @total_pages
+
+    @page = request
     scope = Song.indexable.order(:artist, :title, :source_id)
-    @total_pages = (scope.count.to_f / PAGE_SIZE).ceil
-    @songs = scope.limit(PAGE_SIZE).offset((@page - 1) * PAGE_SIZE)
+    @songs = scope.limit(Song::PAGE_SIZE).offset((@page - 1) * Song::PAGE_SIZE)
   end
 
   def show
@@ -24,14 +25,15 @@ class SongsController < ApplicationController
     lookup = SongLookup.new
     lookup.perform(@song.source_id, client: lrc_lib_client)
 
-    return mark_unavailable_and_render if lookup.http_status == :unprocessable_content
-    return render_load_error(lookup) unless lookup.success?
-
     @song.refresh_from_result!(lookup.result)
     @lyric = lookup.lyric
     @catalog_token = lookup.catalog_token
     @loaded_status = t("lyrics.status.loaded")
     render "lyrics/new"
+  rescue LrcLibClient::NotFoundError
+    mark_unavailable_and_render
+  rescue LrcLibClient::ServiceError
+    render_load_error
   end
 
   private
@@ -49,8 +51,8 @@ class SongsController < ApplicationController
     render_gone
   end
 
-  def render_load_error(lookup)
-    @load_error = lookup.error
+  def render_load_error
+    @load_error = t("songs.errors.service")
     render :show, status: :service_unavailable
   end
 

@@ -45,18 +45,20 @@ class LyricsController < ApplicationController
     lookup = SongLookup.new
     lookup.perform(params[:result_id], client: lrc_lib_client)
 
-    @lyric = lookup.lyric || Lyric.new
-    @loaded_status = t("lyrics.status.loaded") if lookup.success?
+    @lyric = lookup.lyric
+    @loaded_status = t("lyrics.status.loaded")
     @catalog_token = lookup.catalog_token
-    @search_error = lookup.error
 
-    render :new, status: lookup.http_status
+    render :new, status: :ok
+  rescue LrcLibClient::NotFoundError
+    render_select_error(t("songs.errors.unavailable"), :unprocessable_content)
+  rescue LrcLibClient::ServiceError
+    render_select_error(t("songs.errors.service"), :service_unavailable)
   end
 
   def show
-    @lyric = Lyric.active.find_by!(token: params[:token])
+    @lyric = Lyric.renew_retention!(params[:token])
     @generated_page_key = @lyric.token if session.delete(:generated_lyric_token) == @lyric.token
-    @lyric.renew_retention!
   end
 
   private
@@ -71,5 +73,13 @@ class LyricsController < ApplicationController
 
   def lyric_not_found
     redirect_to root_path, alert: t("lyrics.errors.expired")
+  end
+
+  def render_select_error(message, status)
+    @lyric = Lyric.new
+    @catalog_token = nil
+    @search_error = message
+
+    render :new, status: status
   end
 end

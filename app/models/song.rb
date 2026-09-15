@@ -1,5 +1,6 @@
 class Song < ApplicationRecord
   PUBLIC_PRINT_PAGE_THRESHOLD = 3
+  PAGE_SIZE = 50
 
   has_many :lyrics
 
@@ -13,6 +14,10 @@ class Song < ApplicationRecord
   validates :print_page_count, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   scope :indexable, -> { where.not(indexable_at: nil).where(unavailable_at: nil) }
+
+  def self.indexable_page_count
+    [ (indexable.count.to_f / PAGE_SIZE).ceil, 1 ].max
+  end
 
   def indexable?
     indexable_at.present? && unavailable_at.nil?

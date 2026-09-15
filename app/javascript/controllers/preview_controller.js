@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { trackEvent } from "lib/analytics"
+import { sessionPageCountProperties, trackEvent } from "lib/analytics"
 import { SettingsStore } from "lib/settings_store"
 
 const SIZE_KEY = "printlyrics-size"
@@ -32,7 +32,10 @@ export default class extends Controller {
   }
 
   print() {
-    trackEvent("Print Dialog Opened", { entry_method: "print_page" })
+    trackEvent("Print Dialog Opened", {
+      entry_method: "print_page",
+      ...sessionPageCountProperties()
+    })
     window.print()
   }
 
@@ -160,6 +163,10 @@ export default class extends Controller {
     const scale = Math.min(1, this.pageFrameTarget.clientWidth / page.offsetWidth)
     this.pagesTarget.style.setProperty("--preview-scale", scale)
     this.pageFrameTarget.style.height = `${this.pagesTarget.scrollHeight * scale}px`
+  }
+
+  restorePagePreview() {
+    window.requestAnimationFrame(() => this.fitPagePreview())
   }
 
   restorePagePreview() {
