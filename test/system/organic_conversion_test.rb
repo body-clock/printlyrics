@@ -134,8 +134,14 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
       assert_difference([ "Lyric.count", "Song.count" ], 1) do
         click_button "Generate print page"
-        assert_text "Love, rising"
+        # Wait for the generated page. Asserting the lyric text would not
+        # synchronise: it is already on screen in the form's textarea, so this
+        # block used to exit and sample the counts while the POST was still in
+        # flight. The generated-page key only appears on the new page.
+        assert_selector "body[data-generated-page-key]"
       end
+
+      assert_text "Love, rising"
     end
 
     assert_equal 42, Song.last.source_id

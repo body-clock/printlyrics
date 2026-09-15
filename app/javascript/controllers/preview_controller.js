@@ -169,10 +169,6 @@ export default class extends Controller {
     window.requestAnimationFrame(() => this.fitPagePreview())
   }
 
-  restorePagePreview() {
-    window.requestAnimationFrame(() => this.fitPagePreview())
-  }
-
   updatePressedState(buttons, dataKey, activeValue) {
     buttons.forEach((button) => {
       const isActive = button.dataset[dataKey] === activeValue
