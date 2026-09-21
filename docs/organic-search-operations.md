@@ -15,7 +15,7 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All four exact event names exist, automatic goals off | |
+| Plausible goals | Site owner | All six exact event names exist, automatic goals off | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
@@ -62,68 +62,53 @@ custom-event goal for each exact, case-sensitive name:
 2. `Print Dialog Opened`
 3. `Second Print Page Generated`
 4. `Songbook Created`
+5. `Songbook Created From Offer`
+6. `Songbook Printed`
 
-Keep this list short deliberately. Four goals answer four distinct questions:
-did the tool produce a sheet, did that sheet reach the printer, is anyone
-assembling more than one, and did a set of sheets actually come into being.
-Every additional goal costs dashboard legibility and has to earn its place
-against those questions.
+Keep this list short deliberately. Each goal answers one question, and every
+addition costs dashboard legibility and has to earn its place:
+
+| Goal | Question it answers |
+| --- | --- |
+| `Print Page Generated` | Did the tool produce a sheet? |
+| `Print Dialog Opened` | Did a sheet reach the printer? |
+| `Second Print Page Generated` | Is a visit assembling more than one sheet? |
+| `Songbook Created` | Did a set of sheets come into being? |
+| `Songbook Created From Offer` | Did the suggestion produce that set? |
+| `Songbook Printed` | Did a set reach the printer as one job? |
+
+### Why these are goals and not properties
+
+This site's Plausible plan does not include custom properties, so an event's
+name is the only dimension the dashboard can read. Every split that would
+otherwise be a property is its own goal instead.
+
+The application still sends `entry_method`, `songbook_size`, `songbook_origin`,
+`campaign_source`, `campaign_name`, and `page_count_in_session` with events.
+**None of them can be read on this plan, and no reading below depends on them.**
+They are left in place so that a plan change activates them without a code
+change. Until then they are inert, and payload inspection cannot verify them in
+the dashboard.
+
+Two of the goals are subsets of another, which is how a total and a split are
+read without properties:
+
+- `Second Print Page Generated` is the subset of `Print Page Generated` at the
+  second distinct sheet of a visit.
+- `Songbook Printed` is the subset of `Print Dialog Opened` where the printed
+  surface was a set. `Print Dialog Opened` still counts every print, so its
+  series and its 90-day target stay continuous.
+- `Songbook Created From Offer` is the subset of `Songbook Created` where the
+  suggestion started the set. The offer's conversion rate is one over the other.
+
+A songbook counts as a set from its second song. `Songbook Created` is pinned to
+that threshold rather than to the row being inserted, because the row is created
+by a click: a one-song songbook is a draft, and a visitor who starts one and
+leaves is not counted as having made a set.
 
 Do not constrain these goals with song titles, artist names, source IDs, lyric
-tokens, or URLs. The application sends only low-cardinality workflow properties:
-`entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`,
-`campaign_name`, and `page_count_in_session`.
-
-`page_count_in_session` is a bucket — `1`, `2`, `3-5`, or `6+` — reporting how
-many distinct print pages the visit had generated when the event fired. It is a
-running count, not a final total, so read the highest bucket a session reached
-rather than the value on any single event. Both `Print Page Generated` and
-`Print Dialog Opened` carry it.
-
-A songbook — the ordered set of pages a visit assembles and prints as one job —
-is reported at both ends of its life:
-
-- `Songbook Created` fires once for the moment a set came into being, on the
-  visit that crossed the threshold, and never on a later visit to the same set.
-- Printing a set reuses `Print Dialog Opened`, read through `entry_method`.
-
-`entry_method` is `print_page` for a single generated sheet and `songbook` for a
-set. Compare the two to see whether the set surface is actually used.
-
-`songbook_size` is a `2`, `3-5`, `6+` bucket — the same shape as
-`page_count_in_session` — reporting how many songs the set held when the event
-fired. `Songbook Created` and a songbook print both carry it, so creation and
-printing can be compared at matching sizes.
-
-A songbook counts as a set from its second song, and `Songbook Created` is
-pinned to that threshold rather than to the row being inserted. A one-song
-songbook is a draft: it reports nothing until a second song arrives, so a
-visitor who starts one and leaves is not counted as having made a set.
-
-`Songbook Created` also carries `songbook_origin`, which says which route
-started the set:
-
-- `offer` — the visitor accepted the suggestion on a second sheet, gathering the
-  sheets they had already made.
-- `add_song` — the visitor added a song to a set through the entry form.
-
-Those two values exist on no other event, and they are the only direct read of
-whether the nudge works. Everything else measures the feature without it.
-
-A set printed as a single sheet reports `songbook_size: 1`. Read that as a
-visitor who has not finished the set, or who removed a song, rather than as an
-ordinary single-page print.
-
-These properties do not appear in the dashboard on their own. In
-**Settings > Custom Properties**, add each one above, or use the one-click
-option to add every property the site has already sent. Until they are
-configured, the events still count as goals but carry no readable breakdown, and
-every answer this document derives from a property — page count, set size, print
-surface, and the offer's origin — is unavailable.
-
-Custom properties are a Plausible plan feature rather than a default. Confirm
-the section is present before relying on any property reading here; if it is
-not, the events still count but only their names are meaningful.
+tokens, or URLs, and never send lyrics, titles, or real share tokens in an event
+payload.
 
 Turn off Plausible's automatic goals — **Form submissions**, **File downloads**,
 **Outbound links**, and **404** — under **Settings > General > Default
@@ -132,26 +117,23 @@ search form, each result button, and the generate form all post), so it does not
 describe any single product step, and it counts toward billable pageviews.
 PrintLyrics sends none of these events from application code.
 
-Campaign properties are retained in session storage after a visitor arrives on
-an allowlisted campaign URL. Supported launch values are:
-
-- `utm_source`: `church`, `email`, `facebook`, `musician`, `outreach`, `reddit`,
-  or `teacher`
-- `utm_campaign`: `large_print`, `singer_rehearsal`, `teacher_handouts`, or
-  `worship_handouts`
-
-`AnalyticsCampaigns` is the source of truth for both lists; it is rendered into
-the page and read by `app/javascript/lib/analytics.js`. Change that object and
-this section together.
-
-For example:
+Campaign performance is read from Plausible's own attribution, not from the
+application. Plausible records `utm_source`, `utm_medium`, and `utm_campaign`
+from the landing URL and attributes the visit to them, so a goal inherits that
+attribution and can be filtered by source or channel with no application
+support:
 
 ```text
 https://printlyrics.app/?utm_source=outreach&utm_campaign=worship_handouts
 ```
 
-Unknown values are ignored so arbitrary query-string content cannot become an
-analytics property.
+The application additionally keeps an allowlisted copy of those values in
+session storage and sends them as `campaign_source` and `campaign_name`
+properties. Those properties cannot be read on this plan, and performance comes
+from the native attribution above, so the machinery has no effect:
+`AnalyticsCampaigns` holds the allowlists and is rendered into the page for
+`app/javascript/lib/analytics.js`. Nothing in this document depends on it, and it
+is a candidate for removal.
 
 Plausible requires received events to be configured as goals before they appear
 as conversions; see its [custom-event goal documentation](https://plausible.io/docs/custom-event-goals).
@@ -188,29 +170,29 @@ filter for Plausible event requests and preserve the log across navigation.
    visit must send exactly one pageview.
 3. Search for a song and select a result. Confirm neither action sends a custom
    event. Generate the print page and confirm `Print Page Generated` arrives
-   once and carries `page_count_in_session: "1"`.
+   once.
 4. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
-   browser invokes its native print dialog, and that it carries the same
-   bucket. Canceling the dialog is sufficient.
+   browser invokes its native print dialog, and that `Songbook Printed` is not
+   sent, because a single sheet is not a set. Canceling the dialog is
+   sufficient.
 5. Without closing the tab, generate a second song's print page. Confirm
-   `Print Page Generated` now carries `page_count_in_session: "2"` and that
    `Second Print Page Generated` arrives exactly once. Generate a third song and
    confirm it does not arrive again. Reloading the first page must not add a
    count either.
 6. On that second sheet, confirm the songbook suggestion appears with both
    sheets counted, then choose **Make a songbook**. Confirm the set opens with
    every sheet in generation order, that it lists each song, and that exactly
-   one `Songbook Created` arrives carrying `songbook_size: "2"` and
-   `songbook_origin: "offer"`. The suggestion itself sends no event, and
-   **Not now** must send none either. Reloading the set must not report the
-   creation a second time.
+   one `Songbook Created` and one `Songbook Created From Offer` arrive. The
+   suggestion itself sends no event, and **Not now** must send none either.
+   Reloading the set must report neither again.
 7. From a generated page, choose **Add another song**, add a second song, and
    print the set. Confirm exactly one `Songbook Created` arrives for the second
-   song with `songbook_origin: "add_song"`, and exactly one
-   `Print Dialog Opened` for the whole set, carrying `entry_method: "songbook"`
-   and `songbook_size: "2"`, and that the print preview shows one sheet per
-   song. Adding a third song must not report the creation again.
-8. Confirm no other custom event arrives. The application emits exactly four
+   song and no `Songbook Created From Offer`, because a set built by adding a
+   song did not come from the suggestion. Confirm printing sends one
+   `Print Dialog Opened` and one `Songbook Printed`, and that the print preview
+   shows one sheet per song. Adding a third song must not report the creation
+   again.
+8. Confirm no other custom event arrives. The application emits exactly six
    event names, so an unexpected one means stale instrumentation or an automatic
    goal still enabled in site settings.
 9. Inspect every event payload. A saved page must report the synthetic location
@@ -229,25 +211,25 @@ page was printed.
 a second distinct print page. It is a leading indicator that someone is preparing
 several songs at once, which is the case a single-sheet tool serves poorly.
 
-`Print Dialog Opened` with `entry_method: songbook` is the signal that the
-packet actually became one print job. Compare its volume against
-`Second Print Page Generated`: a persistent gap means visitors still assemble
-sets by hand, and a closing gap means the songbook surface absorbed the work.
+`Songbook Printed` is the subset of `Print Dialog Opened` where the printed
+surface was a set, so it is the signal that a packet became one print job.
+Compare it against `Second Print Page Generated`: a persistent gap means visitors
+are still assembling sets by hand, and a closing gap means the songbook surface
+absorbed the work. `Print Dialog Opened` minus `Songbook Printed` is the
+single-sheet prints, which no goal reports directly.
 
 The sheet that is generated second in a tab offers the visitor the sheets it
 already has, as a songbook, so the offer and `Second Print Page Generated` fire
 from the same moment. Neither the offer nor its dismissal sends an event.
 
-Read the offer's conversion as `Songbook Created` filtered to
-`songbook_origin: offer`, against the opportunities it had.
-`Second Print Page Generated` counts visits that made a second sheet, by any
-route, so it is the denominator: the share of those visits that produce an
-`offer` set is the offer's conversion rate.
+Read the offer's conversion as `Songbook Created From Offer` over
+`Songbook Created`. `Second Print Page Generated` counts visits that made a
+second sheet, by any route, so it is the denominator for how much of that demand
+the suggestion reaches at all.
 
-A low `offer` share next to a healthy `add_song` share means the set surface is
-being found without the nudge doing any work, and the suggestion is the part to
-change. Both shares falling together means the set surface itself is not
-landing.
+A low offer share next to a healthy remainder means the set surface is being
+found without the nudge doing any work, and the suggestion is the part to
+change. Both falling together means the set surface itself is not landing.
 
 If an event is missing, first check the browser request, content blocking, the
 exact goal spelling, and whether the production asset release is current. If
@@ -294,9 +276,9 @@ On launch day, record zero or current values for the previous 30 days:
 | `Print Dialog Opened` from organic visits | Plausible goal |
 | Generated-to-dialog conversion rate | Plausible goals/funnel |
 | `Second Print Page Generated` from organic visits | Plausible goal |
-| Share of generating sessions that reach a second sheet | `page_count_in_session` on `Print Page Generated` |
-| Sets printed as one job, and their size | `entry_method` and `songbook_size` on `Print Dialog Opened` |
-| `Songbook Created`, by size | Plausible goal, `songbook_size` |
+| Share of generating visits that reach a second sheet | Plausible goal `Second Print Page Generated` |
+| Sets printed as one job | Plausible goal `Songbook Printed` |
+| Sets created, and how many came from the suggestion | Plausible goals `Songbook Created` and `Songbook Created From Offer` |
 
 At 30 days, confirm the instrumentation is reliable before changing any target.
 Review query intent, indexed surfaces, impressions, clicks, both completion
@@ -402,6 +384,6 @@ the withdrawn URLs leave the index.
 A second operator, or the site owner in a separate walkthrough, checks each
 launch-record row using only this document. Record their name, date, omissions,
 and corrections in the launch issue. U6 is operationally ready when that person
-can reproduce the Search Console property and sitemap submission, all four
+can reproduce the Search Console property and sitemap submission, all six
 Plausible goals, the organic segment, the baseline, the review dates, and every
 recovery path without undocumented knowledge.

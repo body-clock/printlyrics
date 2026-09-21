@@ -52,6 +52,12 @@ export function trackGeneratedPage() {
 // that threshold and renders this marker on the visit that crossed it, so the
 // event reports a set coming into being rather than every later visit to it. The
 // origin says which route started it: the offer, or a song added to a set.
+//
+// The route is also its own event, because this plan's Plausible has no custom
+// properties: `songbook_origin` cannot be read from the dashboard, so the offer
+// only stays visible as a goal. `Songbook Created` is the total, and
+// `Songbook Created From Offer` is the subset the nudge produced, so the two
+// numbers behind the offer's conversion rate are both direct.
 export function trackCreatedSongbook() {
   const { createdSongbookSize, createdSongbookOrigin } = document.body.dataset
   if (!createdSongbookSize) return
@@ -60,6 +66,7 @@ export function trackCreatedSongbook() {
     ...songbookSizeProperties(Number(createdSongbookSize)),
     ...(createdSongbookOrigin && { songbook_origin: createdSongbookOrigin })
   })
+  if (createdSongbookOrigin === "offer") trackEvent("Songbook Created From Offer")
 }
 
 // A printed set is a different act from printing one sheet, and how many songs

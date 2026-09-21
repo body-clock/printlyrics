@@ -181,6 +181,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert native_print_index
     assert_operator print_event_index, :<, native_print_index
     assert_equal "1", calls.dig(print_event_index, 2, "props", "page_count_in_session")
+    # A single sheet is not a set print.
+    assert_nil calls.index { |call| call[1] == "Songbook Printed" }
   end
 
   test "restoring a generated page does not duplicate its generation event" do
@@ -349,12 +351,14 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal 1, created_songbook_calls.length
     assert_equal "2", created_songbook_calls.first.dig(1, "props", "songbook_size")
     assert_equal "offer", created_songbook_calls.first.dig(1, "props", "songbook_origin")
+    assert_equal 1, analytics_calls_named("Songbook Created From Offer").length
 
     # Returning to the same set later is not another creation.
     set_path = current_path
     page.execute_script("Turbo.visit(#{set_path.to_json})")
     assert_selector ".songbook-track", count: 2
     assert_equal 1, created_songbook_calls.length
+    assert_equal 1, analytics_calls_named("Songbook Created From Offer").length
   end
 
   test "a set built by adding a song records its creation once" do
@@ -373,6 +377,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal 1, created_songbook_calls.length
     assert_equal "2", created_songbook_calls.first.dig(1, "props", "songbook_size")
     assert_equal "add_song", created_songbook_calls.first.dig(1, "props", "songbook_origin")
+    # A set built by adding a song is the total only, never the offer subset.
+    assert_empty analytics_calls_named("Songbook Created From Offer")
 
     click_link "Add a song"
     fill_in "Lyrics", with: "Third song line"
@@ -549,6 +555,13 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal "songbook", calls.dig(print_event_index, 2, "props", "entry_method")
     assert_equal "2", calls.dig(print_event_index, 2, "props", "songbook_size")
 
+    # Printing a set is also its own goal, which is the only way it stays
+    # readable without custom properties.
+    set_print_index = calls.index { |call| call[1] == "Songbook Printed" }
+    assert set_print_index
+    assert_operator set_print_index, :<, native_print_index
+    assert_equal 1, calls.count { |call| call[1] == "Songbook Printed" }
+
     # The generation funnel keeps reporting its buckets from the new surface.
     generated = captured_analytics_calls.select { |call| call[0] == "Print Page Generated" }
     assert_equal [ "1", "2" ], generated.map { |call| call.dig(1, "props", "page_count_in_session") }
@@ -628,6 +641,10 @@ class OrganicConversionTest < ApplicationSystemTestCase
   end
 
   def created_songbook_calls
-    captured_analytics_calls.select { |call| call[0] == "Songbook Created" }
+    analytics_calls_named("Songbook Created")
+  end
+
+  def analytics_calls_named(name)
+    captured_analytics_calls.select { |call| call[0] == name }
   end
 end

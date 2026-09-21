@@ -42,11 +42,19 @@ export default class extends Controller {
 
   print() {
     const songbookSize = Number(this.element.dataset.songbookSize || 0)
+    const isSet = songbookSize > 0
+
     trackEvent("Print Dialog Opened", {
-      entry_method: songbookSize > 0 ? "songbook" : "print_page",
-      ...(songbookSize > 0 ? songbookSizeProperties(songbookSize) : {}),
+      entry_method: isSet ? "songbook" : "print_page",
+      ...(isSet ? songbookSizeProperties(songbookSize) : {}),
       ...sessionPageCountProperties()
     })
+
+    // Printing a set is its own goal as well as part of every print, so the
+    // total stays continuous while the set prints stay countable. This plan has
+    // no custom properties, so `entry_method` alone would leave them invisible.
+    if (isSet) trackEvent("Songbook Printed", songbookSizeProperties(songbookSize))
+
     window.print()
   }
 
