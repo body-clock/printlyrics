@@ -14,10 +14,12 @@ en:
     errors:
       blank: "Please paste your lyrics"
       expired: "That lyric page expired or wasn't found"
+      metadata: "That song's details couldn't be saved. Your lyrics are ready to generate as a manual page."
     search:
       status:
         one: "1 match found. Choose a song."
         other: "%{count} matches found. Choose a song."
+      empty: "No matches found. Check the spelling or paste your lyrics below."
     new:
       seo:
         title: "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_14_190219) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_21_001357) do
   create_table "lyrics", force: :cascade do |t|
     t.string "artist", limit: 200
     t.datetime "created_at", null: false
@@ -33,12 +33,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_190219) do
     t.integer "duration_seconds"
     t.datetime "last_verified_at"
     t.integer "print_page_count", default: 0, null: false
-    t.string "slug", null: false
     t.integer "source_id", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.index ["last_verified_at"], name: "index_songs_on_last_verified_at"
-    t.index ["slug"], name: "index_songs_on_slug", unique: true
     t.index ["source_id"], name: "index_songs_on_source_id", unique: true
   end
 

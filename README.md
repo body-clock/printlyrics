@@ -36,9 +36,9 @@ user generates the print page.
 
 ## Retention
 
-Generated pages expire 180 days after their last visit. Visits renew the
-retention window, and creating a new page purges expired records. The same
-cleanup can be run explicitly:
+Generated pages expire 180 days after their last visit, and visits renew the
+retention window. Nothing purges expired rows on its own: cleanup is the
+explicit task below, which the `kamal purge` alias runs against production.
 
 ```sh
 bin/rails lyrics:purge_expired

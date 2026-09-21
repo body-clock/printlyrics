@@ -27,7 +27,7 @@
 <% content_for :body_class, "preview-body" %>
 <% content_for :generated_page_key, @generated_page_key if @generated_page_key %>
 <% content_for :head do %>
-  <script type="application/ld+json"><%= raw json_escape(structured_data.to_json) %></script>
+  <%= render "shared/structured_data", structured_data: structured_data %>
 <% end %>
 
 <div class="preview-shell"

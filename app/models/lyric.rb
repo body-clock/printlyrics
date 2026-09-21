@@ -7,6 +7,7 @@ class Lyric < ApplicationRecord
 
   validates :lyrics, presence: true
   validates :token, presence: true, uniqueness: true, length: { is: 16 }
+  validates :title, :artist, length: { maximum: 200 }, allow_blank: true
   validates :source_url, length: { maximum: 2_048 }, allow_blank: true
 
   scope :active, -> { where("expires_at > ?", Time.current) }

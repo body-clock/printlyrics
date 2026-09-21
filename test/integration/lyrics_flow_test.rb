@@ -221,6 +221,10 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_select "textarea[name='lyric[lyrics]']", /Love, rising/
     assert_select "input[name='lyric[source_url]']", count: 0
+    # Retrying the same verified metadata can only fail again, so the form
+    # drops the token and offers manual entry instead.
+    assert_select "input[type='hidden'][name='catalog_token']", count: 0
+    assert_select "[role='alert']", /couldn't be saved/
   end
 
   test "sourced submission does not round trip a source URL through the form" do
@@ -272,6 +276,20 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :service_unavailable
     assert_select "#song-search-results [role='alert']", /Song search is temporarily unavailable/
+  end
+
+  test "search with no matches reports the empty result set" do
+    client = Object.new
+    client.define_singleton_method(:search) { |_| [] }
+
+    with_lrc_lib_client(client) do
+      post search_lyrics_path, params: { query: "a song nobody wrote" }
+    end
+
+    assert_response :success
+    assert_select "#song-search-results [role='status']", /No matches found/
+    assert_select "input[name='query'][aria-controls='song-search-results']"
+    assert_select "form[action='#{select_lyrics_path}']", count: 0
   end
 
   test "shareable page renders stanzas controls and structured metadata" do
@@ -355,15 +373,6 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
   end
 
   private
-
-  def with_lrc_lib_client(client)
-    LyricsController.alias_method :__original_lrc_lib_client, :lrc_lib_client
-    LyricsController.define_method(:lrc_lib_client) { client }
-    yield
-  ensure
-    LyricsController.alias_method :lrc_lib_client, :__original_lrc_lib_client
-    LyricsController.remove_method :__original_lrc_lib_client
-  end
 
   def app_version
     Rails.root.join("version.txt").read.strip
