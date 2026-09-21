@@ -54,9 +54,14 @@ class LyricTest < ActiveSupport::TestCase
     end
   end
 
-  test "declares title and artist bounds in the database schema" do
-    assert_equal 200, Lyric.columns_hash.fetch("title").limit
-    assert_equal 200, Lyric.columns_hash.fetch("artist").limit
+  test "bounds display metadata to the declared column limits" do
+    assert Lyric.new(lyrics: "A line", title: "T" * 200, artist: "A" * 200).valid?
+
+    lyric = Lyric.new(lyrics: "A line", title: "T" * 201, artist: "A" * 201)
+
+    refute lyric.valid?
+    assert_includes lyric.errors[:title], "is too long (maximum is 200 characters)"
+    assert_includes lyric.errors[:artist], "is too long (maximum is 200 characters)"
   end
 
   test "renew retention finds an active page and returns it" do

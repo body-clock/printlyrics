@@ -17,12 +17,20 @@ class SongSearchTest < ActiveSupport::TestCase
       search.errors.first.message
   end
 
-  test "service failure uses the shared localized error" do
+  test "source failures propagate for callers to translate" do
     client = Object.new
     client.define_singleton_method(:search) { |_| raise LrcLibClient::ServiceError }
     search = SongSearch.new(query: "a song")
 
-    assert_not search.perform(client: client)
-    assert_equal I18n.t("songs.errors.service"), search.error_message
+    assert_raises(LrcLibClient::ServiceError) { search.perform(client: client) }
+  end
+
+  test "empty reports a completed search with no matches" do
+    client = Object.new
+    client.define_singleton_method(:search) { |_| [] }
+    search = SongSearch.new(query: "a song nobody wrote")
+
+    assert search.perform(client: client)
+    assert search.empty?
   end
 end

@@ -1,3 +1,5 @@
+import { sessionStore } from "lib/settings_store"
+
 const TOKEN_PATH = /^\/lyrics\/[^/]+$/
 const GENERATED_KEY_PREFIX = "printlyrics:generated:"
 const SESSION_PAGE_COUNT_KEY = "printlyrics:session-pages"
@@ -35,10 +37,11 @@ export function trackGeneratedPage() {
   const pageKey = document.body.dataset.generatedPageKey
   if (!pageKey) return
 
+  const store = sessionStore()
   const storageKey = `${GENERATED_KEY_PREFIX}${pageKey}`
-  if (sessionStorage.getItem(storageKey)) return
+  if (store.get(storageKey)) return
 
-  sessionStorage.setItem(storageKey, "1")
+  store.set(storageKey, "1")
   const count = bumpSessionPageCount()
   trackEvent("Print Page Generated", sessionPageCountProperties(count))
   if (count === 2) trackEvent("Second Print Page Generated")
@@ -51,20 +54,13 @@ export function sessionPageCountProperties(count = sessionPageCount()) {
 }
 
 function sessionPageCount() {
-  try {
-    return Number(sessionStorage.getItem(SESSION_PAGE_COUNT_KEY)) || 0
-  } catch {
-    return 0
-  }
+  return Number(sessionStore().get(SESSION_PAGE_COUNT_KEY)) || 0
 }
 
 function bumpSessionPageCount() {
   const next = sessionPageCount() + 1
-  try {
-    sessionStorage.setItem(SESSION_PAGE_COUNT_KEY, String(next))
-  } catch {
-    // Degraded mode — the count stalls, but events still report.
-  }
+  // Degraded mode — the count stalls, but events still report.
+  sessionStore().set(SESSION_PAGE_COUNT_KEY, String(next))
   return next
 }
 
@@ -75,13 +71,19 @@ function pageCountBucket(count) {
   return "6+"
 }
 
+// Telemetry never interrupts a product action: unavailable storage or a
+// throwing third-party stub must not stop the print dialog from opening.
 function dispatch(name, props = {}) {
   if (typeof window.plausible !== "function") return
 
-  const options = { url: analyticsUrl() }
-  const eventProps = { ...campaignProps(), ...props }
-  if (Object.keys(eventProps).length > 0) options.props = eventProps
-  window.plausible(name, options)
+  try {
+    const options = { url: analyticsUrl() }
+    const eventProps = { ...campaignProps(), ...props }
+    if (Object.keys(eventProps).length > 0) options.props = eventProps
+    window.plausible(name, options)
+  } catch {
+    // Ignore analytics failures.
+  }
 }
 
 export function captureCampaign() {
@@ -91,7 +93,7 @@ export function captureCampaign() {
   const campaign = allowedValue(params.get("utm_campaign"), campaigns)
   if (!source && !campaign) return
 
-  sessionStorage.setItem(CAMPAIGN_KEY, JSON.stringify({
+  sessionStore().set(CAMPAIGN_KEY, JSON.stringify({
     ...(source && { campaign_source: source }),
     ...(campaign && { campaign_name: campaign })
   }))
@@ -114,10 +116,11 @@ function campaignValues() {
 }
 
 function campaignProps() {
+  const store = sessionStore()
   try {
-    return JSON.parse(sessionStorage.getItem(CAMPAIGN_KEY)) || {}
+    return JSON.parse(store.get(CAMPAIGN_KEY)) || {}
   } catch {
-    sessionStorage.removeItem(CAMPAIGN_KEY)
+    store.remove(CAMPAIGN_KEY)
     return {}
   }
 }

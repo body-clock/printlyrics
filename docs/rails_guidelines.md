@@ -48,10 +48,11 @@
   catalog metadata from `SongCatalogToken`, not submitted source URLs or hidden
   metadata fields. Preserve signature purpose and expiration checks; invalid
   or expired catalog tokens fall back to an unattributed manual page.
-- Keep saved display text separate from verified catalog metadata. Creating a
-  sourced lyric and promoting its song must succeed together. Preserve the
-  transaction, uniqueness handling, and concurrency protection in
-  `LyricPageCreation` when changing this workflow.
+- Keep saved display text separate from verified catalog metadata, and bound
+  title and artist to the same 200-character limits in both. Creating a sourced
+  lyric and promoting its song must succeed together. Preserve the transaction,
+  uniqueness handling, and concurrency protection in `LyricPageCreation` when
+  changing this workflow.
 - Saved pages use opaque tokens, remain `noindex, nofollow`, and never appear
   in the sitemap. Tokens are shareable URLs, not an authentication system.
 - Active page visits renew the 180-day retention window. Expired or unknown
@@ -71,10 +72,10 @@
   and read timeouts, response-shape validation, and distinct not-found and
   temporary-service errors.
 - Treat `LrcLibClient::NotFoundError` and `LrcLibClient::ServiceError` as the
-  shared source vocabulary: `SongLookup`, `SongSearch`, and `SongCatalogVerifier`
-  let them propagate and callers translate them into user copy and HTTP status.
-  Do not add a parallel error hierarchy or wrap errors into status symbols inside
-  domain objects.
+  shared source vocabulary: `SongLookup` and `SongSearch` let them propagate and
+  controllers translate them into user copy and HTTP status. Do not add a
+  parallel error hierarchy or wrap errors into status symbols inside domain
+  objects.
 - Use the fixed LRCLIB base URL and validated source IDs. A pasted source URL
   is not authorization to fetch an arbitrary destination.
 - Preserve plain-lyrics preference, synced-lyrics timestamp removal,
@@ -114,8 +115,8 @@
 - Generate migrations with `bin/rails generate migration`; use SQLite-compatible
   schema and query behavior. Commit the resulting `db/schema.rb` changes.
 - Back important invariants with database constraints and indexes, especially
-  token, slug, and source-ID uniqueness. Model validation alone is insufficient
-  under concurrent requests.
+  token and source-ID uniqueness. Model validation alone is insufficient under
+  concurrent requests.
 - Use short transactions with bang writes or explicit failure handling for
   atomic changes. Keep external network calls outside database transactions.
 - Keep simple reusable filters in scopes and complex queries in cohesive
@@ -139,8 +140,10 @@
   Use unsaved objects when persistence is unnecessary. Do not introduce
   factories or RSpec just to add coverage.
 - Stub HTTP at the client boundary. Client tests use Faraday's test adapter;
-  higher-level tests inject small fake clients. Do not assume WebMock is
-  installed or that the suite globally blocks network access.
+  higher-level tests inject small fake clients through the `with_lrc_lib_client`
+  helper, which swaps the controller's client factory. Do not assume WebMock is
+  installed or that the suite globally blocks network access, and do not redefine
+  controller methods to inject a client.
 - Cover relevant failure paths: malformed or unavailable source data, invalid
   catalog tokens, failed atomic saves, expiration boundaries, and transient
   source failures. Use Rails time helpers for deterministic time tests.

@@ -285,7 +285,6 @@ Review these symptoms weekly during the first 90 days:
 | Saved lyric URL is indexed | Verify `noindex`, sitemap exclusion, and request recrawl |
 | Impressions rise but completions do not | Compare entry pages and funnel drop-off; improve the tool path |
 | Events disappear or duplicate | Repeat production smoke test and repair measurement before analysis |
-| Verifier has repeated failures | Reduce batch, inspect source health, retry safely after recovery |
 | Takedown or source complaint | Remove the affected public song from discovery and preserve the private saved-page contract pending review |
 
 Keeping lyrics out of indexable responses reduces exposure; it is not legal

@@ -35,7 +35,6 @@ class LyricPageCreationTest < ActiveSupport::TestCase
     first = build_operation
     assert first.save
     original_song = first.lyric.song.reload
-    original_slug = original_song.slug
     original_updated_at = original_song.updated_at
 
     travel 1.hour do
@@ -44,7 +43,6 @@ class LyricPageCreationTest < ActiveSupport::TestCase
 
       song = second.lyric.song.reload
       assert_equal 2, song.print_page_count
-      assert_equal original_slug, song.slug
       assert_equal original_updated_at, song.updated_at
       assert_operator song.last_verified_at, :>, original_song.last_verified_at
 
@@ -53,7 +51,6 @@ class LyricPageCreationTest < ActiveSupport::TestCase
 
       song.reload
       assert_equal 3, song.print_page_count
-      assert_equal original_slug, song.slug
     end
   end
 

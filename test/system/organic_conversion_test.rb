@@ -274,6 +274,38 @@ class OrganicConversionTest < ApplicationSystemTestCase
     )
   end
 
+  test "printing and pagination survive blocked browser storage" do
+    # A browser that blocks storage throws on the property itself and on every
+    # method call, which used to take the preview and the print dialog with it.
+    inject_on_new_document(<<~JS)
+      for (const name of ["localStorage", "sessionStorage"]) {
+        Object.defineProperty(window, name, {
+          configurable: true,
+          get() { throw new DOMException("storage blocked", "SecurityError") }
+        })
+      }
+      for (const method of ["getItem", "setItem", "removeItem"]) {
+        Object.defineProperty(Storage.prototype, method, {
+          configurable: true,
+          value() { throw new DOMException("storage blocked", "SecurityError") }
+        })
+      }
+      window.__printed = false
+      window.print = () => { window.__printed = true }
+    JS
+
+    visit root_path
+    fill_in "Lyrics", with: "First line"
+    click_button "Generate print page"
+
+    assert_text "First line"
+    assert_selector "[data-preview-page]", count: 1
+    assert_selector ".page-summary", text: /1 page/
+
+    click_button "Print"
+    assert page.evaluate_script("window.__printed")
+  end
+
   private
 
   def preview_layout
@@ -321,10 +353,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   def install_persistent_analytics_capture
     page.execute_script("sessionStorage.removeItem('test:analyticsCalls')")
-    page.driver.browser.execute_cdp(
-      "Page.addScriptToEvaluateOnNewDocument",
-      source: analytics_capture_source
-    )
+    inject_on_new_document(analytics_capture_source)
   end
 
   def analytics_capture_source
@@ -341,14 +370,5 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   def captured_analytics_calls
     JSON.parse(page.evaluate_script("sessionStorage.getItem('test:analyticsCalls') || '[]'"))
-  end
-
-  def with_lrc_lib_client(client)
-    LyricsController.alias_method :__original_lrc_lib_client, :lrc_lib_client
-    LyricsController.define_method(:lrc_lib_client) { client }
-    yield
-  ensure
-    LyricsController.alias_method :lrc_lib_client, :__original_lrc_lib_client
-    LyricsController.remove_method :__original_lrc_lib_client
   end
 end
