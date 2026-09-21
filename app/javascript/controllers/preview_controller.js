@@ -51,8 +51,9 @@ export default class extends Controller {
     })
 
     // Printing a set is its own goal as well as part of every print, so the
-    // total stays continuous while the set prints stay countable. This plan has
-    // no custom properties, so `entry_method` alone would leave them invisible.
+    // total stays continuous while the set prints stay countable. Plausible's
+    // plan has no custom properties, so `entry_method` alone would leave them
+    // invisible there; GA4 reports the parameter.
     if (isSet) trackEvent("Songbook Printed", songbookSizeProperties(songbookSize))
 
     window.print()

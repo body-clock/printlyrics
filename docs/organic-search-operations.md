@@ -16,6 +16,7 @@ Copy this table into the launch issue and fill every field.
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
 | Plausible goals | Site owner | All six exact event names exist, automatic goals off | |
+| Google Analytics dual run | Site owner | Six key events arrive with `GA_MEASUREMENT_ID` set, enhanced measurement off | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
@@ -85,10 +86,9 @@ otherwise be a property is its own goal instead.
 
 The application still sends `entry_method`, `songbook_size`, `songbook_origin`,
 `campaign_source`, `campaign_name`, and `page_count_in_session` with events.
-**None of them can be read on this plan, and no reading below depends on them.**
-They are left in place so that a plan change activates them without a code
-change. Until then they are inert, and payload inspection cannot verify them in
-the dashboard.
+**Plausible cannot read any of them on this plan, and no reading below depends on
+them here.** The Google Analytics dual run reports all six as custom dimensions,
+which is why the dual run exists.
 
 Two of the goals are subsets of another, which is how a total and a split are
 read without properties:
@@ -161,7 +161,9 @@ individual visitors.
 ### Production event smoke test
 
 Use a normal production browser with developer tools open. In the Network tab,
-filter for Plausible event requests and preserve the log across navigation.
+filter for the destination you are checking — `plausible.io` and
+`google-analytics.com` while the dual run lasts — and preserve the log across
+navigation.
 
 1. Arrive from a real search-result click when practical. For a controlled
    transport test, use a search-engine referrer, but do not count that test in
@@ -202,6 +204,19 @@ filter for Plausible event requests and preserve the log across navigation.
    contain lyrics, song title, artist, album, or source ID.
 10. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
     Search** segment after a genuine organic visit and confirm its attribution.
+11. Confirm the same flow reaches GA4. Filter the Network tab for
+    `google-analytics.com/g/collect` and check that every step above sent its
+    event under the **GA4 event** name from the key-event table and that each
+    request's `dl` (document location), `dt` (document title), and `dr` (document
+    referrer) read `/lyrics/:token` or `/songbooks/:token` on saved surfaces.
+    Then open **Reports > Realtime** in GA4 and read the events there within 30
+    minutes. A song title, an artist, or a real token in any request is the
+    privacy incident below; check **Enhanced measurement** in the data stream
+    first, then the redaction in `app/javascript/lib/analytics.js`.
+
+Both destinations run at once during the dual run, so every check above has to
+pass twice: a step that reaches only one of them is an unfinished migration, not
+a partial success.
 
 `Print Dialog Opened` is the product's **organic print completion** proxy. It
 means the visitor opened the browser dialog; it does not prove that a physical
@@ -238,7 +253,114 @@ lifecycle before collecting a baseline. If a real token or song metadata is
 present, treat it as a privacy incident: disable the affected instrumentation,
 deploy the redaction fix, and exclude the contaminated test period. The
 `analyticsUrl` helper in `app/javascript/lib/analytics.js` is the single place
-that rewrites tokens, so a new token-addressed surface must be added there.
+that rewrites tokens, and the title and referrer GA4 reports are derived from it,
+so a new token-addressed surface must be added there.
+
+### Google Analytics dual run
+
+Google Analytics 4 measures beside Plausible until the cutover below. It is the
+only reason the `entry_method`, `songbook_size`, `songbook_origin`,
+`campaign_source`, `campaign_name`, and `page_count_in_session` parameters the
+application has always sent can be read: GA4 reports them as custom dimensions at
+no cost, where this Plausible plan drops them.
+
+The tag renders only when `GA_MEASUREMENT_ID` is set. That value lives under
+`env.clear` in `config/deploy.yml`, because a measurement ID is public — it is in
+the page source. A blank value renders no Google tag at all.
+
+1. Create a GA4 property for `printlyrics.app` with a Web data stream for
+   `printlyrics.app`, and copy the stream's measurement ID (`G-XXXXXXXXXX`).
+2. Set `GA_MEASUREMENT_ID` in `config/deploy.yml` to that value and deploy.
+3. **Admin > Data collection > Data retention**: set event and user data
+   retention to 14 months. The default is 2 months.
+4. **Admin > Data streams > (stream) > Enhanced measurement**: turn every toggle
+   off. Pageviews are sent by the application, and each remaining automatic event
+   would report the document's own URL and title, which is exactly what the
+   redaction in `app/javascript/lib/analytics.js` exists to prevent.
+5. Leave **Google signals** off under **Admin > Data collection > Google
+   signals**. The application disables Google signals and ad personalization in
+   the tag configuration as well: at this traffic volume they are mostly
+   thresholded out of reports, and they are what makes the property need consent.
+6. **Admin > Data display > Custom definitions**: add these event-scoped custom
+   dimensions, each with the exact parameter name.
+
+   | Dimension name | Event parameter |
+   | --- | --- |
+   | Entry method | `entry_method` |
+   | Songbook size | `songbook_size` |
+   | Songbook origin | `songbook_origin` |
+   | Campaign source | `campaign_source` |
+   | Campaign name | `campaign_name` |
+   | Pages in session | `page_count_in_session` |
+
+7. **Admin > Data display > Key events**: register every event the runbook counts.
+   GA4 rejects spaces in event names, so `app/javascript/lib/analytics.js` maps
+   the product's names to these.
+
+   | Plausible goal | GA4 event | Question it answers |
+   | --- | --- | --- |
+   | `Print Page Generated` | `print_page_generated` | Did the tool produce a sheet? |
+   | `Print Dialog Opened` | `print_dialog_opened` | Did a sheet reach the printer? |
+   | `Second Print Page Generated` | `second_print_page_generated` | Is a visit assembling more than one sheet? |
+   | `Songbook Created` | `songbook_created` | Did a set of sheets come into being? |
+   | `Songbook Created From Offer` | `songbook_created_from_offer` | Did the suggestion produce that set? |
+   | `Songbook Printed` | `songbook_printed` | Did a set reach the printer as one job? |
+
+   `page_view` is the seventh event the application sends, and GA4 counts it
+   without registration — one per Turbo visit, emitted by the application so the
+   token path stays redacted.
+
+8. Build the organic view. GA4 has no saved segments: in **Reports >
+   Acquisition**, add a comparison with **Session default channel group** `is`
+   **Organic Search**, and save it as a report comparison. Build the funnel in
+   **Explore > Funnel exploration** from `print_page_generated` to
+   `print_dialog_opened`, set to open, because a manual-entry visitor can enter at
+   the first step.
+
+Campaign attribution needs no application support on either destination: GA4
+reads `utm_source`, `utm_medium`, and `utm_campaign` from the landing URL itself.
+The allowlist in `AnalyticsCampaigns` serves Plausible's properties only, and the
+cutover deletes it.
+
+#### What GA4 does not carry
+
+- **No history.** The Measurement Protocol backdates events by at most 72 hours
+  ([sending events](https://developers.google.com/analytics/devguides/collection/protocol/ga4/sending-events)),
+  so nothing already in Plausible can be imported. Keep the export; the closing
+  record in section 4 is its summary.
+- **No visit-level conversion count.** Plausible reports unique conversions per
+  visit, GA4 reports event counts and users.
+- **A shorter window on raw data.** Standard reports keep their aggregates, but
+  end-user and event data used by explorations is retained for at most 14 months.
+  Enable the BigQuery export before the cutover if raw history matters.
+- **Consent.** Plausible is cookieless and needs no banner. GA4 sets cookies, and
+  EEA and UK visitors are around a fifth of this site's traffic. The dual run
+  leaves Plausible authoritative until a consent banner exists; do not cut over
+  before that decision is made.
+
+### Cutting over from Plausible
+
+Run both for at least a week, then compare `print_page_generated` and
+`print_dialog_opened` totals over the same window in each dashboard. Blocked tags
+and consent state usually leave GA4 lower than Plausible; what matters is that
+every event is present in both and the two series move together. If an event is
+missing from either, fix the instrumentation before comparing numbers.
+
+To finish the cutover:
+
+1. Remove the Plausible script and bootstrap from
+   `app/views/layouts/application.html.erb`, and drop `https://plausible.io` from
+   `config/initializers/content_security_policy.rb`.
+2. Update `test/integration/google_analytics_test.rb` and
+   `test/integration/content_security_policy_test.rb`, which assert the dual run.
+3. Delete `AnalyticsCampaigns`, `analytics_campaign_data`, `captureCampaign`, the
+   `data-analytics-campaigns` attribute, and the campaign test in
+   `test/integration/lyrics_flow_test.rb`: GA4 reads those parameters natively.
+4. Redeploy, re-run the production smoke test against GA4 alone, and record the
+   cutover release.
+5. Restart the 90-day measurement window at the cutover date, then cancel
+   Plausible. Changing the measurement system restarts the window; it never
+   reinterprets the days collected under the previous one.
 
 ## 3. Song catalog removed
 
@@ -342,6 +464,34 @@ Two properties of this baseline matter when reading the next review:
   clicks. Printing is a desktop task, so check whether mobile Google traffic
   converts into generated sheets before counting it as progress.
 
+### Closing Plausible record, 2026-09-21
+
+The all-time export taken as the dual run began, covering 56 days from
+2026-07-28: 908 visitors, 2,606 pageviews, and 941 visits. Channels: Organic
+Search 662, Direct 214, AI Assistants 43, Referral 2. Sources: Bing 305, Direct
+214, Yahoo! 141, Google 109, DuckDuckGo 96, ChatGPT 37. Conversions:
+`Print Page Generated` 215 unique and 846 total, `Print Dialog Opened` 155 and
+925, `Second Print Page Generated` 30 and 39.
+
+`Songbook Created`, `Songbook Created From Offer`, and `Songbook Printed` show no
+conversions anywhere in that export, because the songbook surface shipped on
+2026-09-21, the day it was taken. They are unverified in production: confirm all
+three in both dashboards during the dual run, before the cutover.
+
+GA4 cannot ingest these events, so this section is the all-time record for the
+period before the migration. Keep the exported CSVs with the launch issue.
+
+### Reading the target after the cutover
+
+The 90-day target above is written in Plausible's unit: 25 `Print Dialog Opened`
+events, unique per visit, attributed to Organic Search. In GA4 the same quantity
+is the `print_dialog_opened` key-event count with the **Organic Search**
+comparison applied. The two numbers will not match, and a smaller GA4 number is
+not by itself a failure. Record which system a figure came from in every review,
+and never compare a GA4 count against a Plausible baseline as though the two
+measured the same thing. Restart the window at the cutover so all 90 days come
+from one system.
+
 ## 5. Monitor and recover
 
 Review these symptoms weekly during the first 90 days:
@@ -353,6 +503,7 @@ Review these symptoms weekly during the first 90 days:
 | Saved lyric or songbook URL is indexed | Verify `noindex`, sitemap exclusion, and request recrawl |
 | Impressions rise but completions do not | Compare entry pages and funnel drop-off; improve the tool path |
 | Events disappear or duplicate | Repeat production smoke test and repair measurement before analysis |
+| GA4 events lag or stop while Plausible's continue | Check `GA_MEASUREMENT_ID` in `config/deploy.yml`, the key-event registration, consent state, and content blocking; the two destinations fail independently |
 | Takedown or source complaint | Remove the affected public song from discovery and preserve the private saved-page contract pending review |
 
 Keeping lyrics out of indexable responses reduces exposure; it is not legal
@@ -384,6 +535,6 @@ the withdrawn URLs leave the index.
 A second operator, or the site owner in a separate walkthrough, checks each
 launch-record row using only this document. Record their name, date, omissions,
 and corrections in the launch issue. U6 is operationally ready when that person
-can reproduce the Search Console property and sitemap submission, all six
-Plausible goals, the organic segment, the baseline, the review dates, and every
-recovery path without undocumented knowledge.
+can reproduce the Search Console property and sitemap submission, all six goals
+in both dashboards, the organic segment or comparison, the baseline, the review
+dates, and every recovery path without undocumented knowledge.

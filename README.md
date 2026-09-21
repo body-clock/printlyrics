@@ -71,5 +71,5 @@ shows that version in its footer.
 ## Operations
 
 Use the [organic search operations runbook](docs/organic-search-operations.md)
-to configure Search Console and Plausible, record launch baselines, and run the
-30- and 90-day reviews.
+to configure Search Console, Plausible, and the Google Analytics dual run,
+record launch baselines, and run the 30- and 90-day reviews.
