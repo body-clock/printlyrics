@@ -34,11 +34,18 @@ Song search uses the public LRCLIB API. Selecting a result fills the editable
 form without creating a database record. A record is persisted only after the
 user generates the print page.
 
+## Songbooks
+
+A generated page can be extended into a songbook: an ordered, token-addressed set
+of lyric sheets that prints as one job. A songbook keeps the generated-page
+contract — unlisted link, no account, and excluded from indexing.
+
 ## Retention
 
-Generated pages expire 180 days after their last visit. Visits renew the
-retention window, and creating a new page purges expired records. The same
-cleanup can be run explicitly:
+Generated pages and songbooks expire 180 days after their last visit, and visits
+renew the retention window. Visiting a songbook renews it and every song in it.
+Nothing purges expired rows on its own: cleanup is the explicit task below, which
+the `kamal purge` alias runs against production.
 
 ```sh
 bin/rails lyrics:purge_expired
@@ -64,5 +71,5 @@ shows that version in its footer.
 ## Operations
 
 Use the [organic search operations runbook](docs/organic-search-operations.md)
-to configure Search Console and Plausible, record launch baselines, and run the
-30- and 90-day reviews.
+to configure Search Console, Plausible, and the Google Analytics dual run,
+record launch baselines, and run the 30- and 90-day reviews.

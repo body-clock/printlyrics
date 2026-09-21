@@ -40,6 +40,24 @@
       plausible.init({ autoCapturePageviews: false })
     </script>
 
+    <% if google_analytics_id %>
+      <!-- Google Analytics 4, measuring beside Plausible during the dual run.
+           docs/organic-search-operations.md owns the cutover. -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=<%= ERB::Util.url_encode(google_analytics_id) %>"></script>
+      <script nonce="<%= content_security_policy_nonce %>">
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = window.gtag || function(){ window.dataLayer.push(arguments) };
+        window.gtag("js", new Date());
+        // Pageviews are sent by lib/analytics.js on turbo:load, where the token
+        // path is redacted; an automatic pageview would report the real URL.
+        window.gtag("config", <%= google_analytics_id.to_json %>, {
+          send_page_view: false,
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false
+        });
+      </script>
+    <% end %>
+
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">
     <link rel="icon" href="/favicon.ico" sizes="48x48">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -51,7 +69,9 @@
 
   <body class="<%= content_for?(:body_class) ? content_for(:body_class) : nil %>"
         data-analytics-campaigns="<%= analytics_campaign_data %>"
-        <% if content_for?(:generated_page_key) %>data-generated-page-key="<%= yield :generated_page_key %>"<% end %>>
+        <% if content_for?(:generated_page_key) %>data-generated-page-key="<%= yield :generated_page_key %>"<% end %>
+        <% if content_for?(:created_songbook_size) %>data-created-songbook-size="<%= yield :created_songbook_size %>"<% end %>
+        <% if content_for?(:created_songbook_origin) %>data-created-songbook-origin="<%= yield :created_songbook_origin %>"<% end %>>
     <main>
       <%= yield %>
     </main>

@@ -10,7 +10,7 @@ People who need clean, legible song lyrics on paper: musicians rehearsing, teach
 
 ## Product Purpose
 
-PrintLyrics turns pasted or extracted song lyrics into a durable, shareable, print-optimized page. Success means the preview is trustworthy, the printed result is readable, and users can adjust type size and columns without learning a layout tool.
+PrintLyrics turns pasted or extracted song lyrics into a durable, shareable, print-optimized page. Success means the preview is trustworthy, the printed result is readable, and users can adjust type size and columns without learning a layout tool. A page can also be extended into a songbook: an ordered set of pages that prints as one job, which is what a rehearsal, a class period, or a service needs.
 
 ## Brand Personality
 

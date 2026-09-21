@@ -7,6 +7,12 @@ module ApplicationHelper
     AnalyticsCampaigns.to_json
   end
 
+  # Nil until the deployment sets GA_MEASUREMENT_ID; the layout renders the GA4
+  # tag only when it is present.
+  def google_analytics_id
+    Rails.configuration.x.google_analytics_id
+  end
+
   def page_title
     content_for?(:title) ? content_for(:title) : t("application.meta.default_title")
   end
@@ -26,5 +32,11 @@ module ApplicationHelper
   def song_duration(seconds)
     minutes, remainder = seconds.to_i.divmod(60)
     "#{minutes}:#{remainder.to_s.rjust(2, "0")}"
+  end
+
+  # Saved pages may carry no title at all, and every surface that lists one
+  # needs the same fallback.
+  def lyric_title(lyric)
+    lyric.title.presence || t("lyrics.show.untitled")
   end
 end

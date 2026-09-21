@@ -196,6 +196,21 @@ textarea:focus-visible {
   font-size: 0.72rem;
 }
 
+.songbook-context {
+  margin: 0 0 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.6rem 0.85rem;
+  background: var(--surface-muted);
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.songbook-context a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .search-form {
   display: flex;
   align-items: stretch;
@@ -883,6 +898,88 @@ textarea:focus-visible {
   background: var(--accent);
 }
 
+.control-start {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.control-start form,
+.songbook-track form {
+  display: flex;
+  margin: 0;
+}
+
+.button-add-song {
+  min-height: 2.55rem;
+}
+
+.songbook-tracks {
+  width: 8.5in;
+  margin: 0 auto 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.songbook-tracks ol {
+  margin: 0;
+  padding: 0.3rem 0;
+  list-style: none;
+}
+
+.songbook-track {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+.songbook-track + .songbook-track {
+  border-top: 1px solid var(--line);
+}
+
+.songbook-track-number {
+  min-width: 1.2rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.songbook-track-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.songbook-track-artist {
+  color: var(--ink-muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.songbook-track-remove {
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.5rem;
+}
+
+.songbook-track-remove:hover {
+  border-color: var(--line);
+  background: var(--surface-muted);
+  color: var(--error);
+}
+
 .paper-frame,
 .paper-pages,
 .paper {
@@ -905,6 +1002,49 @@ textarea:focus-visible {
   font-size: 0.75rem;
   font-weight: 750;
   text-align: right;
+}
+
+.songbook-prompt {
+  display: flex;
+  width: 8.5in;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin: 0 auto 0.85rem;
+  border: 1px solid color-mix(in oklch, var(--accent), var(--line) 70%);
+  border-radius: 6px;
+  padding: 0.65rem 0.75rem;
+  background: var(--surface);
+}
+
+.songbook-prompt-message {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+.button-songbook {
+  min-height: 2.4rem;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.songbook-prompt-dismiss {
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.45rem 0.6rem;
+}
+
+.songbook-prompt-dismiss:hover {
+  border-color: var(--line);
+  background: var(--surface-muted);
+  color: var(--ink);
 }
 
 .paper {
@@ -1129,6 +1269,29 @@ textarea:focus-visible {
 
   .page-summary {
     width: calc(100% - 1rem);
+  }
+
+  .songbook-prompt {
+    width: calc(100% - 1rem);
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .songbook-prompt-message {
+    flex: 1 1 100%;
+  }
+
+  .songbook-tracks {
+    width: calc(100% - 1rem);
+  }
+
+  .control-start {
+    gap: 0.75rem;
+  }
+
+  .button-add-song {
+    min-height: 2.35rem;
+    padding-inline: 0.8rem;
   }
 
   .paper {

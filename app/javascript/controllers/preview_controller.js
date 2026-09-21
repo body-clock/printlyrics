@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { sessionPageCountProperties, trackEvent } from "lib/analytics"
+import { sessionPageCountProperties, songbookSizeProperties, trackEvent } from "lib/analytics"
 import { SettingsStore } from "lib/settings_store"
 
 const SIZE_KEY = "printlyrics-size"
@@ -10,13 +10,22 @@ export default class extends Controller {
 
   connect() {
     this.settings = new SettingsStore()
-    this.header = this.pagesTarget.querySelector(".lyric-header")?.cloneNode(true)
-    this.stanzas = [...this.pagesTarget.querySelectorAll(".stanza")].map((node) => node.textContent)
+    this.songs = this.songSources()
     this.size = this.settings.get(SIZE_KEY, "m")
     this.columns = this.settings.get(COLUMNS_KEY, "1")
     this.updatePressedState(this.sizeButtonTargets, "size", this.size)
     this.updatePressedState(this.columnButtonTargets, "columns", this.columns)
     this.renderPages()
+  }
+
+  // The markup carries one source per song, so a songbook paginates as a set
+  // and a single lyric page stays a set of one. Sources are read once, because
+  // the first render replaces them with the pages it builds.
+  songSources() {
+    return [...this.pagesTarget.querySelectorAll("[data-preview-song]")].map((source) => ({
+      header: source.querySelector(".lyric-header")?.cloneNode(true),
+      stanzas: [...source.querySelectorAll(".stanza")].map((node) => node.textContent)
+    }))
   }
 
   setSize(event) {
@@ -32,10 +41,21 @@ export default class extends Controller {
   }
 
   print() {
+    const songbookSize = Number(this.element.dataset.songbookSize || 0)
+    const isSet = songbookSize > 0
+
     trackEvent("Print Dialog Opened", {
-      entry_method: "print_page",
+      entry_method: isSet ? "songbook" : "print_page",
+      ...(isSet ? songbookSizeProperties(songbookSize) : {}),
       ...sessionPageCountProperties()
     })
+
+    // Printing a set is its own goal as well as part of every print, so the
+    // total stays continuous while the set prints stay countable. Plausible's
+    // plan has no custom properties, so `entry_method` alone would leave them
+    // invisible there; GA4 reports the parameter.
+    if (isSet) trackEvent("Songbook Printed", songbookSizeProperties(songbookSize))
+
     window.print()
   }
 
@@ -53,10 +73,23 @@ export default class extends Controller {
 
   renderPages() {
     this.pagesTarget.replaceChildren()
-    let page = this.appendPage(this.header)
+
+    this.songs.forEach((song) => this.renderSong(song))
+
+    const count = this.pagesTarget.children.length
+    this.pageSummaryTarget.textContent = count === 1 ?
+      this.pageSummaryTarget.dataset.onePageLabel :
+      this.pageSummaryTarget.dataset.manyPagesLabel.replace("%{count}", count)
+    this.fitPagePreview()
+  }
+
+  // Every song opens a sheet of its own, so a set never runs two titles
+  // together. Only a song that outgrows one sheet continues onto a bare page.
+  renderSong(song) {
+    let page = this.appendPage(song.header)
     let column = page.querySelector(".lyric-column")
 
-    this.stanzas.forEach((text) => {
+    song.stanzas.forEach((text) => {
       const stanza = this.stanzaElement(text)
       column.append(stanza)
       if (this.overflows(column)) {
@@ -78,12 +111,6 @@ export default class extends Controller {
         })
       }
     })
-
-    const count = this.pagesTarget.children.length
-    this.pageSummaryTarget.textContent = count === 1 ?
-      this.pageSummaryTarget.dataset.onePageLabel :
-      this.pageSummaryTarget.dataset.manyPagesLabel.replace("%{count}", count)
-    this.fitPagePreview()
   }
 
   appendPage(header) {
@@ -163,10 +190,6 @@ export default class extends Controller {
     const scale = Math.min(1, this.pageFrameTarget.clientWidth / page.offsetWidth)
     this.pagesTarget.style.setProperty("--preview-scale", scale)
     this.pageFrameTarget.style.height = `${this.pagesTarget.scrollHeight * scale}px`
-  }
-
-  restorePagePreview() {
-    window.requestAnimationFrame(() => this.fitPagePreview())
   }
 
   restorePagePreview() {

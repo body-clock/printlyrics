@@ -22,6 +22,9 @@ env:
     - RAILS_MASTER_KEY
   clear:
     RAILS_SERVE_STATIC_FILES: true
+    # Public by design — the ID is in the page source. Set from
+    # docs/organic-search-operations.md; blank renders no Google tag.
+    GA_MEASUREMENT_ID: "G-SECDJWTR8B"
 
 volumes:
   - "printlyrics_storage:/rails/storage"

@@ -1,0 +1,23 @@
+<fieldset class="segmented-control">
+  <legend><%= t(".size") %></legend>
+  <% %w[s m l xl].each do |size| %>
+    <button type="button"
+            class="<%= size == "m" ? "is-active" : nil %>"
+            aria-pressed="<%= size == "m" %>"
+            data-preview-target="sizeButton"
+            data-action="preview#setSize"
+            data-size="<%= size %>"><%= t(".sizes.#{size}") %></button>
+  <% end %>
+</fieldset>
+
+<fieldset class="segmented-control columns-control">
+  <legend><%= t(".columns") %></legend>
+  <% [ 1, 2 ].each do |columns| %>
+    <button type="button"
+            class="<%= columns == 1 ? "is-active" : nil %>"
+            aria-pressed="<%= columns == 1 %>"
+            data-preview-target="columnButton"
+            data-action="preview#setColumns"
+            data-columns="<%= columns %>"><%= columns %></button>
+  <% end %>
+</fieldset>

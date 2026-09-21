@@ -1,9 +1,8 @@
 class SongLookup
-  attr_reader :lyric, :catalog_token, :result
+  attr_reader :lyric, :catalog_token
 
   def perform(result_id, client:)
     result = client.find(result_id)
-    @result = result
     @lyric = Lyric.new(
       title: result.title,
       artist: result.artist,

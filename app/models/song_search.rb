@@ -9,28 +9,16 @@ class SongSearch
 
   attr_reader :results
 
+  # Raises LrcLibClient::ServiceError when the source is unavailable. Callers
+  # translate that into user copy and an HTTP status.
   def perform(client:)
     return false unless valid?
 
     @results = client.search(query)
     true
-  rescue LrcLibClient::ServiceError
-    @error = I18n.t("songs.errors.service")
-    @service_error = true
-    false
   end
 
-  def success?
-    results&.any?
-  end
-
-  def error_message
-    @error || (errors.first&.message unless valid?)
-  end
-
-  def http_status
-    return :service_unavailable if @service_error
-    return :unprocessable_content if error_message
-    :ok
+  def empty?
+    results&.empty?
   end
 end
