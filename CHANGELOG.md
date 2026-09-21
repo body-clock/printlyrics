@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/body-clock/printlyrics/compare/v1.6.0...v1.7.0) (2026-09-21)
+
+
+### Features
+
+* ship songbooks and a Google Analytics dual run ([#62](https://github.com/body-clock/printlyrics/issues/62)) ([d639dca](https://github.com/body-clock/printlyrics/commit/d639dca263020abf5fa4c5a856dcd601c225ecb6))
+
 ## [1.6.0](https://github.com/body-clock/printlyrics/compare/v1.5.0...v1.6.0) (2026-09-15)
 
 
