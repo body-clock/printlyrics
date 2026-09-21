@@ -88,7 +88,12 @@ class LyricsController < ApplicationController
   def destination_for(lyric)
     return lyric unless @songbook
 
+    # The song that turns a one-song songbook into a set is the moment the set
+    # exists, and the only moment the creation event reports.
+    was_a_set = @songbook.a_set?
     @songbook.append!(lyric)
+    remember_created_songbook(@songbook, origin: "add_song") unless was_a_set
+
     @songbook
   end
 

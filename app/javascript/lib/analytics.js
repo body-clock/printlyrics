@@ -48,6 +48,20 @@ export function trackGeneratedPage() {
   if (pages.length === 2) trackEvent("Second Print Page Generated")
 }
 
+// A songbook is only a set once it holds more than one song. The server decides
+// that threshold and renders this marker on the visit that crossed it, so the
+// event reports a set coming into being rather than every later visit to it. The
+// origin says which route started it: the offer, or a song added to a set.
+export function trackCreatedSongbook() {
+  const { createdSongbookSize, createdSongbookOrigin } = document.body.dataset
+  if (!createdSongbookSize) return
+
+  trackEvent("Songbook Created", {
+    ...songbookSizeProperties(Number(createdSongbookSize)),
+    ...(createdSongbookOrigin && { songbook_origin: createdSongbookOrigin })
+  })
+}
+
 // A printed set is a different act from printing one sheet, and how many songs
 // it holds is what separates a rehearsal packet from a classroom handout. Both
 // ride on the existing print goal, so the dashboard gains no fourth conversion.

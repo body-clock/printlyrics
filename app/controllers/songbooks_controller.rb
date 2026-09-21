@@ -11,6 +11,11 @@ class SongbooksController < ApplicationController
 
     songbook = Songbook.start_with(*lyrics)
 
+    # This action gathers sheets the visitor already made, so a set that is
+    # already complete here came from the offer. Continuing to add a song starts
+    # a one-song draft instead, and only becomes a set later.
+    remember_created_songbook(songbook, origin: "offer")
+
     # "Add another song" is a request to keep adding, so it continues into the
     # entry form instead of stopping at a set of one. Anything else — including
     # the offer that gathers sheets a visitor already made — wants the set it
@@ -26,6 +31,7 @@ class SongbooksController < ApplicationController
   def show
     @songbook = Songbook.renew_retention!(params[:token])
     @generated_page_key = generated_page_key
+    @created_songbook = created_songbook
   end
 
   def destroy_song
@@ -55,6 +61,17 @@ class SongbooksController < ApplicationController
   def generated_page_key
     token = session.delete(:generated_lyric_token)
     token if token && @songbook.lyrics.exists?(token: token)
+  end
+
+  # The creation event reports a set that came into being, not a row that was
+  # inserted, and it carries how the set was started. It follows the same
+  # one-shot session flag as a generation, so it fires on the visit that crossed
+  # the threshold and never on a later one.
+  def created_songbook
+    origin = session.delete(:created_songbook_origin)
+    return unless session.delete(:created_songbook_token) == @songbook.token
+
+    { size: @songbook.entries.size, origin: origin }
   end
 
   def songbook_not_found

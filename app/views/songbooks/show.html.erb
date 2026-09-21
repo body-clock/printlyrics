@@ -8,6 +8,10 @@
 <% content_for :robots, "noindex, nofollow" %>
 <% content_for :body_class, "preview-body" %>
 <% content_for :generated_page_key, @generated_page_key if @generated_page_key %>
+<% if @created_songbook %>
+  <% content_for :created_songbook_size, @created_songbook[:size] %>
+  <% content_for :created_songbook_origin, @created_songbook[:origin] %>
+<% end %>
 
 <div class="preview-shell"
      data-controller="preview"

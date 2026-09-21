@@ -334,6 +334,67 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal [ "First Song", "Second Song" ], all(".paper .lyric-header h1").map(&:text)
   end
 
+  test "a set gathered from existing sheets records its creation once" do
+    visit root_path
+    install_persistent_analytics_capture
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    click_link "Back"
+    fill_in "Lyrics", with: "Second song line"
+    click_button "Generate print page"
+    click_button "Make a songbook"
+    assert_selector ".songbook-track", count: 2
+
+    assert_equal 1, created_songbook_calls.length
+    assert_equal "2", created_songbook_calls.first.dig(1, "props", "songbook_size")
+    assert_equal "offer", created_songbook_calls.first.dig(1, "props", "songbook_origin")
+
+    # Returning to the same set later is not another creation.
+    set_path = current_path
+    page.execute_script("Turbo.visit(#{set_path.to_json})")
+    assert_selector ".songbook-track", count: 2
+    assert_equal 1, created_songbook_calls.length
+  end
+
+  test "a set built by adding a song records its creation once" do
+    visit root_path
+    install_persistent_analytics_capture
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    click_button "Add another song"
+    assert_text "Adding to a songbook with 1 song"
+
+    fill_in "Lyrics", with: "Second song line"
+    click_button "Generate print page"
+    assert_selector ".songbook-track", count: 2
+
+    assert_equal 1, created_songbook_calls.length
+    assert_equal "2", created_songbook_calls.first.dig(1, "props", "songbook_size")
+    assert_equal "add_song", created_songbook_calls.first.dig(1, "props", "songbook_origin")
+
+    click_link "Add a song"
+    fill_in "Lyrics", with: "Third song line"
+    click_button "Generate print page"
+
+    assert_selector ".songbook-track", count: 3
+    assert_equal 1, created_songbook_calls.length
+  end
+
+  test "a one-song songbook is not reported as a creation" do
+    visit root_path
+    install_persistent_analytics_capture
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    click_button "Add another song"
+    click_link "View songbook"
+
+    assert_selector ".songbook-track", count: 1
+    assert_empty created_songbook_calls
+  end
+
   test "the songbook context notice clears the list below it" do
     songbook = Songbook.start_with(Lyric.create!(lyrics: "First song line", title: "First Song"))
 
@@ -564,5 +625,9 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   def captured_analytics_calls
     JSON.parse(page.evaluate_script("sessionStorage.getItem('test:analyticsCalls') || '[]'"))
+  end
+
+  def created_songbook_calls
+    captured_analytics_calls.select { |call| call[0] == "Songbook Created" }
   end
 end

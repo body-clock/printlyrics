@@ -33,6 +33,16 @@ class SongbookTest < ActiveSupport::TestCase
     assert_equal [ second.id, first.id ], songbook.lyrics.pluck(:id)
   end
 
+  test "a songbook is a set once it holds more than one song" do
+    songbook = Songbook.start_with(Lyric.create!(lyrics: "First line"))
+
+    assert_not songbook.a_set?
+
+    songbook.append!(Lyric.create!(lyrics: "Second line"))
+
+    assert songbook.a_set?
+  end
+
   test "removing a song leaves the rest of the set in order" do
     lyrics = 3.times.map { |index| Lyric.create!(lyrics: "Line #{index}", title: "Song #{index}") }
     songbook = Songbook.start_with(lyrics.first)

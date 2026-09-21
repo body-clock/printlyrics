@@ -1,6 +1,11 @@
 class Songbook < ApplicationRecord
   include Retained
 
+  # A songbook only becomes a set once it holds more than one song. The row is
+  # created by a click, so a one-song songbook is a draft rather than a set, and
+  # this is the threshold the creation event reports.
+  SET_SIZE = 2
+
   has_many :entries, -> { order(:position) },
     class_name: "SongbookEntry", dependent: :destroy, inverse_of: :songbook
   has_many :lyrics, through: :entries
@@ -34,5 +39,9 @@ class Songbook < ApplicationRecord
 
   def remove!(lyric)
     entries.find_by(lyric_id: lyric.id)&.destroy!
+  end
+
+  def a_set?
+    entries.count >= SET_SIZE
   end
 end

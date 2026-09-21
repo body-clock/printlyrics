@@ -51,7 +51,9 @@
 
   <body class="<%= content_for?(:body_class) ? content_for(:body_class) : nil %>"
         data-analytics-campaigns="<%= analytics_campaign_data %>"
-        <% if content_for?(:generated_page_key) %>data-generated-page-key="<%= yield :generated_page_key %>"<% end %>>
+        <% if content_for?(:generated_page_key) %>data-generated-page-key="<%= yield :generated_page_key %>"<% end %>
+        <% if content_for?(:created_songbook_size) %>data-created-songbook-size="<%= yield :created_songbook_size %>"<% end %>
+        <% if content_for?(:created_songbook_origin) %>data-created-songbook-origin="<%= yield :created_songbook_origin %>"<% end %>>
     <main>
       <%= yield %>
     </main>
