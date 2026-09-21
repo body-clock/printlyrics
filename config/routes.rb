@@ -8,6 +8,11 @@ Rails.application.routes.draw do
       post :select
     end
   end
+  resources :songbooks, only: %i[create show], param: :token
+  delete "songbooks/:token/songs/:lyric_token",
+    to: "songbooks#destroy_song",
+    as: :songbook_song
+
   get "sitemap", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 

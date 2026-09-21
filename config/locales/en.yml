@@ -35,6 +35,11 @@ en:
           - "Print or save as PDF"
       heading: "Find, format, and print song lyrics"
       intro: "Search by song or artist—no copying from another lyrics site. Review the words, fit them on the page, and print or save as PDF. Free, with no account required."
+      songbook:
+        context_html:
+          one: "Adding to a songbook with %{count} song. %{view_link}"
+          other: "Adding to a songbook with %{count} songs. %{view_link}"
+        view: "View songbook"
       benefits:
         label: "What PrintLyrics does"
         items:
@@ -116,14 +121,12 @@ en:
       controls:
         label: "Print page controls"
         back: "Back"
-        size: "Size"
-        sizes:
-          s: "S"
-          m: "M"
-          l: "L"
-          xl: "XL"
-        columns: "Columns"
+        add_to_songbook: "Add another song"
         print: "Print"
+      songbook_prompt:
+        message: "%{count} sheets so far — put them in a songbook to print as one job."
+        action: "Make a songbook"
+        dismiss: "Not now"
       page_count:
         one: "Letter · 0.75 in margins · 1 page"
         other: "Letter · 0.75 in margins · %{count} pages"
@@ -174,12 +177,39 @@ en:
         body: "PrintLyrics lets you search or paste lyrics, review the text, choose a size and column layout, and print. No account is required."
         link: "Open the lyric printing tool"
 
+  songbooks:
+    errors:
+      expired: "That songbook expired or wasn't found"
+    show:
+      seo:
+        title: "Songbook | PrintLyrics"
+        description: "An ordered set of lyric sheets, ready to print in one job."
+      controls:
+        label: "Songbook controls"
+        add_song: "Add a song"
+        print: "Print all"
+      tracks:
+        label: "Songs in this songbook"
+        remove: "Remove"
+        remove_label: "Remove %{title} from this songbook"
+      page_count:
+        one: "Letter · 0.75 in margins · 1 page"
+        other: "Letter · 0.75 in margins · %{count} pages"
+
   songs:
     errors:
       unavailable: "That song is no longer available"
       service: "Song search is temporarily unavailable. You can still paste lyrics below."
 
   shared:
+    preview_controls:
+      size: "Size"
+      sizes:
+        s: "S"
+        m: "M"
+        l: "L"
+        xl: "XL"
+      columns: "Columns"
     resource_navigation:
       label: "More from PrintLyrics"
       tool: "Print song lyrics"

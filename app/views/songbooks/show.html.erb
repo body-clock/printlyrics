@@ -1,0 +1,86 @@
+<%
+  # A songbook is a private working surface, not a published page: it is
+  # reachable only by its unlisted token and never by a crawler.
+%>
+<% content_for :title, t(".seo.title") %>
+<% content_for :description, t(".seo.description") %>
+<% content_for :canonical_url, root_url %>
+<% content_for :robots, "noindex, nofollow" %>
+<% content_for :body_class, "preview-body" %>
+<% content_for :generated_page_key, @generated_page_key if @generated_page_key %>
+<% if @created_songbook %>
+  <% content_for :created_songbook_size, @created_songbook[:size] %>
+  <% content_for :created_songbook_origin, @created_songbook[:origin] %>
+<% end %>
+
+<div class="preview-shell"
+     data-controller="preview"
+     data-songbook-size="<%= @songbook.entries.size %>"
+     data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
+  <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
+    <div class="control-inner">
+      <%= link_to root_path(songbook: @songbook.token), class: "back-link" do %>
+        <span aria-hidden="true">+</span>
+        <span><%= t(".controls.add_song") %></span>
+      <% end %>
+
+      <div class="control-groups">
+        <%= render "shared/preview_controls" %>
+
+        <button type="button" class="button button-print" data-action="preview#print">
+          <span aria-hidden="true">↗</span>
+          <span><%= t(".controls.print") %></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <p class="page-summary no-print"
+     data-preview-target="pageSummary"
+     data-one-page-label="<%= t(".page_count.one") %>"
+     data-many-pages-label="<%= t(".page_count.other") %>"
+     aria-live="polite"></p>
+
+  <section class="songbook-tracks no-print" aria-label="<%= t(".tracks.label") %>">
+    <ol>
+      <% @songbook.entries.each_with_index do |entry, index| %>
+        <% song_title = lyric_title(entry.lyric) %>
+        <li class="songbook-track">
+          <span class="songbook-track-number" aria-hidden="true"><%= index + 1 %></span>
+          <span class="songbook-track-title">
+            <%= song_title %>
+            <% if entry.lyric.artist.present? %>
+              <span class="songbook-track-artist"><%= entry.lyric.artist %></span>
+            <% end %>
+          </span>
+          <%= button_to t(".tracks.remove"),
+                songbook_song_path(@songbook, entry.lyric.token),
+                method: :delete,
+                class: "songbook-track-remove",
+                aria: { label: t(".tracks.remove_label", title: song_title) } %>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+
+  <div class="paper-frame" data-preview-target="pageFrame">
+    <div class="paper-pages" data-preview-target="pages">
+      <% @songbook.entries.each do |entry| %>
+        <article class="paper size-m is-unpaginated" data-preview-page data-preview-song>
+          <header class="lyric-header">
+            <h1><%= lyric_title(entry.lyric) %></h1>
+            <% if entry.lyric.artist.present? %>
+              <p><%= entry.lyric.artist %></p>
+            <% end %>
+          </header>
+
+          <div class="lyrics">
+            <% entry.lyric.stanzas.each do |stanza| %>
+              <section class="stanza"><%= stanza %></section>
+            <% end %>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  </div>
+</div>
