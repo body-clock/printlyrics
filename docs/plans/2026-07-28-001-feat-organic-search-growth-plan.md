@@ -148,6 +148,7 @@ flowchart TB
 - Bulk-generated song, artist, or keyword-variant pages.
 - Generic articles written primarily to increase page count.
 - Setlists, performance mode, decorative template libraries, and other expansion that displaces the simple print workflow.
+  Superseded 2026-09-21: a token-addressed songbook was added as a bounded extension of the print workflow. It is not a setlist or performance mode, records no user identity, and keeps the no-account contract. See `PRODUCT.md`.
 - Claims or guarantees of attaining a particular search ranking.
 
 ### Dependencies and Assumptions

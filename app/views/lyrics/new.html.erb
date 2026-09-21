@@ -38,7 +38,7 @@
 <% content_for :title, t(".seo.title") %>
 <% content_for :description, seo_description %>
 <% content_for :canonical_url, root_url %>
-<% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
+<% content_for :robots, @songbook ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
 <% content_for :head do %>
   <%= render "shared/structured_data", structured_data: structured_data %>
 <% end %>
@@ -54,6 +54,16 @@
         <h1 id="page-heading"><%= t(".heading") %></h1>
         <p><%= t(".intro") %></p>
       </div>
+
+      <% if @songbook %>
+        <%# The songbook is its own page, so its link has to leave the entry
+            frame rather than swap the form for a frame-less response. %>
+        <p class="songbook-context">
+          <%= t(".songbook.context_html",
+                count: @songbook.entries.size,
+                view_link: link_to(t(".songbook.view"), songbook_path(@songbook), data: { turbo_frame: "_top" })) %>
+        </p>
+      <% end %>
 
       <ul class="tool-benefits" aria-label="<%= t(".benefits.label") %>">
         <% t(".benefits.items").each do |benefit| %>
@@ -78,6 +88,7 @@
             },
             html: { aria: { busy: "false" } },
             class: "search-form" do |form| %>
+            <%= hidden_field_tag :songbook, @songbook.token if @songbook %>
             <div class="field grow">
               <%= form.label :query, t(".search.query"), class: "sr-only" %>
               <%= form.search_field :query,
@@ -127,6 +138,7 @@
                       html: { aria: { busy: "false" } },
                       class: "search-result",
                       role: "listitem" do |form| %>
+                      <%= hidden_field_tag :songbook, @songbook.token if @songbook %>
                       <%= form.hidden_field :result_id, value: result.id, id: nil %>
                       <%= form.hidden_field :query, value: @query, id: nil %>
                       <%= form.button class: "search-result-button",
@@ -163,6 +175,7 @@
           <p class="sr-only" role="status" aria-live="polite"><%= @loaded_status %></p>
         <% end %>
         <%= hidden_field_tag :catalog_token, @catalog_token if @catalog_token.present? %>
+        <%= hidden_field_tag :songbook, @songbook.token if @songbook %>
 
         <div class="metadata-grid">
           <div class="field">

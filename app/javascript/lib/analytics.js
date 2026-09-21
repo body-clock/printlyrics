@@ -1,8 +1,7 @@
 import { sessionStore } from "lib/settings_store"
+import { rememberSessionPage, sessionPages } from "lib/session_pages"
 
-const TOKEN_PATH = /^\/lyrics\/[^/]+$/
-const GENERATED_KEY_PREFIX = "printlyrics:generated:"
-const SESSION_PAGE_COUNT_KEY = "printlyrics:session-pages"
+const TOKEN_PATHS = /^\/(lyrics|songbooks)\/[^/]+$/
 const CAMPAIGN_KEY = "printlyrics:campaign"
 
 // Campaign values are allowlisted by the server (AnalyticsCampaigns) and read
@@ -10,12 +9,20 @@ const CAMPAIGN_KEY = "printlyrics:campaign"
 // in this file that can drift from the documented operator contract.
 let campaignAllowlist
 
+// A share token is the only way to reach someone's saved page, so no reported
+// location may carry a real one. Paths become the synthetic `:token` form, and
+// the songbook context on the entry form keeps its parameter without its value.
 export function analyticsUrl() {
   const url = new URL(window.location.href)
-  if (!TOKEN_PATH.test(url.pathname)) return url.toString()
+  const tokenPath = TOKEN_PATHS.exec(url.pathname)
 
-  url.pathname = "/lyrics/:token"
-  url.search = ""
+  if (tokenPath) {
+    url.pathname = `/${tokenPath[1]}/:token`
+    url.search = ""
+  } else if (url.searchParams.has("songbook")) {
+    url.searchParams.set("songbook", ":token")
+  }
+
   url.hash = ""
   return url.toString()
 }
@@ -34,34 +41,24 @@ export function trackEvent(name, props = {}) {
 // the difference between a utility and a product. Counting happens in session
 // storage, so it identifies no one and survives navigation within a visit.
 export function trackGeneratedPage() {
-  const pageKey = document.body.dataset.generatedPageKey
-  if (!pageKey) return
+  const pages = rememberSessionPage(document.body.dataset.generatedPageKey)
+  if (!pages) return
 
-  const store = sessionStore()
-  const storageKey = `${GENERATED_KEY_PREFIX}${pageKey}`
-  if (store.get(storageKey)) return
+  trackEvent("Print Page Generated", sessionPageCountProperties(pages.length))
+  if (pages.length === 2) trackEvent("Second Print Page Generated")
+}
 
-  store.set(storageKey, "1")
-  const count = bumpSessionPageCount()
-  trackEvent("Print Page Generated", sessionPageCountProperties(count))
-  if (count === 2) trackEvent("Second Print Page Generated")
+// A printed set is a different act from printing one sheet, and how many songs
+// it holds is what separates a rehearsal packet from a classroom handout. Both
+// ride on the existing print goal, so the dashboard gains no fourth conversion.
+export function songbookSizeProperties(size) {
+  return { songbook_size: pageCountBucket(size) }
 }
 
 // The bucket, not the raw number, keeps the property low-cardinality. It is a
 // running count at the moment the event fired, not a final session total.
-export function sessionPageCountProperties(count = sessionPageCount()) {
+export function sessionPageCountProperties(count = sessionPages().length) {
   return { page_count_in_session: pageCountBucket(count) }
-}
-
-function sessionPageCount() {
-  return Number(sessionStore().get(SESSION_PAGE_COUNT_KEY)) || 0
-}
-
-function bumpSessionPageCount() {
-  const next = sessionPageCount() + 1
-  // Degraded mode — the count stalls, but events still report.
-  sessionStore().set(SESSION_PAGE_COUNT_KEY, String(next))
-  return next
 }
 
 function pageCountBucket(count) {

@@ -69,7 +69,7 @@ has to earn its place against those questions.
 
 Do not constrain these goals with song titles, artist names, source IDs, lyric
 tokens, or URLs. The application sends only low-cardinality workflow properties:
-`entry_method`, `campaign_source`, `campaign_name`, and
+`entry_method`, `songbook_size`, `campaign_source`, `campaign_name`, and
 `page_count_in_session`.
 
 `page_count_in_session` is a bucket — `1`, `2`, `3-5`, or `6+` — reporting how
@@ -77,6 +77,19 @@ many distinct print pages the visit had generated when the event fired. It is a
 running count, not a final total, so read the highest bucket a session reached
 rather than the value on any single event. Both `Print Page Generated` and
 `Print Dialog Opened` carry it.
+
+A songbook — the ordered set of pages a visit assembles and prints as one job —
+adds no fourth goal. Printing a set reuses `Print Dialog Opened` and is read
+from two properties on that event:
+
+- `entry_method` is `print_page` for a single generated sheet and `songbook` for
+  a set. Compare the two to see whether the set surface is actually used.
+- `songbook_size` is the same `2`, `3-5`, `6+` bucket shape, reporting how many
+  songs the printed set held.
+
+A single-song sheet printed from a songbook reports `entry_method: songbook`
+with `songbook_size: 1`. Read that as a set the visitor had not finished adding
+to, not as an ordinary single-page print.
 
 Turn off Plausible's automatic goals — **Form submissions**, **File downloads**,
 **Outbound links**, and **404** — under **Settings > General > Default
@@ -150,14 +163,24 @@ filter for Plausible event requests and preserve the log across navigation.
    `Second Print Page Generated` arrives exactly once. Generate a third song and
    confirm it does not arrive again. Reloading the first page must not add a
    count either.
-6. Confirm no other custom event arrives. The application emits exactly three
+6. On that second sheet, confirm the songbook suggestion appears with both
+   sheets counted, then choose **Make a songbook**. Confirm the set opens with
+   every sheet in generation order and that it lists each song. The suggestion
+   sends no event of its own, and **Not now** must send none either.
+7. From a generated page, choose **Add another song**, add a second song, and
+   print the set. Confirm exactly one `Print Dialog Opened` arrives for the
+   whole set, carrying `entry_method: "songbook"` and `songbook_size: "2"`, and
+   that the print preview shows one sheet per song.
+8. Confirm no other custom event arrives. The application emits exactly three
    event names, so an unexpected one means stale instrumentation or an automatic
    goal still enabled in site settings.
-7. Inspect every event payload. A saved page must report the synthetic location
-   `/lyrics/:token`, never the real token. No payload may contain lyrics, song
-   title, artist, album, or source ID.
-8. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
-   Search** segment after a genuine organic visit and confirm its attribution.
+9. Inspect every event payload. A saved page must report the synthetic location
+   `/lyrics/:token`, never the real token, and a songbook must report
+   `/songbooks/:token`. The entry form in songbook context reports its
+   `songbook` parameter as `:token`, never the real value. No payload may
+   contain lyrics, song title, artist, album, or source ID.
+10. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
+    Search** segment after a genuine organic visit and confirm its attribution.
 
 `Print Dialog Opened` is the product's **organic print completion** proxy. It
 means the visitor opened the browser dialog; it does not prove that a physical
@@ -167,12 +190,28 @@ page was printed.
 a second distinct print page. It is a leading indicator that someone is preparing
 several songs at once, which is the case a single-sheet tool serves poorly.
 
+`Print Dialog Opened` with `entry_method: songbook` is the signal that the
+packet actually became one print job. Compare its volume against
+`Second Print Page Generated`: a persistent gap means visitors still assemble
+sets by hand, and a closing gap means the songbook surface absorbed the work.
+
+The sheet that is generated second in a tab offers the visitor the sheets it
+already has, as a songbook, so the offer and `Second Print Page Generated` fire
+from the same moment. Neither the offer nor its dismissal sends an event: read
+the offer's effect as the change in that same gap over time, not as a
+conversion of its own. A set can also be started without an offer, and an offer
+can be declined, so the two counts were never expected to match. Adding a goal
+for the offer itself is a separate decision that has to earn its place against
+the three-goal budget.
+
 If an event is missing, first check the browser request, content blocking, the
 exact goal spelling, and whether the production asset release is current. If
 events duplicate, stop the measurement launch and fix the Turbo/pageview
 lifecycle before collecting a baseline. If a real token or song metadata is
 present, treat it as a privacy incident: disable the affected instrumentation,
-deploy the redaction fix, and exclude the contaminated test period.
+deploy the redaction fix, and exclude the contaminated test period. The
+`analyticsUrl` helper in `app/javascript/lib/analytics.js` is the single place
+that rewrites tokens, so a new token-addressed surface must be added there.
 
 ## 3. Song catalog removed
 
@@ -211,6 +250,7 @@ On launch day, record zero or current values for the previous 30 days:
 | Generated-to-dialog conversion rate | Plausible goals/funnel |
 | `Second Print Page Generated` from organic visits | Plausible goal |
 | Share of generating sessions that reach a second sheet | `page_count_in_session` on `Print Page Generated` |
+| Sets printed as one job, and their size | `entry_method` and `songbook_size` on `Print Dialog Opened` |
 
 At 30 days, confirm the instrumentation is reliable before changing any target.
 Review query intent, indexed surfaces, impressions, clicks, both completion
@@ -282,7 +322,7 @@ Review these symptoms weekly during the first 90 days:
 | --- | --- |
 | Sitemap is not `Success` | Fix fetch/XML error, then resubmit and record recovery |
 | Intended page is excluded | Inspect canonical, robots, response status, and rendered content |
-| Saved lyric URL is indexed | Verify `noindex`, sitemap exclusion, and request recrawl |
+| Saved lyric or songbook URL is indexed | Verify `noindex`, sitemap exclusion, and request recrawl |
 | Impressions rise but completions do not | Compare entry pages and funnel drop-off; improve the tool path |
 | Events disappear or duplicate | Repeat production smoke test and repair measurement before analysis |
 | Takedown or source complaint | Remove the affected public song from discovery and preserve the private saved-page contract pending review |

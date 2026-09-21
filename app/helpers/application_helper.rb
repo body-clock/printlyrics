@@ -27,4 +27,10 @@ module ApplicationHelper
     minutes, remainder = seconds.to_i.divmod(60)
     "#{minutes}:#{remainder.to_s.rjust(2, "0")}"
   end
+
+  # Saved pages may carry no title at all, and every surface that lists one
+  # needs the same fallback.
+  def lyric_title(lyric)
+    lyric.title.presence || t("lyrics.show.untitled")
+  end
 end

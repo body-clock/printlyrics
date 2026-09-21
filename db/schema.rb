@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_001357) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_21_030000) do
   create_table "lyrics", force: :cascade do |t|
     t.string "artist", limit: 200
     t.datetime "created_at", null: false
@@ -24,6 +24,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_001357) do
     t.index ["expires_at"], name: "index_lyrics_on_expires_at"
     t.index ["song_id"], name: "index_lyrics_on_song_id"
     t.index ["token"], name: "index_lyrics_on_token", unique: true
+  end
+
+  create_table "songbook_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "lyric_id", null: false
+    t.integer "position", null: false
+    t.integer "songbook_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["lyric_id"], name: "index_songbook_entries_on_lyric_id"
+    t.index ["songbook_id", "lyric_id"], name: "index_songbook_entries_on_songbook_id_and_lyric_id", unique: true
+    t.index ["songbook_id", "position"], name: "index_songbook_entries_on_songbook_id_and_position", unique: true
+  end
+
+  create_table "songbooks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_songbooks_on_expires_at"
+    t.index ["token"], name: "index_songbooks_on_token", unique: true
   end
 
   create_table "songs", force: :cascade do |t|
@@ -40,4 +60,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_001357) do
   end
 
   add_foreign_key "lyrics", "songs"
+  add_foreign_key "songbook_entries", "lyrics", on_delete: :cascade
+  add_foreign_key "songbook_entries", "songbooks", on_delete: :cascade
 end
