@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/body-clock/printlyrics/compare/v1.5.0...v1.6.0) (2026-09-15)
+
+
+### Features
+
+* remove the public song catalog and ship print-intent SEO improvements ([#55](https://github.com/body-clock/printlyrics/issues/55)) ([9518e2d](https://github.com/body-clock/printlyrics/commit/9518e2df7bc9fd5fce563b8d536fb610fe3beaba))
+
 ## [1.5.0](https://github.com/body-clock/printlyrics/compare/v1.4.5...v1.5.0) (2026-09-15)
 
 
