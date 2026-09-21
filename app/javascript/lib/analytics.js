@@ -12,8 +12,9 @@ let campaignAllowlist
 // A share token is the only way to reach someone's saved page, so no reported
 // location may carry a real one. Paths become the synthetic `:token` form, and
 // the songbook context on the entry form keeps its parameter without its value.
-export function analyticsUrl() {
-  const url = new URL(window.location.href)
+// Every analytics destination reports locations through here.
+export function analyticsUrl(href = window.location.href) {
+  const url = new URL(href)
   const tokenPath = TOKEN_PATHS.exec(url.pathname)
 
   if (tokenPath) {
@@ -25,6 +26,23 @@ export function analyticsUrl() {
 
   url.hash = ""
   return url.toString()
+}
+
+// A saved page's title is the song title and artist, so a redacted location
+// reports the synthetic path as its title instead of the document's.
+export function analyticsTitle() {
+  const { pathname } = new URL(analyticsUrl())
+  return TOKEN_PATHS.test(pathname) ? pathname : document.title
+}
+
+// The referring page can be a saved page too, so a same-origin referrer is
+// redacted the same way every reported location is. External referrers pass
+// through: they are the acquisition signal.
+export function analyticsReferrer() {
+  if (!document.referrer) return null
+
+  return new URL(document.referrer).origin === window.location.origin ?
+    analyticsUrl(document.referrer) : document.referrer
 }
 
 export function trackPageview() {
@@ -53,11 +71,12 @@ export function trackGeneratedPage() {
 // event reports a set coming into being rather than every later visit to it. The
 // origin says which route started it: the offer, or a song added to a set.
 //
-// The route is also its own event, because this plan's Plausible has no custom
-// properties: `songbook_origin` cannot be read from the dashboard, so the offer
-// only stays visible as a goal. `Songbook Created` is the total, and
-// `Songbook Created From Offer` is the subset the nudge produced, so the two
-// numbers behind the offer's conversion rate are both direct.
+// The route is also its own event, because Plausible's plan has no custom
+// properties: `songbook_origin` cannot be read from its dashboard, so the offer
+// only stays visible there as a goal. GA4 reads the parameter directly. While
+// both run, `Songbook Created` is the total and `Songbook Created From Offer` is
+// the subset the nudge produced, so the offer's conversion rate is one over the
+// other in either one.
 export function trackCreatedSongbook() {
   const { createdSongbookSize, createdSongbookOrigin } = document.body.dataset
   if (!createdSongbookSize) return
@@ -89,16 +108,64 @@ function pageCountBucket(count) {
   return "6+"
 }
 
-// Telemetry never interrupts a product action: unavailable storage or a
-// throwing third-party stub must not stop the print dialog from opening.
+// GA4 accepts no event name with a space in it, so the product names are mapped.
+// This table is the contract the runbook's key-event list repeats: a new event
+// is added here and registered in the dashboard.
+const GA4_EVENT_NAMES = {
+  pageview: "page_view",
+  "Print Page Generated": "print_page_generated",
+  "Second Print Page Generated": "second_print_page_generated",
+  "Print Dialog Opened": "print_dialog_opened",
+  "Songbook Created": "songbook_created",
+  "Songbook Created From Offer": "songbook_created_from_offer",
+  "Songbook Printed": "songbook_printed"
+}
+
+// An unmapped name still reaches GA4 in the snake_case form it accepts, so new
+// instrumentation shows up immediately instead of silently vanishing.
+function ga4EventName(name) {
+  return GA4_EVENT_NAMES[name] ||
+    String(name).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+}
+
+// Both destinations run side by side during the dual run, and a browser that
+// blocks one still reports the other. Telemetry never interrupts a product
+// action: unavailable storage or a throwing third-party stub must not stop the
+// print dialog from opening.
 function dispatch(name, props = {}) {
+  const location = analyticsUrl()
+  const eventProps = { ...campaignProps(), ...props }
+
+  sendToPlausible(name, location, eventProps)
+  sendToGoogleAnalytics(ga4EventName(name), location, eventProps)
+}
+
+function sendToPlausible(name, location, props) {
   if (typeof window.plausible !== "function") return
 
   try {
-    const options = { url: analyticsUrl() }
-    const eventProps = { ...campaignProps(), ...props }
-    if (Object.keys(eventProps).length > 0) options.props = eventProps
+    const options = { url: location }
+    if (Object.keys(props).length > 0) options.props = props
     window.plausible(name, options)
+  } catch {
+    // Ignore analytics failures.
+  }
+}
+
+function sendToGoogleAnalytics(name, location, props) {
+  if (typeof window.gtag !== "function") return
+
+  try {
+    // gtag.js would otherwise attach the document's own URL, title, and
+    // referrer, and on a saved page those carry the token and song metadata.
+    // Every value it would fill in is supplied here instead.
+    const referrer = analyticsReferrer()
+    window.gtag("event", name, {
+      page_location: location,
+      page_title: analyticsTitle(),
+      ...(referrer && { page_referrer: referrer }),
+      ...props
+    })
   } catch {
     // Ignore analytics failures.
   }

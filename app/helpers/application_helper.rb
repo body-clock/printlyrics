@@ -7,6 +7,12 @@ module ApplicationHelper
     AnalyticsCampaigns.to_json
   end
 
+  # Nil until the deployment sets GA_MEASUREMENT_ID; the layout renders the GA4
+  # tag only when it is present.
+  def google_analytics_id
+    Rails.configuration.x.google_analytics_id
+  end
+
   def page_title
     content_for?(:title) ? content_for(:title) : t("application.meta.default_title")
   end

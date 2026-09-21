@@ -568,6 +568,90 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal 1, captured_analytics_calls.count { |call| call[0] == "Second Print Page Generated" }
   end
 
+  test "google analytics mirrors each event under its own name and redacts saved pages" do
+    visit root_path
+    install_persistent_analytics_capture
+
+    fill_in "Song title", with: "Test Song"
+    fill_in "Artist", with: "Test Artist"
+    fill_in "Lyrics", with: "Line one"
+    click_button "Generate print page"
+    assert_text "Test Song"
+
+    lyric = Lyric.last
+    page_view = captured_ga4_events.find { |name, _| name == "page_view" }
+    generated = captured_ga4_events.find { |name, _| name == "print_page_generated" }
+    assert page_view
+    assert generated
+
+    # gtag fills the location, title, and referrer from the document unless the
+    # event supplies them, and on a saved page the document carries all three.
+    assert_equal "/lyrics/:token", URI(page_view.last.fetch("page_location")).path
+    assert_equal "/lyrics/:token", page_view.last.fetch("page_title")
+    assert_equal "/lyrics/:token", URI(generated.last.fetch("page_location")).path
+    assert_equal "1", generated.last.fetch("page_count_in_session")
+    refute_includes captured_ga4_calls.to_json, lyric.token
+    refute_includes captured_ga4_calls.to_json, lyric.title
+    refute_includes captured_ga4_calls.to_json, lyric.artist
+
+    page.execute_script("window.print = () => {}")
+    click_button "Print"
+
+    assert_equal(
+      [ "page_view", "print_page_generated", "print_dialog_opened" ],
+      captured_ga4_events.map(&:first)
+    )
+    assert_equal(
+      [ "pageview", "Print Page Generated", "Print Dialog Opened" ],
+      captured_analytics_calls.map(&:first)
+    )
+  end
+
+  test "google analytics reports the songbook events with their properties" do
+    visit root_path
+    install_persistent_analytics_capture
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    click_link "Back"
+    fill_in "Lyrics", with: "Second song line"
+    click_button "Generate print page"
+    click_button "Make a songbook"
+    assert_selector ".songbook-track", count: 2
+
+    created = captured_ga4_events.find { |name, _| name == "songbook_created" }
+    assert created
+    assert_equal "2", created.last.fetch("songbook_size")
+    assert_equal "offer", created.last.fetch("songbook_origin")
+    assert_equal 1, captured_ga4_events.count { |name, _| name == "songbook_created_from_offer" }
+  end
+
+  test "google analytics redacts a saved page that referred the visit" do
+    lyric = Lyric.create!(lyrics: "Shared line", title: "Shared Song")
+
+    visit lyric_path(lyric)
+    assert_text "Shared line"
+    install_persistent_analytics_capture
+
+    # A same-origin referrer is itself a saved page, and gtag reports
+    # document.referrer on every event unless the event supplies its own. The
+    # link leaves Turbo so the browser records a real referrer.
+    page.execute_script(<<~JS)
+      const link = document.createElement("a")
+      link.href = #{root_path.to_json}
+      link.dataset.turbo = "false"
+      link.textContent = "Home"
+      document.body.append(link)
+    JS
+    click_link "Home"
+    assert_selector "h1", text: "Find, format, and print song lyrics"
+
+    page_view = captured_ga4_events.find { |name, _| name == "page_view" }
+    assert page_view
+    assert_equal "/lyrics/:token", URI(page_view.last.fetch("page_referrer")).path
+    refute_includes captured_ga4_calls.to_json, lyric.token
+  end
+
   private
 
   def long_lyrics
@@ -621,9 +705,13 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   def install_persistent_analytics_capture
     page.execute_script("sessionStorage.removeItem('test:analyticsCalls')")
+    page.execute_script("sessionStorage.removeItem('test:gtagCalls')")
     inject_on_new_document(analytics_capture_source)
   end
 
+  # Both destinations are stubbed before the page's own scripts run. The
+  # bootstrap keeps an existing `window.gtag`, so the stub survives it and the
+  # real Google tag never sees a configured property.
   def analytics_capture_source
     <<~JS
       window.plausible = (...args) => {
@@ -633,11 +721,27 @@ class OrganicConversionTest < ApplicationSystemTestCase
         sessionStorage.setItem(key, JSON.stringify(calls))
       }
       window.plausible.init = () => {}
+      window.gtag = (...args) => {
+        const key = "test:gtagCalls"
+        const calls = JSON.parse(sessionStorage.getItem(key) || "[]")
+        calls.push(args)
+        sessionStorage.setItem(key, JSON.stringify(calls))
+      }
     JS
   end
 
   def captured_analytics_calls
     JSON.parse(page.evaluate_script("sessionStorage.getItem('test:analyticsCalls') || '[]'"))
+  end
+
+  # gtag also receives the bootstrap's own `js` and `config` commands, which are
+  # not events.
+  def captured_ga4_calls
+    JSON.parse(page.evaluate_script("sessionStorage.getItem('test:gtagCalls') || '[]'"))
+  end
+
+  def captured_ga4_events
+    captured_ga4_calls.select { |call| call[0] == "event" }.map { |call| [ call[1], call[2] ] }
   end
 
   def created_songbook_calls

@@ -10,7 +10,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
 
     assert_includes policy, "default-src 'self'"
     assert_includes policy, "object-src 'none'"
-    assert_includes policy, "script-src 'self' https://plausible.io 'nonce-"
+    assert_includes policy, "script-src 'self' https://plausible.io https://www.googletagmanager.com 'nonce-"
     assert_includes policy, "style-src-attr 'unsafe-inline'"
     assert_includes policy, "frame-ancestors 'none'"
     assert_no_match(/unsafe-eval/, policy)
@@ -52,7 +52,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
     end
 
     response.body.scan(/<script[^>]*\bsrc="([^"]+)"/).flatten.each do |src|
-      assert_match(%r{\A(?:https://plausible\.io|/)}, src, "external script not allowlisted: #{src}")
+      assert_match(%r{\A(?:https://plausible\.io|https://www\.googletagmanager\.com|/)}, src, "external script not allowlisted: #{src}")
     end
   end
 

@@ -1,7 +1,8 @@
 # Be sure to restart your server when you modify this file.
 
 # Content Security Policy for the app. Scripts are nonce-gated (importmap tags
-# pick up the nonce automatically); analytics needs the Plausible origin.
+# pick up the nonce automatically); analytics needs the Plausible origin and,
+# during the dual run, the Google tag origin and its collection endpoints.
 Rails.application.configure do
   config.content_security_policy do |policy|
     policy.default_src :self
@@ -9,9 +10,11 @@ Rails.application.configure do
     policy.font_src    :self, :https, :data
     policy.img_src     :self, :https, :data
     policy.object_src  :none
-    policy.script_src  :self, "https://plausible.io"
+    policy.script_src  :self, "https://plausible.io", "https://www.googletagmanager.com"
     policy.style_src   :self, :https
-    policy.connect_src :self, "https://plausible.io"
+    # GA4 sends its hits to region-specific hosts under both domains.
+    policy.connect_src :self, "https://plausible.io", "https://www.google-analytics.com",
+                       "https://*.google-analytics.com", "https://*.analytics.google.com"
     policy.form_action :self
     policy.frame_ancestors :none
     policy.manifest_src :self
