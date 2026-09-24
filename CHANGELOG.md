@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/body-clock/printlyrics/compare/v1.7.1...v1.8.0) (2026-09-24)
+
+
+### Features
+
+* ship the songbook printing guide and query-shaped search copy ([#71](https://github.com/body-clock/printlyrics/issues/71)) ([17dfec2](https://github.com/body-clock/printlyrics/commit/17dfec24eaa1e128a4e9e30b27fc6d0fceb3c453))
+
 ## [1.7.1](https://github.com/body-clock/printlyrics/compare/v1.7.0...v1.7.1) (2026-09-24)
 
 
