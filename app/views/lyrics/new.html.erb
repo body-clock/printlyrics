@@ -224,6 +224,8 @@
       <h3><%= t(".explainer.use_cases.heading") %></h3>
       <p><%= t(".explainer.use_cases.body") %></p>
     </div>
+
+    <p class="explainer-note songbook-note"><%= t(".explainer.songbook_note_html", songbook_link: link_to(t(".explainer.songbook_link"), print_a_songbook_path)) %></p>
   </section>
 
   <section class="faq" aria-labelledby="common-questions">
