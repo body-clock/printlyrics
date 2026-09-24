@@ -247,9 +247,13 @@ found without the nudge doing any work, and the suggestion is the part to
 change. Both falling together means the set surface itself is not landing.
 
 If an event is missing, first check the browser request, content blocking, the
-exact goal spelling, and whether the production asset release is current. If
-events duplicate, stop the measurement launch and fix the Turbo/pageview
-lifecycle before collecting a baseline. If a real token or song metadata is
+exact goal spelling, and whether the production asset release is current. For a
+GA4 event, also check the browser console for a syntax error from the tag
+bootstrap and confirm the page source carries the measurement ID as a JavaScript
+string with plain quotation marks: an HTML-escaped ID leaves `window.gtag`
+undefined, which loses every event rather than one. If events duplicate, stop
+the measurement launch and fix the Turbo/pageview lifecycle before collecting a
+baseline. If a real token or song metadata is
 present, treat it as a privacy incident: disable the affected instrumentation,
 deploy the redaction fix, and exclude the contaminated test period. The
 `analyticsUrl` helper in `app/javascript/lib/analytics.js` is the single place
@@ -270,7 +274,11 @@ the page source. A blank value renders no Google tag at all.
 
 1. Create a GA4 property for `printlyrics.app` with a Web data stream for
    `printlyrics.app`, and copy the stream's measurement ID (`G-XXXXXXXXXX`).
-2. Set `GA_MEASUREMENT_ID` in `config/deploy.yml` to that value and deploy.
+2. Set `GA_MEASUREMENT_ID` in `config/deploy.yml` to that value and deploy. The
+   bootstrap is inline JavaScript, so the served page must carry the ID as
+   `window.gtag("config", "G-XXXXXXXXXX"` with plain quotation marks; an escaped
+   one is a syntax error that leaves the tag unconfigured and loses every event.
+   `test/integration/google_analytics_test.rb` holds that line.
 3. **Admin > Data collection > Data retention**: set event and user data
    retention to 14 months. The default is 2 months.
 4. **Admin > Data streams > (stream) > Enhanced measurement**: turn every toggle

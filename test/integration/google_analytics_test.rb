@@ -14,6 +14,12 @@ class GoogleAnalyticsTest < ActionDispatch::IntegrationTest
     # must not send a pageview of its own, and the signals that need consent stay
     # off.
     assert_includes response.body, "window.dataLayer = window.dataLayer || []"
+    # The bootstrap is inline JavaScript, so ERB must not HTML-escape the
+    # measurement ID: an escaped quote there is a syntax error that stops the tag
+    # from configuring and loses every event.
+    id = Rails.configuration.x.google_analytics_id
+    assert_includes response.body, "window.gtag(\"config\", #{id.to_json}, {"
+    refute_includes response.body, "&quot;#{id}&quot;"
     assert_includes response.body, "send_page_view: false"
     assert_includes response.body, "allow_google_signals: false"
     assert_includes response.body, "allow_ad_personalization_signals: false"

@@ -50,7 +50,10 @@
         window.gtag("js", new Date());
         // Pageviews are sent by lib/analytics.js on turbo:load, where the token
         // path is redacted; an automatic pageview would report the real URL.
-        window.gtag("config", <%= google_analytics_id.to_json %>, {
+        // `raw` matters: ERB escapes this literal's quotes, and a script element
+        // is raw text, so an entity-escaped quote is a syntax error that kills
+        // the whole bootstrap and every event with it. json_escape keeps it safe.
+        window.gtag("config", <%= raw json_escape(google_analytics_id.to_json) %>, {
           send_page_view: false,
           allow_google_signals: false,
           allow_ad_personalization_signals: false
