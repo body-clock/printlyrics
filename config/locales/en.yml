@@ -35,7 +35,7 @@ en:
           - "Print or save as PDF"
           - "Collect lyric sheets into one songbook and print them as one job"
       heading: "Find, format, and print song lyrics"
-      intro: "Search by song or artist—no copying from another lyrics site. Review the words, fit them on the page, and print or save as PDF. Free, with no account required."
+      intro: "Search by song or artist—no copying from another lyrics site. Review the words, fit them on the page, and print or save as PDF. Free, online, and no account required."
       songbook:
         context_html:
           one: "Adding to a songbook with %{count} song. %{view_link}"
@@ -48,6 +48,7 @@ en:
           - "Edit any line"
           - "Fit one or two columns"
           - "Print or save as PDF"
+          - "Nothing to install"
       search:
         heading: "Find song lyrics"
         provider: "via LRCLIB"
@@ -89,7 +90,7 @@ en:
             body: "Choose a readable font size and one or two columns, then print directly or save the finished lyric sheet as a PDF."
         use_cases:
           heading: "Made for practical use"
-          body: "Create a clear reference sheet for rehearsal, a singer's music stand, a classroom handout, or personal reading without learning a page-layout tool."
+          body: "Create a clear reference sheet for rehearsal, a singer's music stand, a classroom handout, carol or hymn sheets, or large-print reading, without learning a page-layout tool."
         guide_note_html: "Have a song that runs long? The %{guide_link} walks through the order that keeps every line on one sheet."
         guide_link: "one-page printing guide"
         songbook_note_html: "Printing several songs for a rehearsal, a class, or a service? See %{songbook_link}: each song keeps its own sheet, and the set prints as one job."
@@ -101,6 +102,9 @@ en:
           source:
             heading: "Do I need to find and copy the lyrics first?"
             body: "No. Search by song title or artist and PrintLyrics will show available matches from LRCLIB. You can also paste your own text when you already have the words."
+          maker:
+            heading: "Is there a lyric sheet maker or generator?"
+            body: "Yes. Search by song or paste the words and PrintLyrics makes the sheet: choose a size and one or two columns, then print it or save it as a PDF. It runs in the browser, so there is nothing to install and no account to create."
           pdf:
             heading: "Can I save the lyric sheet as a PDF?"
             body: "Yes. Open Print, then choose your browser's Save as PDF option instead of a physical printer. The same page layout is used for either choice."
@@ -166,6 +170,9 @@ en:
         eyebrow: "Common problems"
         heading: "One-page lyric printing questions"
         questions:
+          template:
+            heading: "Do I need a template or a Word document?"
+            body: "No. A lyric sheet has no required layout: title and artist at the top, the stanzas in order, then one or two columns at a size you can read from where the sheet will sit. PrintLyrics builds that format for you, so there is no template to download and no page breaks to fix by hand."
           columns:
             heading: "Should I use one column or two?"
             body: "Use one column for short songs and two columns for longer lyrics. Two columns usually save more vertical space without making the text uncomfortably small."
@@ -186,7 +193,7 @@ en:
         description: "Gather lyric sheets into one songbook and print every song as a single job. Add songs in order, keep each one on its own sheet, and print the set in one go."
       eyebrow: "A practical songbook guide"
       heading: "Make a songbook of lyric sheets"
-      introduction: "A songbook is an ordered set of the sheets you have already made, printed as one job instead of one page at a time."
+      introduction: "A songbook, sometimes called a lyric book or booklet, is an ordered set of the sheets you have already made, printed as one job instead of one page at a time."
       answer:
         heading: "The short answer"
         body_html: "Generate a print page for the first song, then add the next song from that page. Once a second sheet exists, PrintLyrics offers to gather the set: each song keeps its own sheet and the set prints in one job. To start from the tool, %{tool_link}."
@@ -223,6 +230,9 @@ en:
           add_later:
             heading: "Can I add a song to a songbook later?"
             body: "Yes. Open the songbook and choose Add a song, or use Add another song on any generated sheet. The new song joins the end of the set, and your chosen layout applies to it too."
+          word:
+            heading: "Can I make a songbook in Word instead?"
+            body: "You can, but a document editor leaves you managing page breaks and spacing so that each song starts on its own sheet. A songbook here does that already: every song keeps its sheet, the layout you chose applies to all of them, and the set prints as one job."
           account:
             heading: "Do I need an account, and how long does the songbook last?"
             body: "No account is required. A songbook lives behind an unlisted link and stays available for 180 days after its last visit; opening the set renews every song in it."

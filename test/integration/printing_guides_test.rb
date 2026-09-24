@@ -23,6 +23,12 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_equal true, application.fetch("isAccessibleForFree")
     assert_includes application.fetch("featureList"), "Search for lyrics by song title or artist"
     assert_includes application.fetch("featureList"), "Print or save as PDF"
+
+    # Query-shaped copy: the tool qualifiers people type, and the use cases they
+    # describe. Each one is answered by a feature the page already offers.
+    assert_select "main", /Nothing to install/i
+    assert_select "section[aria-labelledby='common-questions'] summary", text: /maker or generator/i
+    assert_select "main", /carol or hymn sheets/i
   end
 
   test "homepage offers the songbook guide for multi-song printing" do
@@ -57,6 +63,8 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "main", /headers and footers/i
     assert_select "main", /100%/i
     assert_select "section[aria-labelledby='one-page-questions'] details", minimum: 3
+    # The layout intent people type as "template" or "Word document".
+    assert_select "section[aria-labelledby='one-page-questions'] summary", text: /template or a Word document/i
   end
 
   test "songbook guide owns its intent and links into the tool" do
@@ -75,6 +83,9 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "main", /25 songs/i
     assert_select "main", /180 days/i
     assert_select "section[aria-labelledby='songbook-questions'] details", minimum: 3
+    # The document-editor alternative and the "lyric book" synonym people use.
+    assert_select "section[aria-labelledby='songbook-questions'] summary", text: /songbook in Word/i
+    assert_select "main", /lyric book or booklet/i
 
     structured_data = JSON.parse(css_select("script[type='application/ld+json']").first.text)
     assert_equal "HowTo", structured_data.fetch("@type")
