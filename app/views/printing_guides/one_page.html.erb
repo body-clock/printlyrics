@@ -55,7 +55,7 @@
       <p class="eyebrow"><%= t(".faq.eyebrow") %></p>
       <h2 id="one-page-questions"><%= t(".faq.heading") %></h2>
 
-      <% %i[columns font_size overflow].each do |question| %>
+      <% %i[template columns font_size overflow].each do |question| %>
         <details>
           <summary><%= t(".faq.questions.#{question}.heading") %></summary>
           <p><%= t(".faq.questions.#{question}.body") %></p>
