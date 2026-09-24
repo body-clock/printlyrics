@@ -6,5 +6,8 @@
     <% unless current_section == :guide %>
       <%= link_to t(".guide"), print_lyrics_on_one_page_path %>
     <% end %>
+    <% unless current_section == :songbook_guide %>
+      <%= link_to t(".songbook_guide"), print_a_songbook_path %>
+    <% end %>
   </nav>
 </footer>

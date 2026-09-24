@@ -1,0 +1,74 @@
+<%
+  description = t(".seo.description")
+  step_keys = %i[first_sheet add_songs gather order remove print_all]
+  steps = step_keys.each_with_index.map do |step, index|
+    {
+      "@type": "HowToStep",
+      position: index + 1,
+      name: t(".steps.#{step}.heading"),
+      text: t(".steps.#{step}.body")
+    }
+  end
+  # Built from the same locale keys the page renders, so the markup cannot drift
+  # from the visible steps. Bing still reads structured data, and it is the
+  # site's largest traffic source.
+  structured_data = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: t(".heading"),
+    description: description,
+    url: print_a_songbook_url,
+    step: steps
+  }
+%>
+<% content_for :title, t(".seo.title") %>
+<% content_for :description, description %>
+<% content_for :canonical_url, print_a_songbook_url %>
+<% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
+<% content_for :head do %>
+  <%= render "shared/structured_data", structured_data: structured_data %>
+<% end %>
+
+<div class="guide-shell">
+  <article class="guide">
+    <header>
+      <p class="eyebrow"><%= t(".eyebrow") %></p>
+      <h1><%= t(".heading") %></h1>
+      <p><%= t(".introduction") %></p>
+    </header>
+
+    <section class="guide-answer" aria-labelledby="short-answer">
+      <h2 id="short-answer"><%= t(".answer.heading") %></h2>
+      <p><%= t(".answer.body_html", tool_link: link_to(t(".answer.tool_link"), root_path)) %></p>
+    </section>
+
+    <ol class="guide-steps">
+      <% step_keys.each do |step| %>
+        <li>
+          <h2><%= t(".steps.#{step}.heading") %></h2>
+          <p><%= t(".steps.#{step}.body") %></p>
+        </li>
+      <% end %>
+    </ol>
+
+    <section class="faq guide-faq" aria-labelledby="songbook-questions">
+      <p class="eyebrow"><%= t(".faq.eyebrow") %></p>
+      <h2 id="songbook-questions"><%= t(".faq.heading") %></h2>
+
+      <% %i[count own_sheet add_later account].each do |question| %>
+        <details>
+          <summary><%= t(".faq.questions.#{question}.heading") %></summary>
+          <p><%= t(".faq.questions.#{question}.body") %></p>
+        </details>
+      <% end %>
+    </section>
+
+    <section class="guide-callout" aria-labelledby="guide-tool-heading">
+      <h2 id="guide-tool-heading"><%= t(".callout.heading") %></h2>
+      <p><%= t(".callout.body") %></p>
+      <%= link_to t(".callout.link"), root_path, class: "button button-primary" %>
+    </section>
+  </article>
+
+  <%= render "shared/resource_navigation", current_section: :songbook_guide %>
+</div>
