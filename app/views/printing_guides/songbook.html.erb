@@ -1,6 +1,6 @@
 <%
   description = t(".seo.description")
-  step_keys = %i[complete columns font_size preview print_settings]
+  step_keys = %i[first_sheet add_songs gather order remove print_all]
   steps = step_keys.each_with_index.map do |step, index|
     {
       "@type": "HowToStep",
@@ -17,13 +17,13 @@
     "@type": "HowTo",
     name: t(".heading"),
     description: description,
-    url: print_lyrics_on_one_page_url,
+    url: print_a_songbook_url,
     step: steps
   }
 %>
 <% content_for :title, t(".seo.title") %>
 <% content_for :description, description %>
-<% content_for :canonical_url, print_lyrics_on_one_page_url %>
+<% content_for :canonical_url, print_a_songbook_url %>
 <% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
 <% content_for :head do %>
   <%= render "shared/structured_data", structured_data: structured_data %>
@@ -51,11 +51,11 @@
       <% end %>
     </ol>
 
-    <section class="faq guide-faq" aria-labelledby="one-page-questions">
+    <section class="faq guide-faq" aria-labelledby="songbook-questions">
       <p class="eyebrow"><%= t(".faq.eyebrow") %></p>
-      <h2 id="one-page-questions"><%= t(".faq.heading") %></h2>
+      <h2 id="songbook-questions"><%= t(".faq.heading") %></h2>
 
-      <% %i[template columns font_size overflow].each do |question| %>
+      <% %i[count own_sheet add_later word account].each do |question| %>
         <details>
           <summary><%= t(".faq.questions.#{question}.heading") %></summary>
           <p><%= t(".faq.questions.#{question}.body") %></p>
@@ -70,5 +70,5 @@
     </section>
   </article>
 
-  <%= render "shared/resource_navigation", current_section: :guide %>
+  <%= render "shared/resource_navigation", current_section: :songbook_guide %>
 </div>

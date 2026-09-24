@@ -39,7 +39,8 @@ require DNS verification and cover protocols and subdomains.
    submits a URL; it does not receive an uploaded file. Record the submission
    time and wait for status `Success`.
 7. In **Page indexing**, filter by the submitted sitemap. Record indexed and
-   non-indexed counts. Inspect the homepage and the guide with URL Inspection.
+   non-indexed counts. Inspect the homepage and both printing guides with URL
+   Inspection.
 
 Recovery:
 
@@ -168,7 +169,7 @@ navigation.
 1. Arrive from a real search-result click when practical. For a controlled
    transport test, use a search-engine referrer, but do not count that test in
    launch performance.
-2. Load the homepage and navigate to the one-page guide and back. Each Turbo
+2. Load the homepage and navigate to each printing guide and back. Each Turbo
    visit must send exactly one pageview.
 3. Search for a song and select a result. Confirm neither action sends a custom
    event. Generate the print page and confirm `Print Page Generated` arrives
@@ -449,6 +450,10 @@ Google Search Console, whole period: 1,347 impressions, 64 clicks, 4.4% CTR.
 | --- | --- | --- | --- | --- |
 | `/` | 973 | 54 | 5.55% | 16.79 |
 | `/print-lyrics-on-one-page` | 323 | 10 | 3.10% | 17.21 |
+| `/print-a-songbook` | — | — | — | — |
+
+`/print-a-songbook` was added after this export and has no baseline row: its first
+30 days are its baseline. Record it the same way as the other two.
 
 Head queries, and the positions to beat:
 
@@ -510,6 +515,7 @@ Review these symptoms weekly during the first 90 days:
 | Intended page is excluded | Inspect canonical, robots, response status, and rendered content |
 | Saved lyric or songbook URL is indexed | Verify `noindex`, sitemap exclusion, and request recrawl |
 | Impressions rise but completions do not | Compare entry pages and funnel drop-off; improve the tool path |
+| Songbook guide earns impressions but no `Songbook Created` | Read the guide's entry pages against `Second Print Page Generated` and the offer; fix the path from the guide into a second sheet before rewriting the guide |
 | Events disappear or duplicate | Repeat production smoke test and repair measurement before analysis |
 | GA4 events lag or stop while Plausible's continue | Check `GA_MEASUREMENT_ID` in `config/deploy.yml`, the key-event registration, consent state, and content blocking; the two destinations fail independently |
 | Takedown or source complaint | Remove the affected public song from discovery and preserve the private saved-page contract pending review |
@@ -520,9 +526,12 @@ not publish lyric text in public HTML, structured data, or analytics.
 
 ## 6. Roll back public discovery safely
 
-Only two pages are offered to crawlers: the homepage and the printing guide.
+Three pages are offered to crawlers: the homepage and the two printing guides,
+`/print-lyrics-on-one-page` and `/print-a-songbook`. Each guide answers one
+printing intent and links into the tool; neither is a keyword variant of the
+other.
 
-If either must be withdrawn:
+If a guide must be withdrawn:
 
 1. Deploy a change that removes the affected URL from `SitemapsController`.
 2. Return `noindex` or `410 Gone` from the withdrawn page as appropriate. Keep

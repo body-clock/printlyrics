@@ -28,7 +28,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
 
   test "no inline handler, javascript URL, or local style attribute resists the policy" do
     lyric = Lyric.create!(lyrics: "A line")
-    [ root_path, print_lyrics_on_one_page_path, lyric_path(lyric) ].each do |path|
+    [ root_path, print_lyrics_on_one_page_path, print_a_songbook_path, lyric_path(lyric) ].each do |path|
       get path
 
       assert_no_match(/\son[a-z]+=/i, response.body, "#{path} has an inline event handler")
