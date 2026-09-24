@@ -59,11 +59,15 @@
   tokens return to the form. Keep cleanup in the explicit purge operation/task;
   do not revive expired pages during lookup.
 - Public pages, structured data, and seeds contain metadata rather than lyric
-  text. The homepage and the printing guide are the only crawlable surfaces; the
+  text. The homepage and the printing guides are the only crawlable surfaces; the
   public song catalog was removed, so do not reintroduce song URLs, browse
   pagination, or `Song` publication state without a new decision.
+- A new crawlable surface needs a materially distinct printing intent, original
+  practical value, and a direct path into the tool; keyword-variant and doorway
+  pages are prohibited. Give it a title, description, canonical URL, and crawl
+  directive, and link it from the shared resource navigation.
 - Songs record sourced demand only. Keep `Song` free of publication state and
-  keep the sitemap limited to the homepage and guide.
+  keep the sitemap limited to the homepage and guides.
 
 ## External input and integrations
 

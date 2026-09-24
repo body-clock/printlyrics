@@ -1,8 +1,8 @@
 # Working on PrintLyrics
 
 PrintLyrics finds songs through LRCLIB or accepts pasted lyrics, then creates
-shareable, print-optimized lyric sheets. Only the homepage and the printing
-guide are public and indexable; saved lyric pages and songbooks are separate,
+shareable, print-optimized lyric sheets. Only the homepage and the two printing
+guides are public and indexable; saved lyric pages and songbooks are separate,
 token-addressed, and excluded from indexing. There is no public song catalog.
 
 The application uses Rails 8.1, Ruby 4.0.5, SQLite, server-rendered ERB,
