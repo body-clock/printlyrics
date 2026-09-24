@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/body-clock/printlyrics/compare/v1.7.0...v1.7.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **analytics:** send the GA4 measurement ID as a JavaScript literal ([#66](https://github.com/body-clock/printlyrics/issues/66)) ([f71b1bb](https://github.com/body-clock/printlyrics/commit/f71b1bbc672a2b8a5bdbb2db1b30ca1b55c80027))
+
 ## [1.7.0](https://github.com/body-clock/printlyrics/compare/v1.6.0...v1.7.0) (2026-09-21)
 
 
