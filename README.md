@@ -64,19 +64,20 @@ LIMIT=200 bin/rails feedback:list
 ```
 
 The form is gated by Cloudflare Turnstile. The site key and the accepted
-hostnames are public and live in `config/deploy.yml`; the secret is a credential:
+hostnames are public and live in `config/deploy.yml`; the widget secret is a
+credential, with the rest of this project's secrets:
 
 ```sh
 TURNSTILE_SITE_KEY=...      # config/deploy.yml, public
 TURNSTILE_HOSTNAMES=...     # config/deploy.yml, public; never localhost in production
-TURNSTILE_SECRET_KEY=...    # .kamal/secrets
+bin/rails credentials:edit  # turnstile.secret_key, unlocked by RAILS_MASTER_KEY
 ```
 
 A submission is stored only when Cloudflare confirms the token for the
 `feedback` action on one of `TURNSTILE_HOSTNAMES`. A declined token, a token
 minted for another surface or host, an unreachable siteverify, or a host missing
-any of these variables is refused: an unjudged challenge is not a pass, so the
-form stays closed until the deployment is configured.
+any of these values is refused: an unjudged challenge is not a pass, so the form
+stays closed until the deployment is configured.
 
 Cloudflare's test keys cannot satisfy those checks: their reply carries no
 `action` and reports `hostname: "example.com"`, so a test-key submission is

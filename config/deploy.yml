@@ -20,10 +20,6 @@ registry:
 env:
   secret:
     - RAILS_MASTER_KEY
-    # Supplied by .kamal/secrets: from the Cloudflare dashboard for a local
-    # deploy, from the printlyrics-prod environment secret in the deploy
-    # workflow. README.md documents the pair with the site key above.
-    - TURNSTILE_SECRET_KEY
   clear:
     RAILS_SERVE_STATIC_FILES: true
     # Public by design — the ID is in the page source. Set from
