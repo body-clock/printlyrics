@@ -25,6 +25,11 @@ env:
     # Public by design — the ID is in the page source. Set from
     # docs/organic-search-operations.md; blank renders no Google tag.
     GA_MEASUREMENT_ID: "G-SECDJWTR8B"
+    # Public by design — the Turnstile site key is in the page source. Its
+    # secret belongs in .kamal/secrets. The hostnames are the frontend hosts the
+    # form accepts tokens for; never localhost or 127.0.0.1 here.
+    TURNSTILE_SITE_KEY: "0x4AAAAAAFDv6dP-s2owpzIe"
+    TURNSTILE_HOSTNAMES: "printlyrics.app"
 
 volumes:
   - "printlyrics_storage:/rails/storage"

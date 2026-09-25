@@ -8,6 +8,24 @@ en:
       default_description: "Find lyrics by song or artist, edit every line, fit them into one or two columns, then print or save as PDF. Free with no account required."
       image_alt: "PrintLyrics - print lyrics for any song"
 
+  feedbacks:
+    created: "Thanks — your note is saved, and I read every one."
+    errors:
+      blank: "Add a note or a song title"
+      verification: "That check didn't pass, so nothing was sent. Please try once more."
+    new:
+      seo:
+        title: "Send Feedback | PrintLyrics"
+        description: "Tell me what you were trying to print, what got in the way, or what you would want next."
+      heading: "Tell me what you were trying to do"
+      intro: "PrintLyrics is built and maintained by one person, and analytics only show counts. A sentence about what you were printing, or what stopped you, is what I can act on."
+      message: "What were you trying to print, and what got in the way?"
+      query: "Song you couldn't find"
+      optional: "Optional"
+      contact_email: "Email"
+      contact_email_note: "Only if you want a reply"
+      submit: "Send feedback"
+
   lyrics:
     status:
       loaded: "Lyrics loaded. Review and edit them before generating your print page."
@@ -59,6 +77,10 @@ en:
         results_label: "Song search results"
         close: "Close search results"
         matches_label: "Song matches"
+        miss:
+          prompt: "Can't find the song you want? Tell me what you were looking for."
+          query: "Song title or artist"
+          submit: "Send it"
       manual_divider: "or enter lyrics manually"
       form:
         title: "Song title"
@@ -279,6 +301,7 @@ en:
       tool: "Print song lyrics"
       guide: "One-page printing guide"
       songbook_guide: "Songbook printing guide"
+      feedback: "Send feedback"
 
   pwa:
     manifest:

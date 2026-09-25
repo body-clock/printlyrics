@@ -14,6 +14,11 @@ Rails.application.routes.draw do
     to: "songbooks#destroy_song",
     as: :songbook_song
 
+  # The feedback form is a plain page and a plain POST, so it needs no resource
+  # scaffolding. The page is noindex and is linked from the resource navigation.
+  get "feedback", to: "feedbacks#new", as: :feedback
+  post "feedback", to: "feedbacks#create", as: :submit_feedback
+
   get "sitemap", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
