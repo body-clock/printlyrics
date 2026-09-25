@@ -12,8 +12,9 @@ class CreateFeedbacks < ActiveRecord::Migration[8.1]
       # Given only when the visitor asks for a reply, and the only field here
       # that identifies anyone.
       t.string :contact_email
-      # Whether Turnstile confirmed a person. False also covers a submission
-      # kept while the challenge could not be judged at all.
+      # Whether Turnstile confirmed a person. The gate refuses any challenge it
+      # cannot confirm, so a stored row is verified by construction and this
+      # records that provenance.
       t.boolean :verified, null: false, default: false
 
       t.timestamps

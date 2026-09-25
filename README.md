@@ -63,17 +63,26 @@ bin/rails feedback:list   # newest first, 50 by default
 LIMIT=200 bin/rails feedback:list
 ```
 
-The form is gated by Cloudflare Turnstile, whose keys come from the deployment
-environment. The site key is public because it is in the page source:
+The form is gated by Cloudflare Turnstile. The site key and the accepted
+hostnames are public and live in `config/deploy.yml`; the secret is a credential:
 
 ```sh
-TURNSTILE_SITE_KEY=...      # config/deploy.yml
+TURNSTILE_SITE_KEY=...      # config/deploy.yml, public
+TURNSTILE_HOSTNAMES=...     # config/deploy.yml, public; never localhost in production
 TURNSTILE_SECRET_KEY=...    # .kamal/secrets
 ```
 
-Until both are set, the widget is not rendered and submissions are stored with
-`verified: false` rather than rejected, so a half-configured host never blocks a
-visitor; `feedback:list` marks those rows `UNVERIFIED`.
+A submission is stored only when Cloudflare confirms the token for the
+`feedback` action on one of `TURNSTILE_HOSTNAMES`. A declined token, a token
+minted for another surface or host, an unreachable siteverify, or a host missing
+any of these variables is refused: an unjudged challenge is not a pass, so the
+form stays closed until the deployment is configured.
+
+Cloudflare's test keys cannot satisfy those checks: their reply carries no
+`action` and reports `hostname: "example.com"`, so a test-key submission is
+refused. To exercise the happy path locally, add `localhost` and `127.0.0.1` to
+the widget's domains in the Cloudflare dashboard and run with the real sitekey
+and `TURNSTILE_HOSTNAMES=localhost,127.0.0.1`.
 
 ## Deployment
 

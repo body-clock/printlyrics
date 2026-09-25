@@ -4,5 +4,6 @@
 <% if turnstile_site_key %>
   <div class="turnstile"
        data-controller="turnstile"
-       data-turnstile-site-key-value="<%= turnstile_site_key %>"></div>
+       data-turnstile-site-key-value="<%= turnstile_site_key %>"
+       data-turnstile-action-value="<%= turnstile_action %>"></div>
 <% end %>

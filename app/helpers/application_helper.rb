@@ -20,6 +20,12 @@ module ApplicationHelper
     Rails.configuration.x.turnstile_site_key
   end
 
+  # The action the widget renders and the server validates; one value, so the
+  # two halves cannot drift into rejecting every submission.
+  def turnstile_action
+    TurnstileClient::ACTION
+  end
+
   def page_title
     content_for?(:title) ? content_for(:title) : t("application.meta.default_title")
   end

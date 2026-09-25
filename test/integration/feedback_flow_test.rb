@@ -4,15 +4,17 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
   # Stands in for TurnstileClient: it records the token it was handed and
   # returns the outcome the test chose.
   class FakeTurnstileClient
-    attr_reader :tokens
+    attr_reader :tokens, :remote_ips
 
     def initialize(outcome)
       @outcome = outcome
       @tokens = []
+      @remote_ips = []
     end
 
-    def verify(token)
+    def verify(token, remote_ip: nil)
       @tokens << token
+      @remote_ips << remote_ip
       raise @outcome if @outcome.is_a?(TurnstileClient::ServiceError)
 
       @outcome
@@ -50,6 +52,9 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
       get feedback_path
 
       assert_select "div.turnstile[data-turnstile-site-key-value='1x00000000000000000000AA']"
+      # The widget's action and the server's expectation are the same value; a
+      # drift between them would reject every real submission.
+      assert_select "div.turnstile[data-turnstile-action-value='#{TurnstileClient::ACTION}']"
       assert_select "script[src='https://challenges.cloudflare.com/turnstile/v0/api.js']"
     end
   end
@@ -81,13 +86,23 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     assert_select ".flash-error", /didn't pass/
   end
 
-  test "a challenge that cannot be judged is stored unverified" do
-    verify_with(TurnstileClient::ServiceError.new("siteverify unreachable")) do
-      post feedback_path, params: { feedback: { message: "hello", surface: "feedback_page" } }
+  test "a challenge that cannot be judged stores nothing" do
+    assert_no_difference("Feedback.count") do
+      verify_with(TurnstileClient::ServiceError.new("siteverify unreachable")) do
+        post feedback_path, params: { feedback: { message: "hello", surface: "feedback_page" } }
+      end
     end
 
-    assert_redirected_to root_path
-    assert_not Feedback.recent.first.verified
+    assert_response :unprocessable_content
+    assert_select ".flash-error", /didn't pass/
+  end
+
+  test "the visitor's address reaches the verifier" do
+    client = verify_with(true) do
+      post feedback_path, params: { feedback: { message: "hi", surface: "feedback_page" } }
+    end
+
+    assert_equal [ "127.0.0.1" ], client.remote_ips
   end
 
   test "an empty submission is refused without spending the challenge" do

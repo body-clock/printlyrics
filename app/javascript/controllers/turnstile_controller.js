@@ -11,7 +11,7 @@ const API_TIMEOUT_MS = 10000
 const POLL_INTERVAL_MS = 100
 
 export default class extends Controller {
-  static values = { siteKey: String }
+  static values = { siteKey: String, action: String }
 
   connect() {
     this.beforeCache = () => this.reset()
@@ -45,7 +45,10 @@ export default class extends Controller {
   renderWidget() {
     if (this.widgetId) return
 
-    this.widgetId = window.turnstile.render(this.element, { sitekey: this.siteKeyValue })
+    this.widgetId = window.turnstile.render(this.element, {
+      sitekey: this.siteKeyValue,
+      action: this.actionValue
+    })
   }
 
   // A cached page must not keep a widget whose token has already been spent, so

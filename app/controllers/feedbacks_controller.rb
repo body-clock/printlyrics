@@ -16,13 +16,12 @@ class FeedbacksController < ApplicationController
       return render :new, status: :unprocessable_content
     end
 
-    verification = turnstile_verification
-    if verification == :rejected
+    unless verified_human?
       flash.now[:alert] = t("feedbacks.errors.verification")
       return render :new, status: :unprocessable_content
     end
 
-    @feedback.verified = verification == :verified
+    @feedback.verified = true
 
     if @feedback.save
       redirect_back_or_to root_path, allow_other_host: false, notice: t("feedbacks.created")
@@ -34,14 +33,14 @@ class FeedbacksController < ApplicationController
 
   private
 
-  def turnstile_verification
-    turnstile_client.verify(params["cf-turnstile-response"]) ? :verified : :rejected
+  # A declined token, a token minted for another surface or hostname, and a
+  # challenge that could not be judged at all all refuse the submission: the
+  # note is not stored, so nothing is kept on an unconfirmed pass.
+  def verified_human?
+    turnstile_client.verify(params["cf-turnstile-response"], remote_ip: request.remote_ip)
   rescue TurnstileClient::ServiceError => error
-    # The challenge could not be judged, so the submission is kept unverified
-    # rather than thrown away: losing a real reply costs more than keeping a
-    # doubtful one.
-    Rails.logger.warn("Turnstile verification unavailable (#{error.message}); storing feedback unverified.")
-    :unavailable
+    Rails.logger.warn("Turnstile verification unavailable (#{error.message}); refusing the submission.")
+    false
   end
 
   def turnstile_client

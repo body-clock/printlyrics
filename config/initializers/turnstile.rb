@@ -8,7 +8,21 @@
 # visitors, and the warning below makes the unarmed gate visible.
 Rails.application.config.x.turnstile_site_key = ENV["TURNSTILE_SITE_KEY"].presence
 Rails.application.config.x.turnstile_secret_key = ENV["TURNSTILE_SECRET_KEY"].presence
+# Frontend hostnames this deployment accepts tokens for, comma-separated. A
+# production value never includes localhost or 127.0.0.1: the hostname in the
+# siteverify reply is checked against this list.
+Rails.application.config.x.turnstile_hostnames = ENV["TURNSTILE_HOSTNAMES"].presence
 
-if Rails.env.production? && Rails.application.config.x.turnstile_site_key.blank?
-  Rails.logger.warn("TURNSTILE_SITE_KEY is not set: the feedback form has no bot gate.")
+# The gate refuses anything it cannot confirm, so a deployment missing any of
+# these refuses every submission rather than accepting them silently. Say so at
+# boot, naming what is missing and never a value.
+if Rails.env.production?
+  missing = %w[TURNSTILE_SITE_KEY TURNSTILE_SECRET_KEY TURNSTILE_HOSTNAMES].reject do |name|
+    ENV[name].present?
+  end
+  if missing.any?
+    Rails.logger.warn(
+      "Turnstile is not fully configured (#{missing.join(', ')} unset): the feedback form refuses every submission."
+    )
+  end
 end
