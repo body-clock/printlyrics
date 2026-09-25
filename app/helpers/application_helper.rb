@@ -13,6 +13,13 @@ module ApplicationHelper
     Rails.configuration.x.google_analytics_id
   end
 
+  # Nil until the deployment sets TURNSTILE_SITE_KEY; the feedback form renders
+  # the widget only when it is present, and the server stores submissions
+  # unverified while the matching secret is absent.
+  def turnstile_site_key
+    Rails.configuration.x.turnstile_site_key
+  end
+
   def page_title
     content_for?(:title) ? content_for(:title) : t("application.meta.default_title")
   end

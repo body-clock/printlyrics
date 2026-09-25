@@ -20,11 +20,18 @@ registry:
 env:
   secret:
     - RAILS_MASTER_KEY
+    # Uncomment with the TURNSTILE_SITE_KEY entry below and the matching line in
+    # .kamal/secrets; README.md documents the pair.
+    # - TURNSTILE_SECRET_KEY
   clear:
     RAILS_SERVE_STATIC_FILES: true
     # Public by design — the ID is in the page source. Set from
     # docs/organic-search-operations.md; blank renders no Google tag.
     GA_MEASUREMENT_ID: "G-SECDJWTR8B"
+    # Public by design — the Turnstile site key is in the page source. Its
+    # secret belongs in .kamal/secrets. With either key missing, the feedback
+    # form stores submissions unverified instead of rejecting them.
+    # TURNSTILE_SITE_KEY: "..."
 
 volumes:
   - "printlyrics_storage:/rails/storage"

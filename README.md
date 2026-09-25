@@ -51,6 +51,30 @@ the `kamal purge` alias runs against production.
 bin/rails lyrics:purge_expired
 ```
 
+## User feedback
+
+Visitors can describe what they were printing and what got in the way, from the
+prompt under a search that found nothing or from the `/feedback` page.
+Submissions are stored in the `feedbacks` table — nothing about them is sent to
+analytics — and read with:
+
+```sh
+bin/rails feedback:list   # newest first, 50 by default
+LIMIT=200 bin/rails feedback:list
+```
+
+The form is gated by Cloudflare Turnstile, whose keys come from the deployment
+environment. The site key is public because it is in the page source:
+
+```sh
+TURNSTILE_SITE_KEY=...      # config/deploy.yml
+TURNSTILE_SECRET_KEY=...    # .kamal/secrets
+```
+
+Until both are set, the widget is not rendered and submissions are stored with
+`verified: false` rather than rejected, so a half-configured host never blocks a
+visitor; `feedback:list` marks those rows `UNVERIFIED`.
+
 ## Deployment
 
 The Dockerfile builds assets without Node.js. Kamal deploys one web container
