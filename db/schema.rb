@@ -10,7 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_203954) do
+  create_table "feedbacks", force: :cascade do |t|
+    t.string "contact_email"
+    t.datetime "created_at", null: false
+    t.text "message"
+    t.string "query", limit: 200
+    t.string "surface", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "verified", default: false, null: false
+    t.index ["created_at"], name: "index_feedbacks_on_created_at"
+  end
+
   create_table "lyrics", force: :cascade do |t|
     t.string "artist", limit: 200
     t.datetime "created_at", null: false

@@ -9,5 +9,8 @@
     <% unless current_section == :songbook_guide %>
       <%= link_to t(".songbook_guide"), print_a_songbook_path %>
     <% end %>
+    <% unless current_section == :feedback %>
+      <%= link_to t(".feedback"), feedback_path %>
+    <% end %>
   </nav>
 </footer>

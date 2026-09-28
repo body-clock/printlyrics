@@ -163,6 +163,35 @@
                   <% end %>
                 </div>
               <% end %>
+
+              <%# A search that finds nothing is the one moment we learn which
+                  song someone wanted and could not get: the query never reaches
+                  analytics, so the visitor is the only source for it. %>
+              <% if @results.blank? && @search_error.blank? %>
+                <div class="search-miss">
+                  <p><%= t(".search.miss.prompt") %></p>
+
+                  <%= form_with url: feedback_path,
+                    method: :post,
+                    scope: :feedback,
+                    data: { turbo: false },
+                    class: "search-miss-form" do |form| %>
+                    <div class="search-form">
+                      <div class="field grow">
+                        <%= form.label :query, t(".search.miss.query"), class: "sr-only" %>
+                        <%= form.text_field :query,
+                          value: @query,
+                          maxlength: Feedback::MAX_QUERY_LENGTH,
+                          autocomplete: "off" %>
+                      </div>
+                      <%= form.button t(".search.miss.submit"), class: "button button-secondary" %>
+                    </div>
+
+                    <%= hidden_field_tag "feedback[surface]", "search_miss" %>
+                    <%= render "shared/turnstile" %>
+                  <% end %>
+                </div>
+              <% end %>
             </section>
           <% end %>
         </div>

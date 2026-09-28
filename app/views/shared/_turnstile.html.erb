@@ -1,0 +1,9 @@
+<%# The API script is loaded once by the layout; this element is where the
+    turnstile controller renders one widget per form. Nothing renders while no
+    site key is configured, and the server then stores submissions unverified. %>
+<% if turnstile_site_key %>
+  <div class="turnstile"
+       data-controller="turnstile"
+       data-turnstile-site-key-value="<%= turnstile_site_key %>"
+       data-turnstile-action-value="<%= turnstile_action %>"></div>
+<% end %>
