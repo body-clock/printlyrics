@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/body-clock/printlyrics/compare/v1.8.0...v1.9.0) (2026-09-28)
+
+
+### Features
+
+* ship visitor feedback behind a Cloudflare Turnstile gate ([#74](https://github.com/body-clock/printlyrics/issues/74)) ([077db3a](https://github.com/body-clock/printlyrics/commit/077db3afedc05a163dcd01ba1962a1ef4b319b0e))
+
 ## [1.8.0](https://github.com/body-clock/printlyrics/compare/v1.7.1...v1.8.0) (2026-09-24)
 
 
