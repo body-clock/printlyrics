@@ -33,6 +33,16 @@
 
     <%= yield :head %>
 
+    <% if turnstile_site_key %>
+      <!-- Cloudflare Turnstile gates the feedback form. The script loads once
+           per page; the turnstile controller renders a widget per form. The
+           nonce is Cloudflare's recommended way to let the widget load its own
+           resources, and the origin is allowlisted in the CSP as well. -->
+      <script async defer
+              src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+              nonce="<%= content_security_policy_nonce %>"></script>
+    <% end %>
+
     <!-- Privacy-friendly analytics by Plausible -->
     <script async src="https://plausible.io/js/pa-f0moCFg03qwW-u-pSexGt.js"></script>
     <script nonce="<%= content_security_policy_nonce %>">

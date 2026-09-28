@@ -10,7 +10,8 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
 
     assert_includes policy, "default-src 'self'"
     assert_includes policy, "object-src 'none'"
-    assert_includes policy, "script-src 'self' https://plausible.io https://www.googletagmanager.com 'nonce-"
+    assert_includes policy, "script-src 'self' https://plausible.io https://www.googletagmanager.com https://challenges.cloudflare.com 'nonce-"
+    assert_includes policy, "frame-src https://challenges.cloudflare.com"
     assert_includes policy, "style-src-attr 'unsafe-inline'"
     assert_includes policy, "frame-ancestors 'none'"
     assert_no_match(/unsafe-eval/, policy)
@@ -28,7 +29,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
 
   test "no inline handler, javascript URL, or local style attribute resists the policy" do
     lyric = Lyric.create!(lyrics: "A line")
-    [ root_path, print_lyrics_on_one_page_path, print_a_songbook_path, lyric_path(lyric) ].each do |path|
+    [ root_path, print_lyrics_on_one_page_path, print_a_songbook_path, feedback_path, lyric_path(lyric) ].each do |path|
       get path
 
       assert_no_match(/\son[a-z]+=/i, response.body, "#{path} has an inline event handler")
@@ -52,7 +53,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
     end
 
     response.body.scan(/<script[^>]*\bsrc="([^"]+)"/).flatten.each do |src|
-      assert_match(%r{\A(?:https://plausible\.io|https://www\.googletagmanager\.com|/)}, src, "external script not allowlisted: #{src}")
+      assert_match(%r{\A(?:https://plausible\.io|https://www\.googletagmanager\.com|https://challenges\.cloudflare\.com|/)}, src, "external script not allowlisted: #{src}")
     end
   end
 

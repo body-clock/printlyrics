@@ -1,0 +1,50 @@
+<%
+  # A place to say what the counts cannot: the feedback page is a plain form, is
+  # not a crawlable surface, and is linked from the shared resource navigation.
+%>
+<% content_for :title, t(".seo.title") %>
+<% content_for :description, t(".seo.description") %>
+<% content_for :canonical_url, feedback_url %>
+<% content_for :robots, "noindex, nofollow" %>
+
+<div class="landing-shell">
+  <section class="entry-panel" aria-labelledby="page-heading">
+    <div class="intro">
+      <p class="eyebrow"><%= t("application.name") %></p>
+      <h1 id="page-heading"><%= t(".heading") %></h1>
+      <p><%= t(".intro") %></p>
+    </div>
+
+    <%= render "shared/flash" %>
+
+    <%= form_with model: @feedback, url: feedback_path, method: :post, data: { turbo: false }, class: "feedback-form" do |form| %>
+      <div class="field">
+        <%= form.label :message, t(".message") %>
+        <%= form.text_area :message, rows: 6, maxlength: Feedback::MAX_MESSAGE_LENGTH %>
+      </div>
+
+      <div class="field">
+        <div class="field-label-row">
+          <%= form.label :query, t(".query") %>
+          <span><%= t(".optional") %></span>
+        </div>
+        <%= form.text_field :query, maxlength: Feedback::MAX_QUERY_LENGTH, autocomplete: "off" %>
+      </div>
+
+      <div class="field">
+        <div class="field-label-row">
+          <%= form.label :contact_email, t(".contact_email") %>
+          <span><%= t(".contact_email_note") %></span>
+        </div>
+        <%= form.email_field :contact_email, maxlength: 200, autocomplete: "email" %>
+      </div>
+
+      <%= hidden_field_tag "feedback[surface]", "feedback_page" %>
+      <%= render "shared/turnstile" %>
+
+      <%= form.button t(".submit"), class: "button button-primary" %>
+    <% end %>
+  </section>
+
+  <%= render "shared/resource_navigation", current_section: :feedback %>
+</div>

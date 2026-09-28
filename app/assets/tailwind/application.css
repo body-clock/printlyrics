@@ -392,6 +392,25 @@ textarea:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+.search-miss {
+  display: grid;
+  gap: 0.7rem;
+  border-top: 1px solid var(--line);
+  padding: 0.9rem 1rem 1rem;
+  background: var(--surface-muted);
+}
+
+.search-miss p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
+.search-miss-form {
+  display: grid;
+  gap: 0.6rem;
+}
+
 @keyframes search-spin {
   to {
     transform: rotate(360deg);
@@ -528,6 +547,22 @@ textarea:focus-visible {
   width: 100%;
   justify-content: space-between;
   padding-inline: 1.15rem;
+}
+
+.feedback-form {
+  display: grid;
+  gap: 1.35rem;
+}
+
+/* The note needs a readable box, not the full-height lyrics area. */
+.feedback-form textarea {
+  min-height: 9rem;
+}
+
+/* Turnstile sizes its own iframe; reserving the usual height keeps the form
+   from jumping when the widget appears. */
+.turnstile {
+  min-height: 65px;
 }
 
 .landing-footer {

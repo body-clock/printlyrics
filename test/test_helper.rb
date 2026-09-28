@@ -14,9 +14,35 @@ module LrcLibClientInjection
   end
 end
 
+module TurnstileClientInjection
+  # Replace the controller's verifier for the duration of the block, so
+  # higher-level tests never reach Cloudflare.
+  def with_turnstile_client(client)
+    previous = FeedbacksController.turnstile_client_factory
+    FeedbacksController.turnstile_client_factory = -> { client }
+    yield
+  ensure
+    FeedbacksController.turnstile_client_factory = previous
+  end
+end
+
+module TurnstileSiteKey
+  # The widget renders only when a site key is configured. The test environment
+  # leaves it unset, so no page loads Cloudflare's script by default.
+  def with_turnstile_site_key(site_key)
+    previous = Rails.configuration.x.turnstile_site_key
+    Rails.configuration.x.turnstile_site_key = site_key
+    yield
+  ensure
+    Rails.configuration.x.turnstile_site_key = previous
+  end
+end
+
 module ActiveSupport
   class TestCase
     include LrcLibClientInjection
+    include TurnstileClientInjection
+    include TurnstileSiteKey
 
     # Run tests in parallel with specified workers. Rails templates the worker
     # number onto the test database name and rebuilds each worker file from

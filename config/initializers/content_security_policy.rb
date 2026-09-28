@@ -3,6 +3,9 @@
 # Content Security Policy for the app. Scripts are nonce-gated (importmap tags
 # pick up the nonce automatically); analytics needs the Plausible origin and,
 # during the dual run, the Google tag origin and its collection endpoints.
+# Turnstile needs its API script and the widget's iframe, which is the two
+# directives Cloudflare's CSP reference requires:
+# https://developers.cloudflare.com/turnstile/reference/content-security-policy/
 Rails.application.configure do
   config.content_security_policy do |policy|
     policy.default_src :self
@@ -10,11 +13,14 @@ Rails.application.configure do
     policy.font_src    :self, :https, :data
     policy.img_src     :self, :https, :data
     policy.object_src  :none
-    policy.script_src  :self, "https://plausible.io", "https://www.googletagmanager.com"
+    policy.script_src  :self, "https://plausible.io", "https://www.googletagmanager.com",
+                       "https://challenges.cloudflare.com"
     policy.style_src   :self, :https
     # GA4 sends its hits to region-specific hosts under both domains.
     policy.connect_src :self, "https://plausible.io", "https://www.google-analytics.com",
                        "https://*.google-analytics.com", "https://*.analytics.google.com"
+    # The Turnstile widget is an iframe served by Cloudflare.
+    policy.frame_src   "https://challenges.cloudflare.com"
     policy.form_action :self
     policy.frame_ancestors :none
     policy.manifest_src :self
