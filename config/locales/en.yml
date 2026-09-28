@@ -18,7 +18,7 @@ en:
         title: "Send Feedback | PrintLyrics"
         description: "Tell me what you were trying to print, what got in the way, or what you would want next."
       heading: "Tell me what you were trying to do"
-      intro: "PrintLyrics is built and maintained by one person, and analytics only show counts. A sentence about what you were printing, or what stopped you, is what I can act on."
+      intro: "PrintLyrics is built and maintained by one person. A sentence about what you were printing, or what stopped you, is what I can act on."
       message: "What were you trying to print, and what got in the way?"
       query: "Song you couldn't find"
       optional: "Optional"
