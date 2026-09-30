@@ -289,7 +289,10 @@ Host, database, and application are Kamal accessories. They are booted once, and
    through this step still reports to Plausible alone.
 7. Leave `DISABLE_TELEMETRY=1` and `MCP_ENABLED=1` set, as `config/deploy.yml`
    ships them. Umami sends anonymous telemetry to its authors by default, and a
-   self-hosted instance has no reason to participate.
+   self-hosted instance has no reason to participate. Do not add
+   `DISABLE_BOT_CHECK` for the same reason: Umami excludes known bots from its
+   statistics by default, by their User-Agent, and that variable turns the check
+   off rather than tightening it.
 
 Do not turn on the tracker's own capture. It reports the live `location.href`,
 `document.title`, and `document.referrer`, and a saved page carries its share
@@ -334,6 +337,14 @@ Rules that make those surfaces read correctly:
   from a salted hash of address and user agent, rotating the salt monthly
   (`SALT_ROTATION`). That is the closest match to Plausible's Uniques, and it is
   a different quantity across a rotation boundary.
+- **The population is the event, not the visitor total.** Anything that runs the
+  tracker is counted and only a User-Agent check stands in front of it, so the
+  visitor and pageview totals describe what the site received rather than who
+  used it. Read every figure below from the events instead — an event's own
+  **Visitors** and **Events** counts, or the funnel whose first step is
+  `Print Page Generated`. A crawler does not open a print dialog or build a
+  songbook, so those counts are the quantity Plausible's goals report, and the
+  totals stay out of the comparison.
 - **`Second Print Page Generated` stays out of the ordered funnel.** It fires
   before the second print dialog, so folding it into the funnel would misorder
   the steps. Read it as a standalone event, the way Plausible reads its own goal.
@@ -356,6 +367,10 @@ it, and it never reads the database.
 
 1. Create a key under **Settings > API keys** in the dashboard and save it; it is
    shown once. Treat it as a credential: whoever holds it can read the analytics.
+   It authenticates a client, not the application, so it belongs in Proton Pass
+   beside the two service secrets rather than in `credentials.yml.enc`, which no
+   Umami code path reads, or in a committed client config, which would hand it
+   to everyone who clones the repository.
 2. Point an MCP client at the endpoint with the key as a bearer token. The
    client has to support Streamable HTTP with custom headers:
 
@@ -370,12 +385,19 @@ it, and it never reads the database.
    }
    ```
 
-3. Call `list_websites` first for the website ID every other tool needs. From
-   there: `get_website_stats`, `get_website_traffic`, `get_website_metrics`,
-   `get_events`, `get_event_stats`, `get_event_series`, `get_event_properties`,
-   `get_realtime`, `get_sessions`, `get_session`, `run_funnel`, `run_journey`,
-   `run_retention`, `run_attribution`, `get_goals`, `list_segments`,
-   `list_funnels`, `get_annotations`, and `get_performance`.
+3. Call `list_websites` first for the website ID every other tool needs, and
+   `get_website_daterange` when it is not obvious which dates hold data. The
+   pinned image (`ghcr.io/umami-software/umami:3.4.0`) exposes 23 read-only
+   tools — `list_websites`, `get_website_daterange`, `get_website_stats`,
+   `get_website_traffic`, `get_website_metrics`, `get_realtime`, `get_events`,
+   `get_event_stats`, `get_event_series`, `get_event_properties`,
+   `get_sessions`, `get_session_stats`, `get_session`, `get_annotations`,
+   `list_segments`, `list_funnels`, `run_funnel`, `get_goals`, `run_journey`,
+   `run_retention`, `run_attribution`, `get_revenue`, and `get_performance`.
+   `get_revenue` and `get_session_stats` answer questions nothing else here
+   asks, so the readings in section 4 do not use them. The list follows the
+   image tag rather than this document: after an image bump, ask the server
+   itself with `tools/list`.
 4. Dates are ISO 8601 strings, both ends supplied. The questions worth asking are
    the ones section 4 records by hand, so ask the same ones:
 
@@ -398,6 +420,15 @@ it, and it never reads the database.
   has to be rechecked after an upgrade: the tag's `data-auto-track="false"` and a
   `/api/send` that stores only what it was sent are the two claims the production
   smoke test verifies.
+- **No bot filtering beyond the User-Agent check.** Umami drops known bots by
+  their User-Agent and nothing else: no referrer-spam domains, no data-center
+  address ranges, and no traffic-pattern detection. Plausible applies all four
+  layers, so a crawler that presents a browser User-Agent is recorded here and
+  filtered there, and the two visitor and pageview totals are not comparable for
+  that reason as well as for the visit definition. The reports have no bot
+  dimension, the filter set has no exclusion operator, and collected rows cannot
+  be removed, so this cannot be filtered out afterwards. The check has to happen
+  before the payload arrives: at the edge, or in Umami's own `IGNORE_IP` list.
 
 ### Production event smoke test
 
@@ -523,9 +554,14 @@ Run Umami and Plausible together for two weeks, then compare
 dashboard, beside the four properties only Umami can read. What matters is that
 every one of the six events is present in both and that the two series move
 together. The counts will not match exactly, because the two products define a
-visit and a visitor differently, so a lower Umami figure is not by itself a
+visit and a visitor differently and because Plausible filters non-human traffic
+in layers Umami does not have, so a lower Umami figure is not by itself a
 failure — but an event missing from either is an instrumentation problem, and
-the instrumentation is fixed before any number is compared.
+the instrumentation is fixed before any number is compared. Compare the events,
+their counts, and their properties, and read both the same way for the
+population that generated a print page; the raw visitor and pageview totals are
+the one figure that is not comparable, and Plausible's export is their record
+for the days before the cutover.
 
 To finish the cutover:
 
