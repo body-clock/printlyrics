@@ -1,7 +1,10 @@
 import { sessionStore } from "lib/settings_store"
 import { rememberSessionPage, sessionPages } from "lib/session_pages"
 
-const TOKEN_PATHS = /^\/(lyrics|songbooks)\/[^/]+$/
+// The trailing slash is optional because Rails serves `/lyrics/<token>/` as the
+// same page, and a shared link that gained one would otherwise report the real
+// token to every destination.
+const TOKEN_PATHS = /^\/(lyrics|songbooks)\/[^/]+\/?$/
 const CAMPAIGN_KEY = "printlyrics:campaign"
 
 // Campaign values are allowlisted by the server (AnalyticsCampaigns) and read
@@ -73,7 +76,7 @@ export function trackGeneratedPage() {
 //
 // The route is also its own event, because Plausible's plan has no custom
 // properties: `songbook_origin` cannot be read from its dashboard, so the offer
-// only stays visible there as a goal. GA4 reads the parameter directly. While
+// only stays visible there as a goal. Umami reads the parameter directly. While
 // both run, `Songbook Created` is the total and `Songbook Created From Offer` is
 // the subset the nudge produced, so the offer's conversion rate is one over the
 // other in either one.
@@ -108,27 +111,7 @@ function pageCountBucket(count) {
   return "6+"
 }
 
-// GA4 accepts no event name with a space in it, so the product names are mapped.
-// This table is the contract the runbook's key-event list repeats: a new event
-// is added here and registered in the dashboard.
-const GA4_EVENT_NAMES = {
-  pageview: "page_view",
-  "Print Page Generated": "print_page_generated",
-  "Second Print Page Generated": "second_print_page_generated",
-  "Print Dialog Opened": "print_dialog_opened",
-  "Songbook Created": "songbook_created",
-  "Songbook Created From Offer": "songbook_created_from_offer",
-  "Songbook Printed": "songbook_printed"
-}
-
-// An unmapped name still reaches GA4 in the snake_case form it accepts, so new
-// instrumentation shows up immediately instead of silently vanishing.
-function ga4EventName(name) {
-  return GA4_EVENT_NAMES[name] ||
-    String(name).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
-}
-
-// Both destinations run side by side during the dual run, and a browser that
+// Both destinations run side by side until the cutover, and a browser that
 // blocks one still reports the other. Telemetry never interrupts a product
 // action: unavailable storage or a throwing third-party stub must not stop the
 // print dialog from opening.
@@ -137,7 +120,7 @@ function dispatch(name, props = {}) {
   const eventProps = { ...campaignProps(), ...props }
 
   sendToPlausible(name, location, eventProps)
-  sendToGoogleAnalytics(ga4EventName(name), location, eventProps)
+  sendToUmami(name, eventProps)
 }
 
 function sendToPlausible(name, location, props) {
@@ -152,20 +135,27 @@ function sendToPlausible(name, location, props) {
   }
 }
 
-function sendToGoogleAnalytics(name, location, props) {
-  if (typeof window.gtag !== "function") return
+// Umami fills url, title, and referrer from the document on every payload,
+// custom events included, so a saved page would report its token and its song
+// title unless each payload supplies its own. The tracker's function form is the
+// only shape that can replace them, and it is how an event carries properties as
+// well: a name plus `data`. Umami keeps the product's event names verbatim,
+// spaces and all, so the names below are the names the dashboard lists.
+//
+// A pageview carries no data of its own; campaign attribution comes from the
+// landing URL's UTM parameters, which Umami attributes natively, the same way
+// Plausible does.
+function sendToUmami(name, props) {
+  if (typeof window.umami?.track !== "function") return
 
   try {
-    // gtag.js would otherwise attach the document's own URL, title, and
-    // referrer, and on a saved page those carry the token and song metadata.
-    // Every value it would fill in is supplied here instead.
-    const referrer = analyticsReferrer()
-    window.gtag("event", name, {
-      page_location: location,
-      page_title: analyticsTitle(),
-      ...(referrer && { page_referrer: referrer }),
-      ...props
-    })
+    window.umami.track((payload) => ({
+      ...payload,
+      url: analyticsUrl(),
+      title: analyticsTitle(),
+      referrer: analyticsReferrer() || "",
+      ...(name === "pageview" ? {} : { name, data: props })
+    }))
   } catch {
     // Ignore analytics failures.
   }
