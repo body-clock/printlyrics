@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/body-clock/printlyrics/compare/v1.10.0...v1.11.0) (2026-09-30)
+
+
+### Features
+
+* **analytics:** activate the Umami site and read its credentials from Proton Pass ([#82](https://github.com/body-clock/printlyrics/issues/82)) ([356ac4f](https://github.com/body-clock/printlyrics/commit/356ac4f36596ba48239139353f61622612350a7a))
+
 ## [1.10.0](https://github.com/body-clock/printlyrics/compare/v1.9.0...v1.10.0) (2026-09-30)
 
 
