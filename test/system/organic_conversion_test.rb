@@ -6,6 +6,9 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     visit root_path
     install_persistent_analytics_capture
+    # The manual form reports its attempt in the document it is submitted from,
+    # so the capture has to be live here as well as in the page that follows.
+    page.execute_script(analytics_capture_source)
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"),
       :<=, page.evaluate_script("window.innerWidth")
     fill_in "Song title", with: "Practice Song"
@@ -64,7 +67,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     )
 
     assert_equal(
-      [ "Print Page Generated" ],
+      [ "Manual Entry Submitted", "Print Page Generated" ],
       captured_analytics_calls.map(&:first).reject { |name| name == "pageview" }
     )
   end
@@ -136,7 +139,10 @@ class OrganicConversionTest < ApplicationSystemTestCase
       assert_field "Song title", with: "The Kiss"
       assert_field "Artist", with: "Judee Sill"
       assert_field "Lyrics", with: "Love, rising"
-      assert_empty page.evaluate_script("window.__analyticsCalls.map((call) => call[0])")
+      # A search reports its attempt; choosing a result is not an event of its
+      # own, and a search that matched leaves the miss prompt out of the panel.
+      assert_equal [ "Song Search Submitted" ],
+        page.evaluate_script("window.__analyticsCalls.map((call) => call[0])")
 
       assert_difference([ "Lyric.count", "Song.count" ], 1) do
         click_button "Generate print page"
@@ -579,6 +585,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
   test "umami reports each event under its own name and redacts saved pages" do
     visit root_path
     install_persistent_analytics_capture
+    page.execute_script(analytics_capture_source)
 
     fill_in "Song title", with: "Test Song"
     fill_in "Artist", with: "Test Artist"
@@ -608,7 +615,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     # Umami keeps the product's names verbatim, spaces and all, so there is no
     # mapping table between the two, and a pageview is the payload with no name.
     assert_equal(
-      [ nil, "Print Page Generated", "Print Dialog Opened" ],
+      [ "Manual Entry Submitted", nil, "Print Page Generated", "Print Dialog Opened" ],
       captured_umami_payloads.map { |payload| payload["name"] }
     )
   end
@@ -673,6 +680,67 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal "/lyrics/:token", pageview.fetch("title")
     refute_includes captured_umami_payloads.to_json, lyric.token
     refute_includes captured_analytics_calls.to_json, lyric.token
+  end
+
+  test "a search that finds nothing reports its attempt and its miss once" do
+    client = Object.new
+    client.define_singleton_method(:search) { |_| [] }
+
+    with_lrc_lib_client(client) do
+      visit root_path
+      install_persistent_analytics_capture
+      # The results arrive in a Turbo frame, which is this same document, so the
+      # capture has to be live here as well as in the document that follows.
+      page.execute_script(analytics_capture_source)
+
+      fill_in "Song title or artist", with: "A song nobody has"
+      click_button "Search"
+      assert_text "No matches found"
+      wait_for_analytics_event("Song Search Missed")
+
+      assert_equal 1, analytics_calls_named("Song Search Submitted").length
+      assert_equal 1, analytics_calls_named("Song Search Missed").length
+
+      # The miss rides the response that carried it, so returning to a panel
+      # restored from Turbo's cache is not another miss.
+      page.execute_script("Turbo.visit('/print-lyrics-on-one-page')")
+      assert_current_path "/print-lyrics-on-one-page"
+      page.go_back
+      assert_selector ".search-miss"
+
+      assert_equal 1, analytics_calls_named("Song Search Missed").length
+      assert_equal 1, analytics_calls_named("Song Search Submitted").length
+
+      # The manual form reports its own attempt, which is the other way in.
+      fill_in "Lyrics", with: "A line we typed ourselves"
+      click_button "Generate print page"
+      assert_selector "body[data-generated-page-key]"
+
+      assert_equal 1, analytics_calls_named("Manual Entry Submitted").length
+      assert_equal 1, analytics_calls_named("Song Search Missed").length
+    end
+  end
+
+  test "the manual form reports its attempt before the page it generates" do
+    visit root_path
+    install_persistent_analytics_capture
+    page.execute_script(analytics_capture_source)
+
+    fill_in "Song title", with: "Practice Song"
+    fill_in "Lyrics", with: "A line we typed ourselves"
+    click_button "Generate print page"
+    assert_selector "body[data-generated-page-key]"
+
+    calls = captured_analytics_calls
+    attempt = calls.index { |call| call[0] == "Manual Entry Submitted" }
+    generated = calls.index { |call| call[0] == "Print Page Generated" }
+    assert attempt
+    assert generated
+    assert_operator attempt, :<, generated
+    assert_equal 1, analytics_calls_named("Manual Entry Submitted").length
+    # The event names the moment; what the visitor typed stays out of it.
+    refute_includes calls.to_json, "A line we typed ourselves"
+    refute_includes calls.to_json, "Practice Song"
   end
 
   private
@@ -789,6 +857,18 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   def created_songbook_calls
     analytics_calls_named("Songbook Created")
+  end
+
+  # A frame reports its outcome once Turbo has finished rendering it, which can
+  # be a repaint later than the text the assertions wait for, so the report is
+  # waited for rather than assumed to have already happened.
+  def wait_for_analytics_event(name)
+    deadline = Time.now + Capybara.default_max_wait_time
+
+    until analytics_calls_named(name).any?
+      flunk "no #{name} call arrived" if Time.now > deadline
+      sleep 0.05
+    end
   end
 
   def analytics_calls_named(name)

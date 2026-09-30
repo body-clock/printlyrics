@@ -63,6 +63,9 @@ bin/rails feedback:list   # newest first, 50 by default
 LIMIT=200 bin/rails feedback:list
 ```
 
+The `kamal feedback` alias runs the same task against the deployed container,
+which is where production submissions are read.
+
 The form is gated by Cloudflare Turnstile. The site key and the accepted
 hostnames are public and live in `config/deploy.yml`; the widget secret is a
 credential, with the rest of this project's secrets:
@@ -119,4 +122,6 @@ shows that version in its footer.
 Use the [organic search operations runbook](docs/organic-search-operations.md)
 to configure Search Console, boot the self-hosted Umami analytics service and its
 MCP endpoint, run the two-week parallel measurement beside Plausible, record
-launch baselines, and run the 30- and 90-day reviews.
+launch baselines, and run the 30- and 90-day reviews. The
+[measurement contract](docs/measurement-contract.md) holds the event vocabulary,
+how a surface reports an event, and what must never reach analytics.
