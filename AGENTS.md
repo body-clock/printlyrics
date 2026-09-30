@@ -45,6 +45,9 @@ and configuration files as the source of truth for versions and tooling.
   references to URL extraction in product prose are not implemented features.
 - [Organic search operations](docs/organic-search-operations.md): indexing,
   analytics contracts, and operational procedures.
+- [Measurement contract](docs/measurement-contract.md): the event vocabulary,
+  how an entry surface reports an event, and what must never reach analytics.
+  Read it before changing analytics or adding a tool that reports anything.
 - [README.md](README.md): retention, deployment, and release workflow.
 
 ## Working conventions
