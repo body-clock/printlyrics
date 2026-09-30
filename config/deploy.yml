@@ -27,7 +27,7 @@ env:
     # setup steps are in docs/organic-search-operations.md. The origin the
     # tracker is served from is `config.x.umami_origin`, which the proxy below
     # and the content security policy also use.
-    UMAMI_WEBSITE_ID: ""
+    UMAMI_WEBSITE_ID: "ea5c0e32-fcc8-4081-814e-085e7dfefa20"
     # Public by design — the Turnstile site key is in the page source. Its
     # secret is a credential (turnstile.secret_key in credentials.yml.enc,
     # unlocked in the container by RAILS_MASTER_KEY). The hostnames are the
