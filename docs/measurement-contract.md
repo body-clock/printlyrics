@@ -32,6 +32,11 @@ matter, the subset is its own event, because this plan cannot read custom
 properties. `Songbook Created` and `Songbook Created From Offer` are the worked
 example: the subset over the total is the offer's conversion rate.
 
+A saved funnel carries a name too, and it follows the same rule: the funnel that
+reads a tool's attempt to its output is named `<entry> to <outcome>` in the
+product's own words. The print tool's three are `Search to sheet`, `Paste to
+sheet`, and `Sheet to printer`.
+
 The nine names in use, grouped by the flow that fires them:
 
 - Print flow: `Print Page Generated`, `Second Print Page Generated`, `Print
@@ -54,8 +59,9 @@ completes the set surface; `Second Print Page Generated`, `Songbook Created`,
 and `Songbook Created From Offer` are the artefacts and subsets between them.
 
 Attempt-to-output conversion is read with a funnel, so no property has to carry
-it: `run_funnel` over the Umami MCP endpoint, or the funnel report in either
-dashboard.
+it: `run_funnel` over the Umami MCP endpoint, or the saved funnel in the Umami
+dashboard, which is where the ordered questions live because this Plausible plan
+has no funnel report.
 
 ## How an entry surface reports its events
 
@@ -103,7 +109,7 @@ the server in `AnalyticsCampaigns` (`app/models/analytics_campaigns.rb`).
    markers beside the controls that fire them.
 2. Create the goals in Plausible, and confirm them in Umami's Events report.
    Umami needs no registration: a name it receives is a row it lists.
-3. Give the tool a funnel in both dashboards, from attempt to output.
+3. Save a funnel from attempt to output in Umami, named `<entry> to <outcome>`.
 4. Keep a free-tier limit in application state. Never derive a limit from
    analytics: a blocked, sampled, or bot-polluted client must not change what a
    visitor can do.

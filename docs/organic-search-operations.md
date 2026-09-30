@@ -182,12 +182,12 @@ is a candidate for removal.
 
 Plausible requires received events to be configured as goals before they appear
 as conversions; see its [custom-event goal documentation](https://plausible.io/docs/custom-event-goals).
-Create a funnel from `Print Page Generated` to `Print Dialog Opened`. Manual-entry
-visitors can legitimately enter at `Print Page Generated`, so review that goal and
-`Print Dialog Opened` separately as well as through the funnel. Create the two
-entry funnels beside it, one from `Song Search Submitted` and one from
-`Manual Entry Submitted`, each ending at `Print Page Generated`. Comparing the
-two ways into the tool is what no property on this plan can do.
+This plan has no funnel report, so every ordered question is read in Umami,
+where the three funnels are named and built in the section below. Plausible
+reads the goals as their own rows, which is what its counts and the reviews
+compare; read `Print Page Generated` and `Print Dialog Opened` separately as
+well as through the Umami funnel, because a manual-entry visitor can
+legitimately enter at the first step.
 
 `Second Print Page Generated` is deliberately outside that linear funnel. It
 fires during the second generation, which precedes the second print dialog, so
@@ -200,11 +200,12 @@ Create a shared site segment named **Organic Search**:
 1. Open the dashboard filter.
 2. Select **Channel**, `is`, **Organic Search**.
 3. Save it as a site segment, not a personal segment.
-4. Reopen the segment and confirm the goals and funnel are filtered with it.
+4. Reopen the segment and confirm the goals are filtered with it.
 
 Plausible documents [channel filtering and saved segments](https://plausible.io/docs/filters-segments).
 Its attribution is visit-level and privacy-preserving; do not try to identify
-individual visitors.
+individual visitors. The same channel filters the Umami funnels, which is where
+the ordered questions are read, since this plan has no funnel report of its own.
 
 ### Umami beside Plausible
 
@@ -334,7 +335,7 @@ name mapping to keep in step, and no per-event charge.
 | --- | --- | --- |
 | Goals grid | **Events** | The row's **Events** count is `Total`; **Visitors** is `Uniques`. |
 | Goals grid | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
-| Funnels | **Funnels** | Build from `Print Page Generated` to `Print Dialog Opened`, set to open, because a manual-entry visitor can enter at the first step, and build the two entry funnels the goals describe. |
+| Funnels | **Funnels** | Build three, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), and **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), the last set to open because a manual-entry visitor can enter at the first step. |
 | Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`. |
 | Explore | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
 
@@ -649,7 +650,7 @@ On launch day, record zero or current values for the previous 30 days:
 | Organic visitors and entry pages | Plausible **Organic Search** segment |
 | `Print Page Generated` from organic visits | Plausible goal |
 | `Print Dialog Opened` from organic visits | Plausible goal |
-| Generated-to-dialog conversion rate | Plausible goals/funnel |
+| Generated-to-dialog conversion rate | Umami funnel **Sheet to printer** |
 | `Second Print Page Generated` from organic visits | Plausible goal |
 | Share of generating visits that reach a second sheet | Plausible goal `Second Print Page Generated` |
 | Sets printed as one job | Plausible goal `Songbook Printed` |
