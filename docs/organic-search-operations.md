@@ -76,6 +76,10 @@ custom-event goal for each exact, case-sensitive name:
 8. `Songbook Created From Offer`
 9. `Songbook Printed`
 
+A goal has to exist before the release that emits its event, because Plausible
+does not backfill what arrived earlier: its counter starts at the first event
+that follows the goal's creation.
+
 Keep this list short deliberately. Each goal answers one question, and every
 addition costs dashboard legibility and has to earn its place:
 
