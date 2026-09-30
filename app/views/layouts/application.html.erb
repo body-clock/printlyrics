@@ -47,28 +47,29 @@
     <script async src="https://plausible.io/js/pa-f0moCFg03qwW-u-pSexGt.js"></script>
     <script nonce="<%= content_security_policy_nonce %>">
       window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-      plausible.init({ autoCapturePageviews: false })
+      // Plausible's own capture sends `location.href` with the event, so a
+      // Form: Submission, File Download, or Outbound Link event bypasses the
+      // redaction in lib/analytics.js and leaks a saved page's share token. The
+      // site settings cannot be relied on to keep them off, so the snippet
+      // disables them here; docs/organic-search-operations.md owns the contract.
+      plausible.init({
+        autoCapturePageviews: false,
+        formSubmissions: false,
+        fileDownloads: false,
+        outboundLinks: false
+      })
     </script>
 
-    <% if google_analytics_id %>
-      <!-- Google Analytics 4, measuring beside Plausible during the dual run.
-           docs/organic-search-operations.md owns the cutover. -->
-      <script async src="https://www.googletagmanager.com/gtag/js?id=<%= ERB::Util.url_encode(google_analytics_id) %>"></script>
-      <script nonce="<%= content_security_policy_nonce %>">
-        window.dataLayer = window.dataLayer || [];
-        window.gtag = window.gtag || function(){ window.dataLayer.push(arguments) };
-        window.gtag("js", new Date());
-        // Pageviews are sent by lib/analytics.js on turbo:load, where the token
-        // path is redacted; an automatic pageview would report the real URL.
-        // `raw` matters: ERB escapes this literal's quotes, and a script element
-        // is raw text, so an entity-escaped quote is a syntax error that kills
-        // the whole bootstrap and every event with it. json_escape keeps it safe.
-        window.gtag("config", <%= raw json_escape(google_analytics_id.to_json) %>, {
-          send_page_view: false,
-          allow_google_signals: false,
-          allow_ad_personalization_signals: false
-        });
-      </script>
+    <% if umami_website_id.present? %>
+      <!-- Umami is the site's own analytics service, measuring beside Plausible
+           until the cutover in docs/organic-search-operations.md. Automatic
+           tracking is off for the same reason Plausible's is: the tracker fills
+           url, title, and referrer from the document on every payload, custom
+           events included, and on a saved page those carry the share token and
+           the song title. lib/analytics.js replaces all three on every event.
+           It is deferred rather than async so it executes before the importmap
+           modules below and no event fires without a tracker to reach. -->
+      <script defer src="<%= umami_script_url %>" data-website-id="<%= umami_website_id %>" data-auto-track="false" nonce="<%= content_security_policy_nonce %>"></script>
     <% end %>
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">

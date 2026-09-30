@@ -10,7 +10,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
 
     assert_includes policy, "default-src 'self'"
     assert_includes policy, "object-src 'none'"
-    assert_includes policy, "script-src 'self' https://plausible.io https://www.googletagmanager.com https://challenges.cloudflare.com 'nonce-"
+    assert_includes policy, "script-src 'self' #{Rails.configuration.x.umami_origin} https://plausible.io https://challenges.cloudflare.com 'nonce-"
     assert_includes policy, "frame-src https://challenges.cloudflare.com"
     assert_includes policy, "style-src-attr 'unsafe-inline'"
     assert_includes policy, "frame-ancestors 'none'"
@@ -53,7 +53,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
     end
 
     response.body.scan(/<script[^>]*\bsrc="([^"]+)"/).flatten.each do |src|
-      assert_match(%r{\A(?:https://plausible\.io|https://www\.googletagmanager\.com|https://challenges\.cloudflare\.com|/)}, src, "external script not allowlisted: #{src}")
+      assert_match(%r{\A(?:#{Regexp.escape(Rails.configuration.x.umami_origin)}|https://plausible\.io|https://challenges\.cloudflare\.com|/)}, src, "external script not allowlisted: #{src}")
     end
   end
 

@@ -96,6 +96,18 @@ RAILS_MASTER_KEY=...
 KAMAL_REGISTRY_PASSWORD=...
 ```
 
+Analytics runs beside that container as two Kamal accessories — Umami and its
+PostgreSQL database. A deploy neither starts, stops, nor updates them; booting
+them for the first time needs two more secrets:
+
+```sh
+UMAMI_DB_PASSWORD=...   # openssl rand -hex 24
+UMAMI_APP_SECRET=...    # openssl rand -hex 32
+```
+
+An ordinary deploy does not need those two, and the runbook linked under
+Operations owns the setup.
+
 The `printlyrics-prod` GitHub environment also requires `KAMAL_SSH_KEY`.
 CI runs for pull requests and pushes to `main`. Release Please maintains a
 release pull request and updates `version.txt`; merging that pull request
@@ -105,5 +117,6 @@ shows that version in its footer.
 ## Operations
 
 Use the [organic search operations runbook](docs/organic-search-operations.md)
-to configure Search Console, Plausible, and the Google Analytics dual run,
-record launch baselines, and run the 30- and 90-day reviews.
+to configure Search Console, boot the self-hosted Umami analytics service and its
+MCP endpoint, run the two-week parallel measurement beside Plausible, record
+launch baselines, and run the 30- and 90-day reviews.

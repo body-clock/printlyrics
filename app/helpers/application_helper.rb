@@ -7,10 +7,14 @@ module ApplicationHelper
     AnalyticsCampaigns.to_json
   end
 
-  # Nil until the deployment sets GA_MEASUREMENT_ID; the layout renders the GA4
-  # tag only when it is present.
-  def google_analytics_id
-    Rails.configuration.x.google_analytics_id
+  # The tracker is served from the origin the content security policy allows,
+  # and the layout renders it only once the deployment supplies a website ID.
+  def umami_script_url
+    "#{Rails.configuration.x.umami_origin}/script.js"
+  end
+
+  def umami_website_id
+    Rails.configuration.x.umami_website_id
   end
 
   # Nil until the deployment sets TURNSTILE_SITE_KEY; the feedback form renders

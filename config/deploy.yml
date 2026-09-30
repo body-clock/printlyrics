@@ -3,7 +3,7 @@ image: body-clock/printlyrics
 
 servers:
   web:
-    hosts:
+    hosts: &hosts
       - 46.225.21.111
 
 proxy:
@@ -22,9 +22,12 @@ env:
     - RAILS_MASTER_KEY
   clear:
     RAILS_SERVE_STATIC_FILES: true
-    # Public by design — the ID is in the page source. Set from
-    # docs/organic-search-operations.md; blank renders no Google tag.
-    GA_MEASUREMENT_ID: "G-SECDJWTR8B"
+    # Public by design — it is in the page source. Umami generates it when the
+    # site is added to the dashboard, and a blank value renders no tracker; the
+    # setup steps are in docs/organic-search-operations.md. The origin the
+    # tracker is served from is `config.x.umami_origin`, which the proxy below
+    # and the content security policy also use.
+    UMAMI_WEBSITE_ID: ""
     # Public by design — the Turnstile site key is in the page source. Its
     # secret is a credential (turnstile.secret_key in credentials.yml.enc,
     # unlocked in the container by RAILS_MASTER_KEY). The hostnames are the
@@ -34,6 +37,54 @@ env:
 
 volumes:
   - "printlyrics_storage:/rails/storage"
+
+# Umami is the site's own analytics service: one accessory for the application
+# and one for its PostgreSQL database, both on the same host as the web
+# container. Accessories are not touched by `kamal deploy` — boot them once with
+# `bin/kamal accessory boot umami-db` and `bin/kamal accessory boot umami`, and
+# upgrade Umami by bumping the image tag and running `bin/kamal accessory reboot
+# umami`. Only Umami is published, behind the proxy on its own host, which keeps
+# the dashboard, its login, and the MCP endpoint off printlyrics.app.
+# docs/organic-search-operations.md owns the setup, the secrets, and the
+# two-week parallel run beside Plausible.
+accessories:
+  umami-db:
+    image: postgres:17-alpine
+    hosts: *hosts
+    env:
+      clear:
+        POSTGRES_DB: umami
+        POSTGRES_USER: umami
+      secret:
+        - POSTGRES_PASSWORD:UMAMI_DB_PASSWORD
+    volumes:
+      - "umami_db_data:/var/lib/postgresql/data"
+  umami:
+    image: ghcr.io/umami-software/umami:3.4.0
+    hosts: *hosts
+    env:
+      clear:
+        # The read-only MCP server at <host>/mcp is key-gated and off by
+        # default; this is the switch that turns it on.
+        MCP_ENABLED: "1"
+        DISABLE_TELEMETRY: "1"
+      secret:
+        - APP_SECRET:UMAMI_APP_SECRET
+        - DATABASE_URL:UMAMI_DATABASE_URL
+    proxy:
+      host: analytics.printlyrics.app
+      ssl: true
+      app_port: 3000
+      # kamal-proxy holds traffic until the target answers a health check, and it
+      # checks `/up` unless told otherwise — which Umami does not serve, so a
+      # boot without this path fails as a target that never became healthy.
+      healthcheck:
+        path: /api/heartbeat
+      # Without this, Umami sees kamal-proxy's own address as every visitor's,
+      # which is what its visitor and session counting is derived from. It also
+      # carries Cloudflare's client address through when the DNS record is
+      # proxied.
+      forward_headers: true
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
