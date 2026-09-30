@@ -84,7 +84,8 @@
             method: :post,
             data: {
               turbo_frame: "lyric_entry",
-              action: "turbo:submit-start->lyric-search#start turbo:submit-end->lyric-search#finish"
+              action: "turbo:submit-start->lyric-search#start turbo:submit-end->lyric-search#finish",
+              analytics_submit: "Song Search Submitted"
             },
             html: { aria: { busy: "false" } },
             class: "search-form" do |form| %>
@@ -168,7 +169,11 @@
                   song someone wanted and could not get: the query never reaches
                   analytics, so the visitor is the only source for it. %>
               <% if @results.blank? && @search_error.blank? %>
-                <div class="search-miss">
+                <%# The miss is counted as an event and its query is not, so the
+                    marker names the event and carries nothing else. It is read
+                    when the frame renders, which is why it lives here rather
+                    than on the body. %>
+                <div class="search-miss" data-analytics-response="Song Search Missed">
                   <p><%= t(".search.miss.prompt") %></p>
 
                   <%= form_with url: feedback_path,
@@ -199,7 +204,7 @@
 
       <div class="divider"><span><%= t(".manual_divider") %></span></div>
 
-      <%= form_with model: @lyric, url: lyrics_path, data: { turbo: false }, class: "lyrics-form" do |form| %>
+      <%= form_with model: @lyric, url: lyrics_path, data: { turbo: false, analytics_submit: "Manual Entry Submitted" }, class: "lyrics-form" do |form| %>
         <% if @loaded_status.present? %>
           <p class="sr-only" role="status" aria-live="polite"><%= @loaded_status %></p>
         <% end %>

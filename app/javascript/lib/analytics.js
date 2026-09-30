@@ -57,6 +57,25 @@ export function trackEvent(name, props = {}) {
   dispatch(name, props)
 }
 
+// A form that names the event it reports, declared in the view beside the
+// surface it belongs to. The manual-entry form posts a whole page, so its
+// attempt has to be reported on submit rather than by the page that follows it.
+export function trackSubmittedEvent(form) {
+  const name = form.dataset?.analyticsSubmit
+  if (name) trackEvent(name)
+}
+
+// An outcome the server knows and the client cannot: the marker is rendered
+// with the response that carries it. A Turbo frame render never fires
+// `turbo:load`, which is what reports the body markers below, and a snapshot
+// restored from Turbo's cache by the Back button never fires
+// `turbo:frame-load`, so a restored panel cannot report it twice.
+export function trackResponseEvents(root) {
+  root.querySelectorAll("[data-analytics-response]").forEach((marker) => {
+    trackEvent(marker.dataset.analyticsResponse)
+  })
+}
+
 // Each distinct print page is counted once per session. The running total is
 // what separates a one-off visitor from someone assembling a packet, which is
 // the difference between a utility and a product. Counting happens in session
