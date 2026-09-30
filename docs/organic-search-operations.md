@@ -15,8 +15,8 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All six exact event names exist, automatic goals off | |
-| Google Analytics dual run | Site owner | Six key events arrive with `GA_MEASUREMENT_ID` set, enhanced measurement off | |
+| Plausible goals | Site owner | All six exact event names exist, automatic goals off in settings and disabled in the snippet | |
+| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, and all six events plus every property arrive beside Plausible's | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
@@ -55,7 +55,13 @@ Recovery:
   `noindex` directive, remove any route to it from the sitemap, and request
   recrawling. Never submit saved lyric URLs.
 
-## 2. Configure Plausible
+## 2. Configure the analytics destinations
+
+Plausible is the destination of record until the cutover. Umami, this site's own
+analytics service, runs beside it first, and the Google Analytics dual run is
+over: the tag, the initializer, and its CSP origins are gone from the code.
+
+### Plausible
 
 In the Plausible site for `printlyrics.app`, open **Settings > Goals** and add a
 custom-event goal for each exact, case-sensitive name:
@@ -88,8 +94,9 @@ otherwise be a property is its own goal instead.
 The application still sends `entry_method`, `songbook_size`, `songbook_origin`,
 `campaign_source`, `campaign_name`, and `page_count_in_session` with events.
 **Plausible cannot read any of them on this plan, and no reading below depends on
-them here.** The Google Analytics dual run reports all six as custom dimensions,
-which is why the dual run exists.
+them here.** Umami records all six as event properties, which is why it runs
+beside Plausible for the two weeks in "Umami beside Plausible" below: it is the
+first destination this site has had that can report them next to the counts.
 
 Two of the goals are subsets of another, which is how a total and a split are
 read without properties:
@@ -117,6 +124,31 @@ tracking**. `Form: Submission` pools every form on the site into one number (the
 search form, each result button, and the generate form all post), so it does not
 describe any single product step, and it counts toward billable pageviews.
 PrintLyrics sends none of these events from application code.
+
+The dashboard setting is not the switch that holds. Plausible's automatic
+capture sends the live `location.href` with the event, which bypasses the
+redaction in `app/javascript/lib/analytics.js`, so any automatic event on a saved
+page carries a real share token. The 2026-09-22 to 2026-09-28 export proved it:
+the site's Default tracking settings still had form submissions, file downloads,
+and outbound links enabled — the served
+`https://plausible.io/js/pa-f0moCFg03qwW-u-pSexGt.js` carries all three as
+`true` — and the export listed 36 real `/lyrics/<token>` and
+`/songbooks/<token>` paths (22 sheets and 14 sets) with zero pageviews each, the
+signature of a non-pageview event, carrying 75 events between them. A saved page
+has no other event source than those automatic ones, and the counts match its
+`button_to` forms — **Make a songbook** and **Add another song** on a sheet, and
+each **Remove** on a set: the busiest set drew 11 events from one visitor, one
+per removal.
+
+`plausible.init()` in `app/views/layouts/application.html.erb` therefore passes
+`formSubmissions: false`, `fileDownloads: false`, and `outboundLinks: false`
+beside `autoCapturePageviews: false`, which the script documents under
+[its configuration options](https://plausible.io/docs/script-extensions) and
+applies over the site settings baked into the bundle.
+`test/integration/analytics_test.rb` asserts the flags, so a snippet edit
+cannot drop them silently. Re-check the Network tab after any Plausible release:
+if a future script version ignores these options, automatic events return, and
+smoke-test step 8 is what catches them.
 
 Campaign performance is read from Plausible's own attribution, not from the
 application. Plausible records `utm_source`, `utm_medium`, and `utm_campaign`
@@ -159,12 +191,206 @@ Plausible documents [channel filtering and saved segments](https://plausible.io/
 Its attribution is visit-level and privacy-preserving; do not try to identify
 individual visitors.
 
+### Umami beside Plausible
+
+Umami is this site's own analytics service. It runs on the same host as the web
+container, as the two accessories in `config/deploy.yml`, and it measures beside
+Plausible until the cutover below. It is the only reason the `entry_method`,
+`songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, and
+`page_count_in_session` parameters the application has always sent can be read
+next to the counts: Umami reports them as event properties, on a plan that costs
+nothing at any traffic, where this Plausible plan drops them. It also exposes a
+read-only MCP endpoint, so the same figures can be asked for in sentences instead
+of clicked through.
+
+#### Set up the service
+
+Host, database, and application are Kamal accessories. They are booted once, and
+`bin/kamal deploy` neither starts, stops, nor updates them.
+
+1. Point `analytics.printlyrics.app` at the web host in DNS. kamal-proxy requests
+   the certificate for that host on first boot, so the record must exist first;
+   without it the proxy has nothing to answer for and no certificate to serve.
+
+   In Cloudflare that is one **A** record — name `analytics`, IPv4
+   `46.225.21.111` (the host in `servers.web.hosts`), TTL Auto. Add no AAAA
+   record unless the host really has IPv6, because Let's Encrypt prefers it and
+   a wrong one breaks issuance. Do not use a CNAME: the record is the statement
+   of where kamal-proxy runs.
+
+   Proxied or not is the operator's call, and both work:
+
+   - **DNS only** is the plain Kamal path. The proxy completes its preferred
+     `tls-alpn-01` challenge on port 443 against the origin directly, and Umami
+     sees each visitor's own address without trusting any header.
+   - **Proxied** matches the apex, which is orange today and still holds a valid
+     Let's Encrypt certificate, so issuance demonstrably completes behind it:
+     kamal-proxy registers autocert's `http-01` handler, so a failed
+     `tls-alpn-01` falls back to port 80, which the proxy passes through. It also
+     hides the origin address, edge-caches `script.js`, and puts Cloudflare in
+     front of the dashboard and the MCP endpoint. Two things must then be true:
+     the zone's SSL/TLS mode is **Full (strict)**, because a Flexible setting
+     loops against the proxy's own HTTP-to-HTTPS redirect, and the accessory's
+     `forward_headers` stays on, because otherwise every visitor reaches Umami as
+     a Cloudflare address and the visitor and session counts derived from it are
+     wrong. If a renewal ever fails, Cloudflare's Bot Fight Mode challenging the
+     ACME validator is the first thing to check.
+2. Supply `UMAMI_DB_PASSWORD` (for example `openssl rand -hex 24`) and
+   `UMAMI_APP_SECRET` (`openssl rand -hex 32`) the way `KAMAL_REGISTRY_PASSWORD`
+   is supplied. `.kamal/secrets` composes `UMAMI_DATABASE_URL` from the password,
+   and the accessories receive them under Umami's and PostgreSQL's own variable
+   names. Neither value belongs in `config/deploy.yml`.
+
+   Every accessory command that reads the environment needs both of them
+   exported at that moment — `boot`, `reboot`, and any restore — because the
+   database URL and Umami's secret are composed from them when the container
+   starts. A shell without them starts the service against an empty password,
+   which Umami reports as a database it cannot reach. `bin/kamal deploy` is not
+   one of those commands: it neither boots nor restarts an accessory, so the
+   deployment pipeline needs neither value. The deploy workflow writes its own
+   `.kamal/secrets` with only the registry password and `RAILS_MASTER_KEY`, so
+   every accessory command runs from an operator's machine, never from CI.
+3. Boot the database before the application, then confirm both:
+
+   ```sh
+   bin/kamal accessory boot umami-db
+   bin/kamal accessory boot umami
+   bin/kamal accessory details umami
+   ```
+
+   The application exits on its first start if the database is not accepting
+   connections yet. That is not a misconfiguration: `bin/kamal accessory start
+   umami` once the database reports healthy.
+4. Sign in at `https://analytics.printlyrics.app` as **admin** / **umami**, and
+   change the password immediately. The dashboard is public; the account is the
+   only thing in front of it. Two-factor authentication is available if
+   `TWO_FACTOR_ENCRYPTION_KEY` (`openssl rand -hex 32`) is added to the
+   accessory's secrets beside `UMAMI_APP_SECRET`; without it Umami refuses to
+   enable 2FA rather than storing a secret it cannot encrypt.
+5. Add the site: **Settings > Websites > Add website**, name it `PrintLyrics`,
+   domain `printlyrics.app`. Copy the website ID it generates.
+6. Set `UMAMI_WEBSITE_ID` in `config/deploy.yml` to that value and deploy. The
+   tracker renders only when it is present — a blank value renders no tracker at
+   all rather than one that reports to nothing — so a host that has not been
+   through this step still reports to Plausible alone.
+7. Leave `DISABLE_TELEMETRY=1` and `MCP_ENABLED=1` set, as `config/deploy.yml`
+   ships them. Umami sends anonymous telemetry to its authors by default, and a
+   self-hosted instance has no reason to participate.
+
+Do not turn on the tracker's own capture. It reports the live `location.href`,
+`document.title`, and `document.referrer`, and a saved page carries its share
+token and its song title in all three. The application has sent every pageview
+and every event through `app/javascript/lib/analytics.js` for that reason, and
+the script tag in `app/views/layouts/application.html.erb` carries
+`data-auto-track="false"` so the tracker only ever sends what it is handed.
+`test/integration/analytics_test.rb` holds that flag the way the Plausible snippet's
+`plausible.init` flags are held.
+
+The tag is deferred rather than async so that it runs before the application's
+own modules, which is what makes "exactly one pageview per visit" true from the
+first page load. The cost is that an unreachable analytics host delays the
+page's own scripts until its request fails; the host is on the same machine, so
+that failure is immediate. Section 5 watches for it.
+
+#### Read the six events in Umami
+
+Umami needs no goal registration: an event appears in its **Events** report the
+first time it arrives, under the product's own name, spaces and all. There is no
+name mapping to keep in step, and no per-event charge.
+
+| Plausible | Umami surface | How the figure is read |
+| --- | --- | --- |
+| Goals grid | **Events** | The row's **Events** count is `Total`; **Visitors** is `Uniques`. |
+| Goals grid | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
+| Funnels | **Funnels** | Build from `Print Page Generated` to `Print Dialog Opened`, set to open, because a manual-entry visitor can enter at the first step. |
+| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`. |
+| Explore | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
+
+Rules that make those surfaces read correctly:
+
+- **Properties are per event.** `entry_method` rides only on
+  `Print Dialog Opened`, `songbook_origin` only on `Songbook Created`, and the
+  size and page-count buckets only on the events that set them. Event data has no
+  `(not set)` bucket, so a property that never arrived is absent rather than
+  zero, and a breakdown needs the event that carries it.
+- **A pageview is a payload with no name.** Umami files a payload without a name
+  as a pageview and the rest as events, which is why `Print Page Generated` is an
+  event row and not a pageview.
+- **Visitors are visit-scoped, and the salt rotates.** Umami counts a visitor
+  from a salted hash of address and user agent, rotating the salt monthly
+  (`SALT_ROTATION`). That is the closest match to Plausible's Uniques, and it is
+  a different quantity across a rotation boundary.
+- **`Second Print Page Generated` stays out of the ordered funnel.** It fires
+  before the second print dialog, so folding it into the funnel would misorder
+  the steps. Read it as a standalone event, the way Plausible reads its own goal.
+- **Umami adds no events.** Unlike the Google tag it replaces, it stores only
+  what the application sends, so an unexpected event is instrumentation drift and
+  nothing else.
+
+Campaign performance needs no application support: Umami attributes a visit from
+the landing URL's own `utm_source`, `utm_medium`, and `utm_campaign`, and reports
+them under **UTM**. `AnalyticsCampaigns` still serve Plausible's properties, and
+ride on Umami's events as `campaign_source` and `campaign_name`; the cutover
+deletes them, because the native attribution is what the readings use.
+
+#### Ask Umami directly (MCP)
+
+Umami ships a read-only MCP server, and `MCP_ENABLED=1` exposes it at
+`https://analytics.printlyrics.app/mcp`. It calls the same API the dashboard
+does, with the same website and team permissions as the key that authenticates
+it, and it never reads the database.
+
+1. Create a key under **Settings > API keys** in the dashboard and save it; it is
+   shown once. Treat it as a credential: whoever holds it can read the analytics.
+2. Point an MCP client at the endpoint with the key as a bearer token. The
+   client has to support Streamable HTTP with custom headers:
+
+   ```json
+   {
+     "mcpServers": {
+       "umami": {
+         "url": "https://analytics.printlyrics.app/mcp",
+         "headers": { "Authorization": "Bearer umami_<your-api-key>" }
+       }
+     }
+   }
+   ```
+
+3. Call `list_websites` first for the website ID every other tool needs. From
+   there: `get_website_stats`, `get_website_traffic`, `get_website_metrics`,
+   `get_events`, `get_event_stats`, `get_event_series`, `get_event_properties`,
+   `get_realtime`, `get_sessions`, `get_session`, `run_funnel`, `run_journey`,
+   `run_retention`, `run_attribution`, `get_goals`, `list_segments`,
+   `list_funnels`, `get_annotations`, and `get_performance`.
+4. Dates are ISO 8601 strings, both ends supplied. The questions worth asking are
+   the ones section 4 records by hand, so ask the same ones:
+
+   > Which events did PrintLyrics get last week, and how many visits made a
+   > second print page? Show how many printed a songbook as one job.
+
+   > Which entry pages brought visits that opened a print dialog in September?
+
+5. Delete the key under **Settings > API keys** to revoke every client using it.
+   Nothing in this document depends on MCP; it reads the reports the dashboard
+   reads, and a blocked or revoked key changes no figure here.
+
+#### What Umami does not carry
+
+- **No history.** Nothing already in Plausible can be imported. Keep the export;
+  the closing record in section 4 is its summary.
+- **No single goals grid.** The Events report gives both counts per event, but
+  the six goals are read as six rows or as saved goals, not as one table.
+- **No automatic events to filter out.** That is the point, and it is also what
+  has to be rechecked after an upgrade: the tag's `data-auto-track="false"` and a
+  `/api/send` that stores only what it was sent are the two claims the production
+  smoke test verifies.
+
 ### Production event smoke test
 
 Use a normal production browser with developer tools open. In the Network tab,
-filter for the destination you are checking — `plausible.io` and
-`google-analytics.com` while the dual run lasts — and preserve the log across
-navigation.
+filter for the destinations you are checking — `plausible.io` and the analytics
+host, `analytics.printlyrics.app`, while the parallel run lasts — and preserve
+the log across navigation.
 
 1. Arrive from a real search-result click when practical. For a controlled
    transport test, use a search-engine referrer, but do not count that test in
@@ -195,29 +421,39 @@ navigation.
    `Print Dialog Opened` and one `Songbook Printed`, and that the print preview
    shows one sheet per song. Adding a third song must not report the creation
    again.
-8. Confirm no other custom event arrives. The application emits exactly six
-   event names, so an unexpected one means stale instrumentation or an automatic
-   goal still enabled in site settings.
+8. Confirm no other event arrives, custom or automatic. The application emits
+   exactly six names, so an unexpected custom event means stale instrumentation;
+   an automatic `Form: Submission`, `File Download`, or `Outbound Link: Click`
+   means the `plausible.init` flags did not take effect, and on a saved page it
+   reports the real token. Submit a `button_to` form on a saved page — **Make a
+   songbook**, **Add another song**, or a set's **Remove** — and confirm the only
+   request to `plausible.io` is the pageview, whose `u` reads `/lyrics/:token` or
+   `/songbooks/:token`.
 9. Inspect every event payload. A saved page must report the synthetic location
    `/lyrics/:token`, never the real token, and a songbook must report
-   `/songbooks/:token`. The entry form in songbook context reports its
+   `/songbooks/:token`; that holds for the trailing-slash form Rails serves as
+   the same page, `/lyrics/<token>/`. The entry form in songbook context reports its
    `songbook` parameter as `:token`, never the real value. No payload may
    contain lyrics, song title, artist, album, or source ID.
 10. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
     Search** segment after a genuine organic visit and confirm its attribution.
-11. Confirm the same flow reaches GA4. Filter the Network tab for
-    `google-analytics.com/g/collect` and check that every step above sent its
-    event under the **GA4 event** name from the key-event table and that each
-    request's `dl` (document location), `dt` (document title), and `dr` (document
-    referrer) read `/lyrics/:token` or `/songbooks/:token` on saved surfaces.
-    Then open **Reports > Realtime** in GA4 and read the events there within 30
-    minutes. A song title, an artist, or a real token in any request is the
-    privacy incident below; check **Enhanced measurement** in the data stream
-    first, then the redaction in `app/javascript/lib/analytics.js`.
+11. Confirm the same flow reaches Umami. The tracker loads from
+    `analytics.printlyrics.app/script.js` and posts every payload to `/api/send`
+    on that same host, so filter the Network tab for the host and check that
+    every step above arrived under the same name, with `url` and `title` reading
+    `/lyrics/:token` or `/songbooks/:token` on saved surfaces. Read them back in
+    the dashboard's **Events** report and their properties under **Event data**;
+    the realtime view confirms delivery within seconds. A song title, an artist,
+    or a real token in any payload is the privacy incident below.
+    Umami stores only what the application sent — there is no auto-collected
+    event that could carry a document URL behind the redaction, the way the
+    Google tag's own events could. The tracker's capture is off at initialization
+    in the script tag instead, and opening a saved page directly, in a fresh
+    browser session, is what confirms it stayed off.
 
-Both destinations run at once during the dual run, so every check above has to
-pass twice: a step that reaches only one of them is an unfinished migration, not
-a partial success.
+Both destinations run at once during the parallel run, so every check above has
+to pass twice: a step that reaches only one of them is an unfinished migration,
+not a partial success.
 
 `Print Dialog Opened` is the product's **organic print completion** proxy. It
 means the visitor opened the browser dialog; it does not prove that a physical
@@ -248,128 +484,69 @@ found without the nudge doing any work, and the suggestion is the part to
 change. Both falling together means the set surface itself is not landing.
 
 If an event is missing, first check the browser request, content blocking, the
-exact goal spelling, and whether the production asset release is current. For a
-GA4 event, also check the browser console for a syntax error from the tag
-bootstrap and confirm the page source carries the measurement ID as a JavaScript
-string with plain quotation marks: an HTML-escaped ID leaves `window.gtag`
-undefined, which loses every event rather than one. If events duplicate, stop
+exact event spelling, and whether the production asset release is current. For a
+Umami event, also confirm the tracker loaded at all — a host that does not
+resolve, a policy that does not allow its origin, or a blank `UMAMI_WEBSITE_ID`
+each leave `window.umami` undefined and drop every event silently while
+Plausible keeps reporting — and that the website ID in the dashboard is the one
+in `config/deploy.yml`. If events duplicate, stop
 the measurement launch and fix the Turbo/pageview lifecycle before collecting a
 baseline. If a real token or song metadata is
 present, treat it as a privacy incident: disable the affected instrumentation,
 deploy the redaction fix, and exclude the contaminated test period. The
 `analyticsUrl` helper in `app/javascript/lib/analytics.js` is the single place
-that rewrites tokens, and the title and referrer GA4 reports are derived from it,
-so a new token-addressed surface must be added there.
+that rewrites tokens, and the title and referrer every destination reports are
+derived from it, so a new token-addressed surface must be added there. It covers
+the trailing-slash form Rails serves as well; before it did, `/lyrics/<token>/`
+reported the real token. Plausible's automatic
+capture is the one reported location that never passes through it, which is why
+the snippet disables it at initialization rather than relying on site settings.
 
-### Google Analytics dual run
+### Cutting over to Umami
 
-Google Analytics 4 measures beside Plausible until the cutover below. It is the
-only reason the `entry_method`, `songbook_size`, `songbook_origin`,
-`campaign_source`, `campaign_name`, and `page_count_in_session` parameters the
-application has always sent can be read: GA4 reports them as custom dimensions at
-no cost, where this Plausible plan drops them.
-
-The tag renders only when `GA_MEASUREMENT_ID` is set. That value lives under
-`env.clear` in `config/deploy.yml`, because a measurement ID is public — it is in
-the page source. A blank value renders no Google tag at all.
-
-1. Create a GA4 property for `printlyrics.app` with a Web data stream for
-   `printlyrics.app`, and copy the stream's measurement ID (`G-XXXXXXXXXX`).
-2. Set `GA_MEASUREMENT_ID` in `config/deploy.yml` to that value and deploy. The
-   bootstrap is inline JavaScript, so the served page must carry the ID as
-   `window.gtag("config", "G-XXXXXXXXXX"` with plain quotation marks; an escaped
-   one is a syntax error that leaves the tag unconfigured and loses every event.
-   `test/integration/google_analytics_test.rb` holds that line.
-3. **Admin > Data collection > Data retention**: set event and user data
-   retention to 14 months. The default is 2 months.
-4. **Admin > Data streams > (stream) > Enhanced measurement**: turn every toggle
-   off. Pageviews are sent by the application, and each remaining automatic event
-   would report the document's own URL and title, which is exactly what the
-   redaction in `app/javascript/lib/analytics.js` exists to prevent.
-5. Leave **Google signals** off under **Admin > Data collection > Google
-   signals**. The application disables Google signals and ad personalization in
-   the tag configuration as well: at this traffic volume they are mostly
-   thresholded out of reports, and they are what makes the property need consent.
-6. **Admin > Data display > Custom definitions**: add these event-scoped custom
-   dimensions, each with the exact parameter name.
-
-   | Dimension name | Event parameter |
-   | --- | --- |
-   | Entry method | `entry_method` |
-   | Songbook size | `songbook_size` |
-   | Songbook origin | `songbook_origin` |
-   | Campaign source | `campaign_source` |
-   | Campaign name | `campaign_name` |
-   | Pages in session | `page_count_in_session` |
-
-7. **Admin > Data display > Key events**: register every event the runbook counts.
-   GA4 rejects spaces in event names, so `app/javascript/lib/analytics.js` maps
-   the product's names to these.
-
-   | Plausible goal | GA4 event | Question it answers |
-   | --- | --- | --- |
-   | `Print Page Generated` | `print_page_generated` | Did the tool produce a sheet? |
-   | `Print Dialog Opened` | `print_dialog_opened` | Did a sheet reach the printer? |
-   | `Second Print Page Generated` | `second_print_page_generated` | Is a visit assembling more than one sheet? |
-   | `Songbook Created` | `songbook_created` | Did a set of sheets come into being? |
-   | `Songbook Created From Offer` | `songbook_created_from_offer` | Did the suggestion produce that set? |
-   | `Songbook Printed` | `songbook_printed` | Did a set reach the printer as one job? |
-
-   `page_view` is the seventh event the application sends, and GA4 counts it
-   without registration — one per Turbo visit, emitted by the application so the
-   token path stays redacted.
-
-8. Build the organic view. GA4 has no saved segments: in **Reports >
-   Acquisition**, add a comparison with **Session default channel group** `is`
-   **Organic Search**, and save it as a report comparison. Build the funnel in
-   **Explore > Funnel exploration** from `print_page_generated` to
-   `print_dialog_opened`, set to open, because a manual-entry visitor can enter at
-   the first step.
-
-Campaign attribution needs no application support on either destination: GA4
-reads `utm_source`, `utm_medium`, and `utm_campaign` from the landing URL itself.
-The allowlist in `AnalyticsCampaigns` serves Plausible's properties only, and the
-cutover deletes it.
-
-#### What GA4 does not carry
-
-- **No history.** The Measurement Protocol backdates events by at most 72 hours
-  ([sending events](https://developers.google.com/analytics/devguides/collection/protocol/ga4/sending-events)),
-  so nothing already in Plausible can be imported. Keep the export; the closing
-  record in section 4 is its summary.
-- **No visit-level conversion count.** Plausible reports unique conversions per
-  visit, GA4 reports event counts and users.
-- **A shorter window on raw data.** Standard reports keep their aggregates, but
-  end-user and event data used by explorations is retained for at most 14 months.
-  Enable the BigQuery export before the cutover if raw history matters.
-- **Consent.** Plausible is cookieless and needs no banner. GA4 sets cookies, and
-  EEA and UK visitors are around a fifth of this site's traffic. The dual run
-  leaves Plausible authoritative until a consent banner exists; do not cut over
-  before that decision is made.
-
-### Cutting over from Plausible
-
-Run both for at least a week, then compare `print_page_generated` and
-`print_dialog_opened` totals over the same window in each dashboard. Blocked tags
-and consent state usually leave GA4 lower than Plausible; what matters is that
-every event is present in both and the two series move together. If an event is
-missing from either, fix the instrumentation before comparing numbers.
+Run Umami and Plausible together for two weeks, then compare
+`Print Page Generated` and `Print Dialog Opened` over the same window in each
+dashboard, beside the four properties only Umami can read. What matters is that
+every one of the six events is present in both and that the two series move
+together. The counts will not match exactly, because the two products define a
+visit and a visitor differently, so a lower Umami figure is not by itself a
+failure — but an event missing from either is an instrumentation problem, and
+the instrumentation is fixed before any number is compared.
 
 To finish the cutover:
 
-1. Remove the Plausible script and bootstrap from
+1. Remove the Plausible script and its bootstrap from
    `app/views/layouts/application.html.erb`, and drop `https://plausible.io` from
+   both `policy.script_src` and `policy.connect_src` in
    `config/initializers/content_security_policy.rb`.
-2. Update `test/integration/google_analytics_test.rb` and
-   `test/integration/content_security_policy_test.rb`, which assert the dual run.
-3. Delete `AnalyticsCampaigns`, `analytics_campaign_data`, `captureCampaign`, the
-   `data-analytics-campaigns` attribute, and the campaign test in
-   `test/integration/lyrics_flow_test.rb`: GA4 reads those parameters natively.
-4. Redeploy, re-run the production smoke test against GA4 alone, and record the
+2. Delete `AnalyticsCampaigns`, `analytics_campaign_data`, `captureCampaign`, the
+   `data-analytics-campaigns` attribute on the layout's `<body>`, and the
+   campaign test in `test/integration/lyrics_flow_test.rb`. Umami reads
+   `utm_source`, `utm_medium`, and `utm_campaign` natively, and the native
+   attribution is what the reviews use.
+3. Update `test/integration/analytics_test.rb` and
+   `test/integration/content_security_policy_test.rb`: delete the Plausible
+   snippet test and the Plausible origin from the policy assertions, which are
+   the last places that name it.
+4. Redeploy, re-run the production smoke test against Umami alone, and record the
    cutover release.
-5. Restart the 90-day measurement window at the cutover date, then cancel
-   Plausible. Changing the measurement system restarts the window; it never
+5. Cancel Plausible, and restart the 90-day measurement window at the cutover
+   date. Changing the measurement system restarts the window; it never
    reinterprets the days collected under the previous one.
+6. Keep the Plausible export with the launch issue. It is the record of
+   everything before the cutover, and Umami can never hold it.
+
+The service is the operator's now, and it is not part of a deploy:
+
+```sh
+bin/kamal accessory logs umami --follow
+bin/kamal accessory reboot umami     # after bumping the image tag in config/deploy.yml
+bin/kamal accessory exec umami-db "pg_dump -U umami umami" > umami-backup.sql
+```
+
+Upgrades are the operator's call, not CI's. Take a dump before one and keep it
+somewhere that is not the server, because the database holds the only copy of
+every measurement taken after the cutover.
 
 ## 3. Song catalog removed
 
@@ -410,6 +587,13 @@ On launch day, record zero or current values for the previous 30 days:
 | Share of generating visits that reach a second sheet | Plausible goal `Second Print Page Generated` |
 | Sets printed as one job | Plausible goal `Songbook Printed` |
 | Sets created, and how many came from the suggestion | Plausible goals `Songbook Created` and `Songbook Created From Offer` |
+
+The parallel run reads every one of these twice. Record both figures for the same
+window and label which system each came from: the **Source** column above names
+the Plausible surface, which stays the destination of record until the cutover,
+and the same signals read from Umami's **Events** report and its **Organic
+Search** segment. After the cutover the Umami figures are the only ones, and the
+recorded Plausible baseline is the comparison point for them.
 
 At 30 days, confirm the instrumentation is reliable before changing any target.
 Review query intent, indexed surfaces, impressions, clicks, both completion
@@ -479,7 +663,7 @@ Two properties of this baseline matter when reading the next review:
 
 ### Closing Plausible record, 2026-09-21
 
-The all-time export taken as the dual run began, covering 56 days from
+The all-time export taken before the Google dual run, covering 56 days from
 2026-07-28: 908 visitors, 2,606 pageviews, and 941 visits. Channels: Organic
 Search 662, Direct 214, AI Assistants 43, Referral 2. Sources: Bing 305, Direct
 214, Yahoo! 141, Google 109, DuckDuckGo 96, ChatGPT 37. Conversions:
@@ -489,21 +673,23 @@ Search 662, Direct 214, AI Assistants 43, Referral 2. Sources: Bing 305, Direct
 `Songbook Created`, `Songbook Created From Offer`, and `Songbook Printed` show no
 conversions anywhere in that export, because the songbook surface shipped on
 2026-09-21, the day it was taken. They are unverified in production: confirm all
-three in both dashboards during the dual run, before the cutover.
+three in both dashboards during the parallel run, before the cutover.
 
-GA4 cannot ingest these events, so this section is the all-time record for the
+Umami cannot ingest them either, so this section is the all-time record for the
 period before the migration. Keep the exported CSVs with the launch issue.
 
 ### Reading the target after the cutover
 
 The 90-day target above is written in Plausible's unit: 25 `Print Dialog Opened`
-events, unique per visit, attributed to Organic Search. In GA4 the same quantity
-is the `print_dialog_opened` key-event count with the **Organic Search**
-comparison applied. The two numbers will not match, and a smaller GA4 number is
-not by itself a failure. Record which system a figure came from in every review,
-and never compare a GA4 count against a Plausible baseline as though the two
-measured the same thing. Restart the window at the cutover so all 90 days come
-from one system.
+events, unique per visit, attributed to Organic Search. In Umami the same
+quantity is that event's **Visitors** count under the **Organic Search**
+segment. The two numbers will not match, and a smaller Umami number is not by
+itself a failure: Umami derives a visitor from a salted hash of address and user
+agent, rotates that salt monthly, and files a payload with no name as a pageview,
+so its unit differs from Plausible's in ways neither product controls. Record
+which system a figure came from in every review, and never compare a Umami count
+against a Plausible baseline as though the two measured the same thing. Restart
+the window at the cutover so all 90 days come from one system.
 
 ## 5. Monitor and recover
 
@@ -517,7 +703,9 @@ Review these symptoms weekly during the first 90 days:
 | Impressions rise but completions do not | Compare entry pages and funnel drop-off; improve the tool path |
 | Songbook guide earns impressions but no `Songbook Created` | Read the guide's entry pages against `Second Print Page Generated` and the offer; fix the path from the guide into a second sheet before rewriting the guide |
 | Events disappear or duplicate | Repeat production smoke test and repair measurement before analysis |
-| GA4 events lag or stop while Plausible's continue | Check `GA_MEASUREMENT_ID` in `config/deploy.yml`, the key-event registration, consent state, and content blocking; the two destinations fail independently |
+| A real share token or saved path appears in a dashboard, export, or report | Privacy incident: confirm the `data-auto-track="false"` tag and the `plausible.init` flags in `app/views/layouts/application.html.erb`, check a saved page with and without a trailing slash, then exclude the contaminated days instead of reinterpreting them |
+| Umami events lag or stop while Plausible's continue | Check `UMAMI_WEBSITE_ID` in `config/deploy.yml`, that `analytics.printlyrics.app` resolves and serves `/script.js`, that the policy still allows that origin, and that the accessory is running (`bin/kamal accessory details umami`); the two destinations fail independently |
+| Every page's own scripts stall before the page becomes interactive | The tracker is deferred and therefore on the critical path. Confirm the analytics host answers instead of hanging — `curl -sI https://analytics.printlyrics.app/script.js` — and restart the accessory if it is not; the service is on the same machine, so a healthy failure is immediate, and a hanging one is the symptom worth catching |
 | Takedown or source complaint | Remove the affected public song from discovery and preserve the private saved-page contract pending review |
 
 Keeping lyrics out of indexable responses reduces exposure; it is not legal
@@ -552,6 +740,7 @@ the withdrawn URLs leave the index.
 A second operator, or the site owner in a separate walkthrough, checks each
 launch-record row using only this document. Record their name, date, omissions,
 and corrections in the launch issue. U6 is operationally ready when that person
-can reproduce the Search Console property and sitemap submission, all six goals
-in both dashboards, the organic segment or comparison, the baseline, the review
-dates, and every recovery path without undocumented knowledge.
+can reproduce the Search Console property and sitemap submission, all six events
+in both dashboards, the Umami properties, the MCP endpoint with their own API
+key, the organic segment or comparison, the baseline, the review dates, and every
+recovery path without undocumented knowledge.

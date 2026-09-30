@@ -576,7 +576,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal 1, captured_analytics_calls.count { |call| call[0] == "Second Print Page Generated" }
   end
 
-  test "google analytics mirrors each event under its own name and redacts saved pages" do
+  test "umami reports each event under its own name and redacts saved pages" do
     visit root_path
     install_persistent_analytics_capture
 
@@ -587,35 +587,33 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_text "Test Song"
 
     lyric = Lyric.last
-    page_view = captured_ga4_events.find { |name, _| name == "page_view" }
-    generated = captured_ga4_events.find { |name, _| name == "print_page_generated" }
-    assert page_view
+    pageview = captured_umami_payloads.find { |payload| !payload["name"] }
+    generated = captured_umami_events.find { |name, _| name == "Print Page Generated" }
+    assert pageview
     assert generated
 
-    # gtag fills the location, title, and referrer from the document unless the
-    # event supplies them, and on a saved page the document carries all three.
-    assert_equal "/lyrics/:token", URI(page_view.last.fetch("page_location")).path
-    assert_equal "/lyrics/:token", page_view.last.fetch("page_title")
-    assert_equal "/lyrics/:token", URI(generated.last.fetch("page_location")).path
-    assert_equal "1", generated.last.fetch("page_count_in_session")
-    refute_includes captured_ga4_calls.to_json, lyric.token
-    refute_includes captured_ga4_calls.to_json, lyric.title
-    refute_includes captured_ga4_calls.to_json, lyric.artist
+    # Umami fills the location, title, and referrer from the document unless the
+    # payload replaces them, and on a saved page the document carries all three.
+    assert_equal "/lyrics/:token", URI(pageview.fetch("url")).path
+    assert_equal "/lyrics/:token", pageview.fetch("title")
+    assert_equal "/lyrics/:token", URI(generated.last.fetch("url")).path
+    assert_equal "1", generated.last.dig("data", "page_count_in_session")
+    refute_includes captured_umami_payloads.to_json, lyric.token
+    refute_includes captured_umami_payloads.to_json, lyric.title
+    refute_includes captured_umami_payloads.to_json, lyric.artist
 
     page.execute_script("window.print = () => {}")
     click_button "Print"
 
+    # Umami keeps the product's names verbatim, spaces and all, so there is no
+    # mapping table between the two, and a pageview is the payload with no name.
     assert_equal(
-      [ "page_view", "print_page_generated", "print_dialog_opened" ],
-      captured_ga4_events.map(&:first)
-    )
-    assert_equal(
-      [ "pageview", "Print Page Generated", "Print Dialog Opened" ],
-      captured_analytics_calls.map(&:first)
+      [ nil, "Print Page Generated", "Print Dialog Opened" ],
+      captured_umami_payloads.map { |payload| payload["name"] }
     )
   end
 
-  test "google analytics reports the songbook events with their properties" do
+  test "umami reports the songbook events with their properties" do
     visit root_path
     install_persistent_analytics_capture
 
@@ -627,22 +625,22 @@ class OrganicConversionTest < ApplicationSystemTestCase
     click_button "Make a songbook"
     assert_selector ".songbook-track", count: 2
 
-    created = captured_ga4_events.find { |name, _| name == "songbook_created" }
+    created = captured_umami_events.find { |name, _| name == "Songbook Created" }
     assert created
-    assert_equal "2", created.last.fetch("songbook_size")
-    assert_equal "offer", created.last.fetch("songbook_origin")
-    assert_equal 1, captured_ga4_events.count { |name, _| name == "songbook_created_from_offer" }
+    assert_equal "2", created.last.dig("data", "songbook_size")
+    assert_equal "offer", created.last.dig("data", "songbook_origin")
+    assert_equal 1, captured_umami_events.count { |name, _| name == "Songbook Created From Offer" }
   end
 
-  test "google analytics redacts a saved page that referred the visit" do
+  test "umami redacts a saved page that referred the visit" do
     lyric = Lyric.create!(lyrics: "Shared line", title: "Shared Song")
 
     visit lyric_path(lyric)
     assert_text "Shared line"
     install_persistent_analytics_capture
 
-    # A same-origin referrer is itself a saved page, and gtag reports
-    # document.referrer on every event unless the event supplies its own. The
+    # A same-origin referrer is itself a saved page, and the tracker reports
+    # document.referrer on every payload unless the payload replaces it. The
     # link leaves Turbo so the browser records a real referrer.
     page.execute_script(<<~JS)
       const link = document.createElement("a")
@@ -654,10 +652,27 @@ class OrganicConversionTest < ApplicationSystemTestCase
     click_link "Home"
     assert_selector "h1", text: "Find, format, and print song lyrics"
 
-    page_view = captured_ga4_events.find { |name, _| name == "page_view" }
-    assert page_view
-    assert_equal "/lyrics/:token", URI(page_view.last.fetch("page_referrer")).path
-    refute_includes captured_ga4_calls.to_json, lyric.token
+    pageview = captured_umami_payloads.find { |payload| !payload["name"] }
+    assert pageview
+    assert_equal "/lyrics/:token", URI(pageview.fetch("referrer")).path
+    refute_includes captured_umami_payloads.to_json, lyric.token
+  end
+
+  test "a saved page reached with a trailing slash still redacts its token" do
+    lyric = Lyric.create!(lyrics: "Shared line", title: "Shared Song")
+
+    # Rails serves `/lyrics/<token>/` as the same page, so a shared link that
+    # gained a slash would otherwise report the real token to every destination.
+    visit root_path
+    install_persistent_analytics_capture
+    visit "#{lyric_path(lyric)}/"
+    assert_text "Shared line"
+
+    pageview = captured_umami_payloads.last
+    assert_equal "/lyrics/:token", URI(pageview.fetch("url")).path
+    assert_equal "/lyrics/:token", pageview.fetch("title")
+    refute_includes captured_umami_payloads.to_json, lyric.token
+    refute_includes captured_analytics_calls.to_json, lyric.token
   end
 
   private
@@ -713,13 +728,14 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   def install_persistent_analytics_capture
     page.execute_script("sessionStorage.removeItem('test:analyticsCalls')")
-    page.execute_script("sessionStorage.removeItem('test:gtagCalls')")
+    page.execute_script("sessionStorage.removeItem('test:umamiCalls')")
     inject_on_new_document(analytics_capture_source)
   end
 
-  # Both destinations are stubbed before the page's own scripts run. The
-  # bootstrap keeps an existing `window.gtag`, so the stub survives it and the
-  # real Google tag never sees a configured property.
+  # Both destinations are stubbed before the page's own scripts run. Each one
+  # keeps an existing definition — Plausible's bootstrap queues into whatever is
+  # already there, and the Umami tracker only assigns `window.umami` when nothing
+  # has — so the stubs survive the real scripts and no request leaves the browser.
   def analytics_capture_source
     <<~JS
       window.plausible = (...args) => {
@@ -729,11 +745,28 @@ class OrganicConversionTest < ApplicationSystemTestCase
         sessionStorage.setItem(key, JSON.stringify(calls))
       }
       window.plausible.init = () => {}
-      window.gtag = (...args) => {
-        const key = "test:gtagCalls"
-        const calls = JSON.parse(sessionStorage.getItem(key) || "[]")
-        calls.push(args)
-        sessionStorage.setItem(key, JSON.stringify(calls))
+      // The tracker runs the payload function against the properties it
+      // collected and sends the result, so the stub hands it the same document
+      // values a real tracker would. On a saved page those are the share token
+      // and the song title that the redaction exists to replace.
+      window.umami = {
+        track: (name) => {
+          const payload = typeof name === "function"
+            ? name({
+                website: "test-website",
+                hostname: location.hostname,
+                language: "en-US",
+                screen: `${screen.width}x${screen.height}`,
+                title: document.title,
+                url: location.href,
+                referrer: document.referrer
+              })
+            : name
+          const key = "test:umamiCalls"
+          const calls = JSON.parse(sessionStorage.getItem(key) || "[]")
+          calls.push(payload)
+          sessionStorage.setItem(key, JSON.stringify(calls))
+        }
       }
     JS
   end
@@ -742,14 +775,16 @@ class OrganicConversionTest < ApplicationSystemTestCase
     JSON.parse(page.evaluate_script("sessionStorage.getItem('test:analyticsCalls') || '[]'"))
   end
 
-  # gtag also receives the bootstrap's own `js` and `config` commands, which are
-  # not events.
-  def captured_ga4_calls
-    JSON.parse(page.evaluate_script("sessionStorage.getItem('test:gtagCalls') || '[]'"))
+  def captured_umami_payloads
+    JSON.parse(page.evaluate_script("sessionStorage.getItem('test:umamiCalls') || '[]'"))
   end
 
-  def captured_ga4_events
-    captured_ga4_calls.select { |call| call[0] == "event" }.map { |call| [ call[1], call[2] ] }
+  # The tracker treats a payload with no name as a pageview and the rest as
+  # custom events.
+  def captured_umami_events
+    captured_umami_payloads
+      .select { |payload| payload["name"] }
+      .map { |payload| [ payload["name"], payload ] }
   end
 
   def created_songbook_calls
