@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/body-clock/printlyrics/compare/v1.11.0...v1.12.0) (2026-09-30)
+
+
+### Features
+
+* **analytics:** measure the entry path and read the demand channel ([#85](https://github.com/body-clock/printlyrics/issues/85)) ([8ce8da7](https://github.com/body-clock/printlyrics/commit/8ce8da740429e6bdfd76928df933e23a93544bac))
+
 ## [1.11.0](https://github.com/body-clock/printlyrics/compare/v1.10.0...v1.11.0) (2026-09-30)
 
 
