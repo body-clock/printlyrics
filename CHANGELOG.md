@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/body-clock/printlyrics/compare/v1.9.0...v1.10.0) (2026-09-30)
+
+
+### Features
+
+* **analytics:** self-host Umami and retire the Google Analytics dual run ([#78](https://github.com/body-clock/printlyrics/issues/78)) ([c38bc2f](https://github.com/body-clock/printlyrics/commit/c38bc2fc859777c061139b883039183963559dd2))
+
 ## [1.9.0](https://github.com/body-clock/printlyrics/compare/v1.8.0...v1.9.0) (2026-09-28)
 
 
