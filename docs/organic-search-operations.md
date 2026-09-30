@@ -235,21 +235,35 @@ Host, database, and application are Kamal accessories. They are booted once, and
      a Cloudflare address and the visitor and session counts derived from it are
      wrong. If a renewal ever fails, Cloudflare's Bot Fight Mode challenging the
      ACME validator is the first thing to check.
-2. Supply `UMAMI_DB_PASSWORD` (for example `openssl rand -hex 24`) and
-   `UMAMI_APP_SECRET` (`openssl rand -hex 32`) the way `KAMAL_REGISTRY_PASSWORD`
-   is supplied. `.kamal/secrets` composes `UMAMI_DATABASE_URL` from the password,
-   and the accessories receive them under Umami's and PostgreSQL's own variable
-   names. Neither value belongs in `config/deploy.yml`.
+2. Supply the two credentials from Proton Pass. `.kamal/secrets` reads them with
+   `pass-cli` from items titled **PrintLyrics Umami DB** and **PrintLyrics Umami
+   App Secret**, composes `UMAMI_DATABASE_URL` from the first, and the accessories
+   receive them under PostgreSQL's and Umami's own variable names
+   (`POSTGRES_PASSWORD`, `APP_SECRET`, `DATABASE_URL`). Neither value belongs in
+   `config/deploy.yml`, and the database password is hex on purpose: it is
+   interpolated into a connection string, so a value containing `:` `@` `/` or
+   `#` would break it.
 
-   Every accessory command that reads the environment needs both of them
-   exported at that moment — `boot`, `reboot`, and any restore — because the
-   database URL and Umami's secret are composed from them when the container
-   starts. A shell without them starts the service against an empty password,
-   which Umami reports as a database it cannot reach. `bin/kamal deploy` is not
-   one of those commands: it neither boots nor restarts an accessory, so the
-   deployment pipeline needs neither value. The deploy workflow writes its own
-   `.kamal/secrets` with only the registry password and `RAILS_MASTER_KEY`, so
-   every accessory command runs from an operator's machine, never from CI.
+   The file is read on the machine running the command, never on the server:
+   `pass-cli` does not exist there, and the containers only ever receive plain
+   environment variables. Kamal uploads the resolved values over SSH into
+   `.kamal/apps/printlyrics/env/accessories/*.env` on the host, mode `0600`, and
+   starts each container with them. Every accessory command — boot, reboot,
+   restore — therefore needs a live `pass-cli` session, and `bin/kamal deploy` is
+   not one of them: it neither boots nor restarts an accessory. The deploy
+   workflow writes its own `.kamal/secrets` holding only the registry password
+   and `RAILS_MASTER_KEY`, so CI never sees these values.
+
+   A missing or logged-out `pass-cli` does not stop the command. The substitution
+   yields an empty value and the failure lands on the service instead: PostgreSQL
+   refuses to initialize with an empty superuser password, and Umami cannot reach
+   a database whose password is empty. Since `boot umami-db` reports only that the
+   container started, run this first and expect `49`:
+
+   ```sh
+   pass-cli item view --vault-name printlyrics \
+     --item-title "PrintLyrics Umami DB" --field password | wc -c
+   ```
 3. Boot the database before the application, then confirm both:
 
    ```sh
