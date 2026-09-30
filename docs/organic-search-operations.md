@@ -15,8 +15,8 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All six exact event names exist, automatic goals off in settings and disabled in the snippet | |
-| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, and all six events plus every property arrive beside Plausible's | |
+| Plausible goals | Site owner | All nine exact event names exist, automatic goals off in settings and disabled in the snippet | |
+| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, and all nine events plus every property arrive beside Plausible's | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
@@ -66,24 +66,33 @@ over: the tag, the initializer, and its CSP origins are gone from the code.
 In the Plausible site for `printlyrics.app`, open **Settings > Goals** and add a
 custom-event goal for each exact, case-sensitive name:
 
-1. `Print Page Generated`
-2. `Print Dialog Opened`
-3. `Second Print Page Generated`
-4. `Songbook Created`
-5. `Songbook Created From Offer`
-6. `Songbook Printed`
+1. `Song Search Submitted`
+2. `Song Search Missed`
+3. `Manual Entry Submitted`
+4. `Print Page Generated`
+5. `Print Dialog Opened`
+6. `Second Print Page Generated`
+7. `Songbook Created`
+8. `Songbook Created From Offer`
+9. `Songbook Printed`
 
 Keep this list short deliberately. Each goal answers one question, and every
 addition costs dashboard legibility and has to earn its place:
 
 | Goal | Question it answers |
 | --- | --- |
+| `Song Search Submitted` | Did a visit look for a song by name? |
+| `Song Search Missed` | Did that search find nothing? |
+| `Manual Entry Submitted` | Did a visit paste its own lyrics instead? |
 | `Print Page Generated` | Did the tool produce a sheet? |
 | `Print Dialog Opened` | Did a sheet reach the printer? |
 | `Second Print Page Generated` | Is a visit assembling more than one sheet? |
 | `Songbook Created` | Did a set of sheets come into being? |
 | `Songbook Created From Offer` | Did the suggestion produce that set? |
 | `Songbook Printed` | Did a set reach the printer as one job? |
+
+[The measurement contract](measurement-contract.md) holds the rule behind this
+list: the naming, the slots every tool fills, and what must never travel.
 
 ### Why these are goals and not properties
 
@@ -98,9 +107,12 @@ them here.** Umami records all six as event properties, which is why it runs
 beside Plausible for the two weeks in "Umami beside Plausible" below: it is the
 first destination this site has had that can report them next to the counts.
 
-Two of the goals are subsets of another, which is how a total and a split are
+Four of the goals are subsets of another, which is how a total and a split are
 read without properties:
 
+- `Song Search Missed` is the subset of `Song Search Submitted` whose query
+  found nothing. It counts the searches that failed to serve the visitor; what
+  they were looking for is in the feedback table and never in analytics.
 - `Second Print Page Generated` is the subset of `Print Page Generated` at the
   second distinct sheet of a visit.
 - `Songbook Printed` is the subset of `Print Dialog Opened` where the printed
@@ -172,7 +184,10 @@ Plausible requires received events to be configured as goals before they appear
 as conversions; see its [custom-event goal documentation](https://plausible.io/docs/custom-event-goals).
 Create a funnel from `Print Page Generated` to `Print Dialog Opened`. Manual-entry
 visitors can legitimately enter at `Print Page Generated`, so review that goal and
-`Print Dialog Opened` separately as well as through the funnel.
+`Print Dialog Opened` separately as well as through the funnel. Create the two
+entry funnels beside it, one from `Song Search Submitted` and one from
+`Manual Entry Submitted`, each ending at `Print Page Generated`. Comparing the
+two ways into the tool is what no property on this plan can do.
 
 `Second Print Page Generated` is deliberately outside that linear funnel. It
 fires during the second generation, which precedes the second print dialog, so
@@ -309,7 +324,7 @@ first page load. The cost is that an unreachable analytics host delays the
 page's own scripts until its request fails; the host is on the same machine, so
 that failure is immediate. Section 5 watches for it.
 
-#### Read the six events in Umami
+#### Read the nine events in Umami
 
 Umami needs no goal registration: an event appears in its **Events** report the
 first time it arrives, under the product's own name, spaces and all. There is no
@@ -319,7 +334,7 @@ name mapping to keep in step, and no per-event charge.
 | --- | --- | --- |
 | Goals grid | **Events** | The row's **Events** count is `Total`; **Visitors** is `Uniques`. |
 | Goals grid | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
-| Funnels | **Funnels** | Build from `Print Page Generated` to `Print Dialog Opened`, set to open, because a manual-entry visitor can enter at the first step. |
+| Funnels | **Funnels** | Build from `Print Page Generated` to `Print Dialog Opened`, set to open, because a manual-entry visitor can enter at the first step, and build the two entry funnels the goals describe. |
 | Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`. |
 | Explore | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
 
@@ -415,7 +430,7 @@ it, and it never reads the database.
 - **No history.** Nothing already in Plausible can be imported. Keep the export;
   the closing record in section 4 is its summary.
 - **No single goals grid.** The Events report gives both counts per event, but
-  the six goals are read as six rows or as saved goals, not as one table.
+  the nine goals are read as nine rows or as saved goals, not as one table.
 - **No automatic events to filter out.** That is the point, and it is also what
   has to be rechecked after an upgrade: the tag's `data-auto-track="false"` and a
   `/api/send` that stores only what it was sent are the two claims the production
@@ -442,9 +457,11 @@ the log across navigation.
    launch performance.
 2. Load the homepage and navigate to each printing guide and back. Each Turbo
    visit must send exactly one pageview.
-3. Search for a song and select a result. Confirm neither action sends a custom
-   event. Generate the print page and confirm `Print Page Generated` arrives
-   once.
+3. Search for a song. Confirm `Song Search Submitted` arrives once, that
+   choosing a result sends nothing of its own, and that a search which matched
+   sends no `Song Search Missed`. Search for something that cannot match and
+   confirm the miss arrives once. Generate the print page from a result and
+   confirm `Print Page Generated` arrives once.
 4. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
    browser invokes its native print dialog, and that `Songbook Printed` is not
    sent, because a single sheet is not a set. Canceling the dialog is
@@ -467,13 +484,13 @@ the log across navigation.
    shows one sheet per song. Adding a third song must not report the creation
    again.
 8. Confirm no other event arrives, custom or automatic. The application emits
-   exactly six names, so an unexpected custom event means stale instrumentation;
-   an automatic `Form: Submission`, `File Download`, or `Outbound Link: Click`
-   means the `plausible.init` flags did not take effect, and on a saved page it
-   reports the real token. Submit a `button_to` form on a saved page — **Make a
-   songbook**, **Add another song**, or a set's **Remove** — and confirm the only
-   request to `plausible.io` is the pageview, whose `u` reads `/lyrics/:token` or
-   `/songbooks/:token`.
+   exactly nine names, so an unexpected custom event means stale
+   instrumentation; an automatic `Form: Submission`, `File Download`, or
+   `Outbound Link: Click` means the `plausible.init` flags did not take
+   effect, and on a saved page it reports the real token. Submit a `button_to`
+   form on a saved page — **Make a songbook**, **Add another song**, or a
+   set's **Remove** — and confirm the only request to `plausible.io` is the
+   pageview, whose `u` reads `/lyrics/:token` or `/songbooks/:token`.
 9. Inspect every event payload. A saved page must report the synthetic location
    `/lyrics/:token`, never the real token, and a songbook must report
    `/songbooks/:token`; that holds for the trailing-slash form Rails serves as
@@ -552,7 +569,7 @@ the snippet disables it at initialization rather than relying on site settings.
 Run Umami and Plausible together for two weeks, then compare
 `Print Page Generated` and `Print Dialog Opened` over the same window in each
 dashboard, beside the four properties only Umami can read. What matters is that
-every one of the six events is present in both and that the two series move
+every one of the nine events is present in both and that the two series move
 together. The counts will not match exactly, because the two products define a
 visit and a visitor differently and because Plausible filters non-human traffic
 in layers Umami does not have, so a lower Umami figure is not by itself a
@@ -661,6 +678,12 @@ measurement problem, fix it and restart the window; do not reinterpret broken
 data. Once reliable conversion data exists, the site owner may replace the
 calibration target with a conversion-informed target without expanding product
 scope.
+
+Every review also reads the feedback visitors sent, because it is the one
+channel that holds what no dashboard can: the songs they asked for and could
+not get. In production that is `bin/kamal feedback`, newest first, and the
+queries there are the demand list the next source addition or tool is chosen
+from. A miss counts in Umami; what was missed lives only there.
 
 ### Recorded baseline, 2026-09-14
 
@@ -790,7 +813,7 @@ the withdrawn URLs leave the index.
 A second operator, or the site owner in a separate walkthrough, checks each
 launch-record row using only this document. Record their name, date, omissions,
 and corrections in the launch issue. U6 is operationally ready when that person
-can reproduce the Search Console property and sitemap submission, all six events
-in both dashboards, the Umami properties, the MCP endpoint with their own API
-key, the organic segment or comparison, the baseline, the review dates, and every
-recovery path without undocumented knowledge.
+can reproduce the Search Console property and sitemap submission, all nine
+events in both dashboards, the Umami properties, the MCP endpoint with their own
+API key, the organic segment or comparison, the baseline, the review dates, and
+every recovery path without undocumented knowledge.
