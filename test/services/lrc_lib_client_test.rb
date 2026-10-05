@@ -56,14 +56,67 @@ class LrcLibClientTest < ActiveSupport::TestCase
     end
   end
 
-  test "raises a service error when LRCLIB is unavailable" do
+  test "retries once when the source is busy and answers on the second try" do
+    rows = [ result(id: 1, title: "The Kiss") ]
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        if calls == 1
+          [ 503, json_headers.merge("Retry-After" => "1"), "{}" ]
+        else
+          [ 200, json_headers, JSON.generate(rows) ]
+        end
+      end
+    end
+    waits = []
+
+    results = LrcLibClient.new(connection: connection, sleeper: ->(seconds) { waits << seconds }).search("the kiss")
+
+    assert_equal [ 1 ], results.map(&:id)
+    assert_equal [ 1.0 ], waits
+  end
+
+  test "waits no longer than the cap even when the source asks for more" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 429, json_headers.merge("Retry-After" => "30"), "{}" ] }
+    end
+    waits = []
+
+    assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(connection: connection, sleeper: ->(seconds) { waits << seconds }).search("the kiss")
+    end
+
+    assert_equal [ LrcLibClient::MAX_RETRY_WAIT ], waits
+  end
+
+  test "raises a service error when LRCLIB stays unavailable" do
     connection = connection_with do |stub|
       stub.get("/api/search") { [ 503, json_headers, "{}" ] }
     end
+    waits = []
 
     assert_raises(LrcLibClient::ServiceError) do
-      LrcLibClient.new(connection: connection).search("the kiss")
+      LrcLibClient.new(connection: connection, sleeper: ->(seconds) { waits << seconds }).search("the kiss")
     end
+
+    assert_equal 1, waits.size
+  end
+
+  test "search by fields asks the title and artist separately" do
+    rows = [ result(id: 7, title: "Battle Belongs", artist: "Phil Wickham") ]
+    connection = connection_with do |stub|
+      stub.get("/api/search") do |env|
+        assert_equal "Battle Belongs", env.params["track_name"]
+        assert_equal "Phil Wickham", env.params["artist_name"]
+        [ 200, json_headers, JSON.generate(rows) ]
+      end
+    end
+
+    results = LrcLibClient.new(connection: connection)
+      .search_by_fields(track_name: "Battle Belongs", artist_name: "Phil Wickham")
+
+    assert_equal [ 7 ], results.map(&:id)
   end
 
   private
