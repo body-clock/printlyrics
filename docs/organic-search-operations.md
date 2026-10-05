@@ -68,13 +68,14 @@ custom-event goal for each exact, case-sensitive name:
 
 1. `Song Search Submitted`
 2. `Song Search Missed`
-3. `Manual Entry Submitted`
-4. `Print Page Generated`
-5. `Print Dialog Opened`
-6. `Second Print Page Generated`
-7. `Songbook Created`
-8. `Songbook Created From Offer`
-9. `Songbook Printed`
+3. `Song Result Selected`
+4. `Manual Entry Submitted`
+5. `Print Page Generated`
+6. `Print Dialog Opened`
+7. `Second Print Page Generated`
+8. `Songbook Created`
+9. `Songbook Created From Offer`
+10. `Songbook Printed`
 
 A goal has to exist before the release that emits its event, because Plausible
 does not backfill what arrived earlier: its counter starts at the first event
@@ -87,6 +88,7 @@ addition costs dashboard legibility and has to earn its place:
 | --- | --- |
 | `Song Search Submitted` | Did a visit look for a song by name? |
 | `Song Search Missed` | Did that search find nothing? |
+| `Song Result Selected` | Did the visit choose a match the search found? |
 | `Manual Entry Submitted` | Did a visit paste its own lyrics instead? |
 | `Print Page Generated` | Did the tool produce a sheet? |
 | `Print Dialog Opened` | Did a sheet reach the printer? |
@@ -124,6 +126,12 @@ read without properties:
   series and its 90-day target stay continuous.
 - `Songbook Created From Offer` is the subset of `Songbook Created` where the
   suggestion started the set. The offer's conversion rate is one over the other.
+
+`Song Search Missed` and `Song Result Selected` split `Song Search Submitted`,
+which is neither's subset: the first is the searches that found nothing, the
+second the searches that found something the visitor chose. Searches that found
+something and were abandoned are the remainder, and they are only visible as the
+gap between the three.
 
 A songbook counts as a set from its second song. `Songbook Created` is pinned to
 that threshold rather than to the row being inserted, because the row is created
@@ -462,11 +470,12 @@ the log across navigation.
    launch performance.
 2. Load the homepage and navigate to each printing guide and back. Each Turbo
    visit must send exactly one pageview.
-3. Search for a song. Confirm `Song Search Submitted` arrives once, that
-   choosing a result sends nothing of its own, and that a search which matched
-   sends no `Song Search Missed`. Search for something that cannot match and
-   confirm the miss arrives once. Generate the print page from a result and
-   confirm `Print Page Generated` arrives once.
+3. Search for a song. Confirm `Song Search Submitted` arrives once and that a
+   search which matched sends no `Song Search Missed`. Choose a result and
+   confirm exactly one `Song Result Selected` arrives, before the lyrics load.
+   Generate the print page from it and confirm `Print Page Generated` arrives
+   once. Then search for something that cannot match and confirm the miss
+   arrives once and that no `Song Result Selected` follows it.
 4. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
    browser invokes its native print dialog, and that `Songbook Printed` is not
    sent, because a single sheet is not a set. Canceling the dialog is
@@ -480,7 +489,12 @@ the log across navigation.
    every sheet in generation order, that it lists each song, and that exactly
    one `Songbook Created` and one `Songbook Created From Offer` arrive. The
    suggestion itself sends no event, and **Not now** must send none either.
-   Reloading the set must report neither again.
+   Reloading the set must report neither again, and so must leaving the set and
+   returning to it with the browser's Back button: the sheet list keeps the
+   pages, and the set's own page is restored from Turbo's cache with the
+   creation marker still in it. Now clear the suggestion's session flag, return
+   to the entry panel with two sheets in the tab, and confirm the same
+   suggestion appears there with both sheets counted.
 7. From a generated page, choose **Add another song**, add a second song, and
    print the set. Confirm exactly one `Songbook Created` arrives for the second
    song and no `Songbook Created From Offer`, because a set built by adding a
@@ -489,7 +503,7 @@ the log across navigation.
    shows one sheet per song. Adding a third song must not report the creation
    again.
 8. Confirm no other event arrives, custom or automatic. The application emits
-   exactly nine names, so an unexpected custom event means stale
+   exactly ten names, so an unexpected custom event means stale
    instrumentation; an automatic `Form: Submission`, `File Download`, or
    `Outbound Link: Click` means the `plausible.init` flags did not take
    effect, and on a saved page it reports the real token. Submit a `button_to`
@@ -537,9 +551,12 @@ are still assembling sets by hand, and a closing gap means the songbook surface
 absorbed the work. `Print Dialog Opened` minus `Songbook Printed` is the
 single-sheet prints, which no goal reports directly.
 
-The sheet that is generated second in a tab offers the visitor the sheets it
-already has, as a songbook, so the offer and `Second Print Page Generated` fire
-from the same moment. Neither the offer nor its dismissal sends an event.
+The sheet that crosses two in a tab offers the visitor the sheets it already
+has, as a songbook, so the offer and `Second Print Page Generated` fire from the
+same moment. The entry panel carries the same offer, because that is where a
+visit that already made sheets returns for the next one; the strip is one
+component rendered in both places and silenced for the tab by either answer.
+Neither the offer nor its dismissal sends an event.
 
 Read the offer's conversion as `Songbook Created From Offer` over
 `Songbook Created`. `Second Print Page Generated` counts visits that made a

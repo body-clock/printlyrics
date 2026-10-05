@@ -37,3 +37,31 @@ export function sessionPagesWith(pageKey) {
 
   return [...pages, pageKey]
 }
+
+const CREATED_SONGBOOKS_KEY = "printlyrics:created-songbooks"
+
+// Whether this set still needs to be reported, so one set is counted once
+// however many times its page is rendered: Turbo caches the response that
+// carries the creation marker, and restoring that snapshot fires `turbo:load`
+// again with the marker still in the markup. The list is its own, because the
+// sheet list counts pages for the offer and for `page_count_in_session`.
+//
+// A marker with no token has nothing to dedupe on, so it reports.
+export function rememberCreatedSongbook(token) {
+  if (!token) return true
+
+  const seen = createdSongbooks()
+  if (seen.includes(token)) return false
+
+  sessionStore().set(CREATED_SONGBOOKS_KEY, JSON.stringify([...seen, token]))
+  return true
+}
+
+function createdSongbooks() {
+  try {
+    const parsed = JSON.parse(sessionStore().get(CREATED_SONGBOOKS_KEY) || "[]")
+    return Array.isArray(parsed) ? parsed.filter((token) => typeof token === "string") : []
+  } catch {
+    return []
+  }
+}

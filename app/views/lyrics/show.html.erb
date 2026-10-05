@@ -60,28 +60,9 @@
     </div>
   </nav>
 
-  <%# Offered only on a sheet that was just generated, because that is the only
-      moment the visit can become a set. How many sheets the tab holds — and
-      therefore whether to offer anything at all — is session storage, so the
-      strip stays hidden until the controller confirms there is more than one. %>
-  <% if @generated_page_key %>
-    <div class="songbook-prompt no-print" data-controller="songbook-prompt" hidden>
-      <p class="songbook-prompt-message"
-         data-songbook-prompt-target="message"
-         data-template="<%= t(".songbook_prompt.message") %>"
-         role="status"></p>
-
-      <%= button_to t(".songbook_prompt.action"),
-            songbooks_path,
-            class: "button button-primary button-songbook",
-            data: { action: "songbook-prompt#accept" },
-            form: { data: { songbook_prompt_target: "form" } } %>
-
-      <button type="button"
-              class="songbook-prompt-dismiss"
-              data-action="songbook-prompt#dismiss"><%= t(".songbook_prompt.dismiss") %></button>
-    </div>
-  <% end %>
+  <%# A sheet that was just generated is one of the two moments a visit can
+      become a set; the other is the entry panel it returns to. %>
+  <%= render "shared/songbook_prompt" if @generated_page_key %>
 
   <p class="page-summary no-print"
      data-preview-target="pageSummary"

@@ -71,6 +71,11 @@
         <% end %>
       </ul>
 
+      <%# The entry panel is where a visit that already made sheets comes back
+          for the next one, so the offer belongs here as well as on the sheet.
+          A visit already adding to a set is not offered another one. %>
+      <%= render "shared/songbook_prompt", class_name: "songbook-prompt-landing" unless @songbook %>
+
       <div class="search-section">
         <div class="section-heading">
           <h2><%= t(".search.heading") %></h2>
@@ -134,6 +139,7 @@
                       method: :post,
                       data: {
                         turbo_frame: "lyric_entry",
+                        analytics_submit: "Song Result Selected",
                         action: "turbo:submit-start->lyric-search#selecting turbo:submit-end->lyric-search#selected"
                       },
                       html: { aria: { busy: "false" } },
@@ -175,6 +181,17 @@
                     than on the body. %>
                 <div class="search-miss" data-analytics-response="Song Search Missed">
                   <p><%= t(".search.miss.prompt") %></p>
+
+                  <%# A miss is not a dead end. The manual form is on this same
+                      page and already carries the query as the song title, so
+                      the panel sends the visitor there first and keeps the
+                      demand note as the alternative. %>
+                  <%= link_to t(".search.miss.continue"),
+                        "#lyric_lyrics",
+                        class: "button button-primary search-miss-continue",
+                        data: { action: "lyric-search#continueManually" } %>
+
+                  <p><%= t(".search.miss.feedback") %></p>
 
                   <%= form_with url: feedback_path,
                     method: :post,

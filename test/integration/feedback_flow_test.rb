@@ -162,10 +162,23 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
-    assert_select ".search-miss", text: /Can't find the song/
+    assert_select ".search-miss"
     assert_select ".search-miss input[name='feedback[query]'][value='not a song']"
     assert_select ".search-miss input[name='feedback[surface]'][value='search_miss']"
     assert_select ".search-miss form[action='#{feedback_path}']"
+  end
+
+  test "an empty search carries the query into the manual form" do
+    client = Object.new
+    client.define_singleton_method(:search) { |_| [] }
+
+    with_lrc_lib_client(client) do
+      post search_lyrics_path, params: { query: "not a song" }
+    end
+
+    assert_response :success
+    assert_select ".search-miss a[href='#lyric_lyrics']"
+    assert_select "input[name='lyric[title]'][value='not a song']"
   end
 
   test "matches leave the miss prompt out" do

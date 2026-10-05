@@ -139,9 +139,10 @@ class OrganicConversionTest < ApplicationSystemTestCase
       assert_field "Song title", with: "The Kiss"
       assert_field "Artist", with: "Judee Sill"
       assert_field "Lyrics", with: "Love, rising"
-      # A search reports its attempt; choosing a result is not an event of its
-      # own, and a search that matched leaves the miss prompt out of the panel.
-      assert_equal [ "Song Search Submitted" ],
+      # Every step of the search reports itself: the attempt, then the match the
+      # visitor chose. A search that matched leaves the miss prompt out of the
+      # panel, so nothing else arrives.
+      assert_equal [ "Song Search Submitted", "Song Result Selected" ],
         page.evaluate_script("window.__analyticsCalls.map((call) => call[0])")
 
       assert_difference([ "Lyric.count", "Song.count" ], 1) do
@@ -230,14 +231,16 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     fill_in "Lyrics", with: "First song line"
     click_button "Generate print page"
-    assert_text "First song line"
+    # The lyric text is already on screen in the form's textarea, so asserting it
+    # does not wait for the POST: the paper only exists on the generated page.
+    assert_selector ".paper .lyrics", text: "First song line"
 
     2.times do |index|
       page.execute_script("Turbo.visit('/')")
       assert_selector "h1", text: "Find, format, and print song lyrics"
       fill_in "Lyrics", with: "Later song line #{index}"
       click_button "Generate print page"
-      assert_text "Later song line #{index}"
+      assert_selector ".paper .lyrics", text: "Later song line #{index}"
     end
 
     calls = captured_analytics_calls
@@ -308,6 +311,28 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal [ "First Song", "Second Song" ], all(".paper .lyric-header h1").map(&:text)
   end
 
+  test "the entry panel offers the sheets the tab already made" do
+    visit root_path
+    refute_selector ".songbook-prompt"
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    click_link "Back"
+    fill_in "Lyrics", with: "Second song line"
+    click_button "Generate print page"
+    assert_selector ".songbook-prompt", text: "2 sheets so far"
+
+    click_link "Back"
+
+    # The entry panel is where a visit that already made sheets returns for the
+    # next one, so the offer is there too, not only on the sheet it just made.
+    assert_selector ".songbook-prompt", text: "2 sheets so far"
+    click_button "Make a songbook"
+
+    assert_current_path %r{/songbooks/}
+    assert_selector ".songbook-track", count: 2
+  end
+
   test "declining the songbook suggestion keeps it away for the tab" do
     visit root_path
     fill_in "Lyrics", with: "First song line"
@@ -370,6 +395,31 @@ class OrganicConversionTest < ApplicationSystemTestCase
     # Returning to the same set later is not another creation.
     set_path = current_path
     page.execute_script("Turbo.visit(#{set_path.to_json})")
+    assert_selector ".songbook-track", count: 2
+    assert_equal 1, created_songbook_calls.length
+    assert_equal 1, analytics_calls_named("Songbook Created From Offer").length
+  end
+
+  test "restoring the set from the browser cache does not record the creation again" do
+    visit root_path
+    install_persistent_analytics_capture
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    click_link "Back"
+    fill_in "Lyrics", with: "Second song line"
+    click_button "Generate print page"
+    click_button "Make a songbook"
+    assert_selector ".songbook-track", count: 2
+    assert_equal 1, created_songbook_calls.length
+
+    # Leaving and returning with the Back button restores Turbo's cached copy of
+    # this page, creation marker and all. The server's one-shot flag is long
+    # consumed by then, so only the client can tell the two apart.
+    click_link "Add a song"
+    assert_selector "form[action='#{lyrics_path}']"
+    page.go_back
+
     assert_selector ".songbook-track", count: 2
     assert_equal 1, created_songbook_calls.length
     assert_equal 1, analytics_calls_named("Songbook Created From Offer").length
