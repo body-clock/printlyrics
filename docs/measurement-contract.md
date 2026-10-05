@@ -62,7 +62,6 @@ The search step has an output of its own: `Song Result Selected` is the match
 the visitor chose. Together with `Song Search Missed` it separates the two ways
 a search fails to become a sheet — finding nothing, and finding something that
 was then abandoned — which `Song Search Submitted` alone could not tell apart.
-
 Attempt-to-output conversion is read with a funnel, so no property has to carry
 it: `run_funnel` over the Umami MCP endpoint, or the saved funnel in the Umami
 dashboard, which is where the ordered questions live because this Plausible plan
