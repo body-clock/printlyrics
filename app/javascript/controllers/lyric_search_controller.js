@@ -80,6 +80,15 @@ export default class extends Controller {
     this.queryTarget.focus()
   }
 
+  // A search that found nothing is not the end of the task: the manual form is
+  // on this page and already carries the query. The panel's action points at the
+  // lyrics box, and the anchor scrolls there; focusing it means the words a
+  // visitor already has can go straight in.
+  continueManually(event) {
+    const field = document.getElementById(event.currentTarget.hash.slice(1))
+    field?.focus()
+  }
+
   dismissFromOutside(event) {
     if (!this.hasPanelTarget || this.panelTarget.hidden || this.element.contains(event.target)) return
 

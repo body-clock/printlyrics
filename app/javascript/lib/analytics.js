@@ -1,5 +1,5 @@
 import { sessionStore } from "lib/settings_store"
-import { rememberSessionPage, sessionPages } from "lib/session_pages"
+import { rememberCreatedSongbook, rememberSessionPage, sessionPages } from "lib/session_pages"
 
 // The trailing slash is optional because Rails serves `/lyrics/<token>/` as the
 // same page, and a shared link that gained one would otherwise report the real
@@ -100,8 +100,14 @@ export function trackGeneratedPage() {
 // the subset the nudge produced, so the offer's conversion rate is one over the
 // other in either one.
 export function trackCreatedSongbook() {
-  const { createdSongbookSize, createdSongbookOrigin } = document.body.dataset
+  const { createdSongbookSize, createdSongbookOrigin, createdSongbookToken } = document.body.dataset
   if (!createdSongbookSize) return
+
+  // The marker rides in the markup, so a snapshot restored from Turbo's cache
+  // carries it back in and would report the same set again. Claiming the set
+  // first is what keeps it one report per session, the way the sheet counter
+  // keeps `Print Page Generated` one per session.
+  if (!rememberCreatedSongbook(createdSongbookToken)) return
 
   trackEvent("Songbook Created", {
     ...songbookSizeProperties(Number(createdSongbookSize)),

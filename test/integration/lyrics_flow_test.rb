@@ -131,11 +131,22 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
       assert_select "input[name='result_id'][value='42']"
       assert_select "input[id]", count: 0
       assert_select "[data-action*='lyric-search#selecting']"
+      assert_select "[data-analytics-submit='Song Result Selected']"
       assert_select "button[data-lyric-search-target='resultButton']", /The Kiss/
       assert_select "button", /Judee Sill/
       assert_select "button", /Heart Food/
       assert_select "[data-lyric-search-target='resultBusy'][hidden]", /Loading lyrics/
     end
+  end
+
+  test "the entry panel offers the songbook unless a set is already being built" do
+    get root_path
+    assert_select ".songbook-prompt[hidden] .button-songbook"
+
+    songbook = Songbook.start_with(Lyric.create!(lyrics: "First line"))
+    get root_path(songbook: songbook.token)
+
+    assert_select ".songbook-prompt", count: 0
   end
 
   test "selecting a result fills the editable form without persisting" do

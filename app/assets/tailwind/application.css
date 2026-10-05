@@ -411,6 +411,12 @@ textarea:focus-visible {
   gap: 0.6rem;
 }
 
+/* The path that still produces a sheet, so it reads as the panel's action
+   rather than as another line of the note. */
+.search-miss-continue {
+  justify-self: start;
+}
+
 @keyframes search-spin {
   to {
     transform: rotate(360deg);
@@ -1050,6 +1056,12 @@ textarea:focus-visible {
   border-radius: 6px;
   padding: 0.65rem 0.75rem;
   background: var(--surface);
+}
+
+/* The entry panel is fluid, so the strip takes its width instead of the
+   preview shell's fixed paper width. */
+.songbook-prompt-landing {
+  width: 100%;
 }
 
 .songbook-prompt-message {

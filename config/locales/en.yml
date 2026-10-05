@@ -78,7 +78,9 @@ en:
         close: "Close search results"
         matches_label: "Song matches"
         miss:
-          prompt: "Can't find the song you want? Tell me what you were looking for."
+          prompt: "You can still print it. Paste the words you have and PrintLyrics will lay them out."
+          continue: "Paste your lyrics"
+          feedback: "Or tell me the song you wanted, and I'll look for it."
           query: "Song title or artist"
           submit: "Send it"
       manual_divider: "or enter lyrics manually"
@@ -152,10 +154,6 @@ en:
         back: "Back"
         add_to_songbook: "Add another song"
         print: "Print"
-      songbook_prompt:
-        message: "%{count} sheets so far — put them in a songbook to print as one job."
-        action: "Make a songbook"
-        dismiss: "Not now"
       page_count:
         one: "Letter · 0.75 in margins · 1 page"
         other: "Letter · 0.75 in margins · %{count} pages"
@@ -288,6 +286,10 @@ en:
       service: "Song search is temporarily unavailable. You can still paste lyrics below."
 
   shared:
+    songbook_prompt:
+      message: "%{count} sheets so far — put them in a songbook to print as one job."
+      action: "Make a songbook"
+      dismiss: "Not now"
     preview_controls:
       size: "Size"
       sizes:

@@ -85,7 +85,8 @@
         data-analytics-campaigns="<%= analytics_campaign_data %>"
         <% if content_for?(:generated_page_key) %>data-generated-page-key="<%= yield :generated_page_key %>"<% end %>
         <% if content_for?(:created_songbook_size) %>data-created-songbook-size="<%= yield :created_songbook_size %>"<% end %>
-        <% if content_for?(:created_songbook_origin) %>data-created-songbook-origin="<%= yield :created_songbook_origin %>"<% end %>>
+        <% if content_for?(:created_songbook_origin) %>data-created-songbook-origin="<%= yield :created_songbook_origin %>"<% end %>
+        <% if content_for?(:created_songbook_token) %>data-created-songbook-token="<%= yield :created_songbook_token %>"<% end %>>
     <main>
       <%= yield %>
     </main>
