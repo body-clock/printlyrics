@@ -26,6 +26,18 @@ module TurnstileClientInjection
   end
 end
 
+module UmamiClientInjection
+  # Replace the controller's analytics sender for the duration of the block, so
+  # higher-level tests never reach Umami.
+  def with_umami_client(client)
+    previous = FeedbacksController.umami_client_factory
+    FeedbacksController.umami_client_factory = -> { client }
+    yield
+  ensure
+    FeedbacksController.umami_client_factory = previous
+  end
+end
+
 module TurnstileSiteKey
   # The widget renders only when a site key is configured. The test environment
   # leaves it unset, so no page loads Cloudflare's script by default.
@@ -42,6 +54,7 @@ module ActiveSupport
   class TestCase
     include LrcLibClientInjection
     include TurnstileClientInjection
+    include UmamiClientInjection
     include TurnstileSiteKey
 
     # Run tests in parallel with specified workers. Rails templates the worker

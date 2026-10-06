@@ -21,6 +21,25 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # Stands in for UmamiClient: it records what it was asked to report, and can be
+  # told to refuse the way the service does.
+  class FakeUmamiClient
+    attr_reader :reports
+
+    def initialize(outcome = :ok)
+      @outcome = outcome
+      @reports = []
+    end
+
+    def configured? = true
+
+    def record_feedback(feedback, ip: nil, user_agent: nil, hostname: nil)
+      raise @outcome if @outcome.is_a?(UmamiClient::ServiceError)
+
+      @reports << { feedback: feedback, ip: ip, user_agent: user_agent, hostname: hostname }
+    end
+  end
+
   test "the page asks for the work, not for a rating" do
     get feedback_path
 
@@ -143,6 +162,111 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     assert_equal "singer@example.com", Feedback.recent.first.contact_email
   end
 
+  test "a stored submission is reported to Umami with the visitor's own words" do
+    sent = []
+    with_umami_client(recording_umami_client(sent)) do
+      verify_with(true) do
+        post feedback_path,
+          params: {
+            feedback: { message: "Two columns, but I needed three.", query: "The Kiss", surface: "feedback_page" }
+          },
+          headers: { "User-Agent" => "Mozilla/5.0 (Windows NT 10.0)" }
+      end
+    end
+
+    assert_equal 1, sent.size
+    payload = sent.first[:body]["payload"]
+    assert_equal "event", sent.first[:body]["type"]
+    assert_equal UmamiClient::EVENT_NAME, payload["name"]
+    assert_equal "/feedback", payload["url"]
+    assert_equal "www.example.com", payload["hostname"]
+    assert_equal({
+      "feedback_surface" => "feedback_page",
+      "song_query" => "The Kiss",
+      "feedback_note" => "Two columns, but I needed three."
+    }, payload["data"])
+
+    # Umami hashes the address and the agent into the session id, so the
+    # visitor's own pair is what files the event under the session their
+    # pageviews opened rather than under this container's.
+    assert_equal "127.0.0.1", payload["ip"]
+    assert_equal "Mozilla/5.0 (Windows NT 10.0)", sent.first[:headers]["User-Agent"]
+  end
+
+  test "the search-miss prompt reports its surface's page, not the page it came from" do
+    sent = []
+    with_umami_client(recording_umami_client(sent)) do
+      verify_with(true) do
+        post feedback_path,
+          params: { feedback: { query: "A song nobody has", surface: "search_miss" } },
+          headers: { "Referer" => print_lyrics_on_one_page_url }
+      end
+    end
+
+    assert_equal "/", sent.first[:body]["payload"]["url"]
+    assert_equal({ "feedback_surface" => "search_miss", "song_query" => "A song nobody has" },
+      sent.first[:body]["payload"]["data"])
+  end
+
+  test "the reply address stays in the table and out of the report" do
+    sent = []
+    with_umami_client(recording_umami_client(sent)) do
+      verify_with(true) do
+        post feedback_path, params: {
+          feedback: { message: "hi", contact_email: "singer@example.com", surface: "feedback_page" }
+        }
+      end
+    end
+
+    assert_equal "singer@example.com", Feedback.recent.first.contact_email
+    assert_not_includes sent.first[:body]["payload"]["data"].keys, "contact_email"
+    assert_not_includes JSON.generate(sent.first[:body]), "singer@example.com"
+  end
+
+  test "a rejected challenge reports nothing" do
+    reported = report_with do
+      verify_with(false) do
+        post feedback_path, params: { feedback: { message: "hello", surface: "feedback_page" } }
+      end
+    end
+
+    assert_empty reported.reports
+  end
+
+  test "a challenge that cannot be judged reports nothing" do
+    reported = report_with do
+      verify_with(TurnstileClient::ServiceError.new("siteverify unreachable")) do
+        post feedback_path, params: { feedback: { message: "hello", surface: "feedback_page" } }
+      end
+    end
+
+    assert_empty reported.reports
+  end
+
+  test "a service that refuses the report changes nothing the visitor sees" do
+    reported = report_with(UmamiClient::ServiceError.new("Umami answered 503")) do
+      verify_with(true) do
+        post feedback_path, params: { feedback: { message: "hi", surface: "feedback_page" } }
+      end
+    end
+
+    assert_redirected_to root_path
+    assert_equal "hi", Feedback.recent.first.message
+    assert_empty reported.reports
+  end
+
+  test "a host with no website to report to still stores and thanks the visitor" do
+    # The real client, unconfigured: nothing is sent, and the form still works.
+    with_umami_client(UmamiClient.new(website_id: "")) do
+      verify_with(true) do
+        post feedback_path, params: { feedback: { message: "hi", surface: "feedback_page" } }
+      end
+    end
+
+    assert_redirected_to root_path
+    assert_equal "hi", Feedback.recent.first.message
+  end
+
   test "the visitor is returned to the page they wrote from" do
     verify_with(true) do
       post feedback_path,
@@ -222,5 +346,24 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     client = FakeTurnstileClient.new(outcome)
     with_turnstile_client(client) { yield }
     client
+  end
+
+  def report_with(outcome = :ok)
+    client = FakeUmamiClient.new(outcome)
+    with_umami_client(client) { yield }
+    client
+  end
+
+  # The real client over a stubbed transport, so a test can read the payload
+  # this application would put on the wire without reaching Umami.
+  def recording_umami_client(sent)
+    stubs = Faraday::Adapter::Test::Stubs.new
+    stubs.post("#{Rails.configuration.x.umami_origin}#{UmamiClient::SEND_PATH}") do |env|
+      sent << { body: JSON.parse(env.body), headers: env.request_headers }
+      [ 200, { "Content-Type" => "application/json" }, "{}" ]
+    end
+    connection = Faraday.new { |faraday| faraday.adapter(:test, stubs) }
+
+    UmamiClient.new(connection: connection, website_id: "ea5c0e32-fcc8-4081-814e-085e7dfefa20")
   end
 end

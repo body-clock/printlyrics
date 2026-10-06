@@ -39,7 +39,15 @@ module Printlyrics
     # Public by design — it is in the page source — and it belongs under
     # `env.clear` in config/deploy.yml, not in a secret. Umami generates it when
     # the site is added to the dashboard; a host without one renders no tracker.
+    #
+    # The test environment's placeholder makes the tracker tag render without
+    # naming a website anyone can send to, so the server-side sender in
+    # app/services/umami_client.rb treats it as unconfigured and the suite never
+    # reaches the service.
+    config.x.umami_placeholder_website_id = "00000000-0000-4000-8000-000000000000"
+
     config.x.umami_website_id =
-      ENV["UMAMI_WEBSITE_ID"] || ("00000000-0000-4000-8000-000000000000" if Rails.env.test?)
+      ENV["UMAMI_WEBSITE_ID"] ||
+        (config.x.umami_placeholder_website_id if Rails.env.test?)
   end
 end
