@@ -37,13 +37,13 @@ reads a tool's attempt to its output is named `<entry> to <outcome>` in the
 product's own words. The print tool's three are `Search to sheet`, `Paste to
 sheet`, and `Sheet to printer`.
 
-The nine names in use, grouped by the flow that fires them:
+The ten names in use, grouped by the flow that fires them:
 
 - Print flow: `Print Page Generated`, `Second Print Page Generated`, `Print
   Dialog Opened`, `Songbook Created`, `Songbook Created From Offer`, `Songbook
   Printed`.
-- Entry flow: `Song Search Submitted`, `Song Search Missed`, `Manual Entry
-  Submitted`.
+- Entry flow: `Song Search Submitted`, `Song Search Missed`, `Song Result
+  Selected`, `Manual Entry Submitted`.
 
 ## The three slots every tool fills
 
@@ -58,6 +58,10 @@ Its output is `Print Page Generated`, and its completion is
 completes the set surface; `Second Print Page Generated`, `Songbook Created`,
 and `Songbook Created From Offer` are the artefacts and subsets between them.
 
+The search step has an output of its own: `Song Result Selected` is the match
+the visitor chose. Together with `Song Search Missed` it separates the two ways
+a search fails to become a sheet — finding nothing, and finding something that
+was then abandoned — which `Song Search Submitted` alone could not tell apart.
 Attempt-to-output conversion is read with a funnel, so no property has to carry
 it: `run_funnel` over the Umami MCP endpoint, or the saved funnel in the Umami
 dashboard, which is where the ordered questions live because this Plausible plan
@@ -69,10 +73,10 @@ Both mechanisms are declared in the view by the server, so the event a control
 reports is visible beside the control that fires it.
 
 A form that reports its own submit carries `data-analytics-submit` with the
-event name as its value. The search form and the manual pasted-lyrics form in
-`app/views/lyrics/new.html.erb` report `Song Search Submitted` and
-`Manual Entry Submitted`. That listener lives in
-`app/javascript/application.js`.
+event name as its value. In `app/views/lyrics/new.html.erb` the search form, the
+manual pasted-lyrics form, and each result's select form report
+`Song Search Submitted`, `Manual Entry Submitted`, and `Song Result Selected`.
+That listener lives in `app/javascript/application.js`.
 
 An outcome the server knows and the client cannot carries
 `data-analytics-response` with the event name as its value, on the element the

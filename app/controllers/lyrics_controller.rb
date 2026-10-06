@@ -40,7 +40,17 @@ class LyricsController < ApplicationController
 
     if search.perform(client: lrc_lib_client)
       @results = search.results
-      @search_status = search.empty? ? t("lyrics.search.empty") : t("lyrics.search.status", count: @results.size)
+
+      if search.empty?
+        # A search that found nothing still tells us the song's name, and the
+        # manual form on this page can use it: the sheet is made from the
+        # visitor's own words either way.
+        @lyric = Lyric.new(title: @query)
+        @search_status = t("lyrics.search.empty")
+      else
+        @search_status = t("lyrics.search.status", count: @results.size)
+      end
+
       render :new, status: :ok
     else
       @search_error = search.errors.first&.message

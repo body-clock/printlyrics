@@ -11,6 +11,9 @@
 <% if @created_songbook %>
   <% content_for :created_songbook_size, @created_songbook[:size] %>
   <% content_for :created_songbook_origin, @created_songbook[:origin] %>
+  <%# The token is what lets the client tell a restored copy of this page from
+      the visit that actually created the set. %>
+  <% content_for :created_songbook_token, @songbook.token %>
 <% end %>
 
 <div class="preview-shell"
