@@ -15,8 +15,8 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All nine exact event names exist, automatic goals off in settings and disabled in the snippet | |
-| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, and all nine events plus every property arrive beside Plausible's | |
+| Plausible goals | Site owner | All ten exact event names exist, automatic goals off in settings and disabled in the snippet | |
+| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the ten shared events plus every property arrive beside Plausible's, and the three names that are Umami's alone (`Feedback Submitted`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
@@ -118,7 +118,8 @@ read without properties:
 
 - `Song Search Missed` is the subset of `Song Search Submitted` whose query
   found nothing. It counts the searches that failed to serve the visitor; what
-  they were looking for is in the feedback table and never in analytics.
+  they were looking for sits in the feedback table, and submitting the miss
+  prompt also reports it as `Feedback Submitted` in Umami alone.
 - `Second Print Page Generated` is the subset of `Print Page Generated` at the
   second distinct sheet of a visit.
 - `Songbook Printed` is the subset of `Print Dialog Opened` where the printed
@@ -337,7 +338,7 @@ first page load. The cost is that an unreachable analytics host delays the
 page's own scripts until its request fails; the host is on the same machine, so
 that failure is immediate. Section 5 watches for it.
 
-#### Read the nine events in Umami
+#### Read the events in Umami
 
 Umami needs no goal registration: an event appears in its **Events** report the
 first time it arrives, under the product's own name, spaces and all. There is no
@@ -348,7 +349,7 @@ name mapping to keep in step, and no per-event charge.
 | Goals grid | **Events** | The row's **Events** count is `Total`; **Visitors** is `Uniques`. |
 | Goals grid | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
 | Funnels | **Funnels** | Build three, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), and **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), the last set to open because a manual-entry visitor can enter at the first step. |
-| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`. |
+| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`, and the feedback event's `feedback_surface`, `song_query`, and `feedback_note`. |
 | Explore | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
 
 Rules that make those surfaces read correctly:
@@ -443,7 +444,10 @@ it, and it never reads the database.
 - **No history.** Nothing already in Plausible can be imported. Keep the export;
   the closing record in section 4 is its summary.
 - **No single goals grid.** The Events report gives both counts per event, but
-  the nine goals are read as nine rows or as saved goals, not as one table.
+  the ten goals are read as ten rows or as saved goals, not as one table.
+  `Feedback Submitted` and the offer's two events are the exceptions on both
+  sides: they are Umami's alone, and they are read from **Event data** rather
+  than from a goal.
 - **No automatic events to filter out.** That is the point, and it is also what
   has to be rechecked after an upgrade: the tag's `data-auto-track="false"` and a
   `/api/send` that stores only what it was sent are the two claims the production
@@ -457,6 +461,13 @@ it, and it never reads the database.
   dimension, the filter set has no exclusion operator, and collected rows cannot
   be removed, so this cannot be filtered out afterwards. The check has to happen
   before the payload arrives: at the edge, or in Umami's own `IGNORE_IP` list.
+
+  The server-sent `Feedback Submitted` event obeys the same check, because it
+  carries the visitor's own User-Agent: a submission from a client Umami reads
+  as a bot is dropped with that client's pageviews, which keeps a bot-filled
+  form out of the demand list. Umami answers 200 whether it stored the event or
+  dropped it, so a clean return from `UmamiClient` confirms acceptance and not
+  storage.
 
 ### Production event smoke test
 
@@ -475,26 +486,33 @@ the log across navigation.
    confirm exactly one `Song Result Selected` arrives, before the lyrics load.
    Generate the print page from it and confirm `Print Page Generated` arrives
    once. Then search for something that cannot match and confirm the miss
-   arrives once and that no `Song Result Selected` follows it.
+   arrives once and that no `Song Result Selected` follows it. Submit the miss
+   prompt with the song you wanted: the note is stored, and `Feedback Submitted`
+   arrives at `analytics.printlyrics.app` carrying the song, the note, and
+   `feedback_surface=search_miss` — from the server, so the request carries no
+   browser event, and nothing carrying that query may reach `plausible.io`.
 4. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
    browser invokes its native print dialog, and that `Songbook Printed` is not
    sent, because a single sheet is not a set. Canceling the dialog is
    sufficient.
-5. Without closing the tab, generate a second song's print page. Confirm
+5. Generate a second song's print page in the same visit. Confirm
    `Second Print Page Generated` arrives exactly once. Generate a third song and
    confirm it does not arrive again. Reloading the first page must not add a
-   count either.
+   count either, and the count must be the visit's: generating the second sheet
+   in a second tab must still arrive as one visit's second sheet.
 6. On that second sheet, confirm the songbook suggestion appears with both
    sheets counted, then choose **Make a songbook**. Confirm the set opens with
    every sheet in generation order, that it lists each song, and that exactly
-   one `Songbook Created` and one `Songbook Created From Offer` arrive. The
-   suggestion itself sends no event, and **Not now** must send none either.
-   Reloading the set must report neither again, and so must leaving the set and
-   returning to it with the browser's Back button: the sheet list keeps the
-   pages, and the set's own page is restored from Turbo's cache with the
-   creation marker still in it. Now clear the suggestion's session flag, return
-   to the entry panel with two sheets in the tab, and confirm the same
-   suggestion appears there with both sheets counted.
+   one `Songbook Created` and one `Songbook Created From Offer` arrive.
+   `Songbook Offer Shown` arrives in Umami alone when the offer renders, and
+   `Songbook Offer Dismissed` when **Not now** is chosen — with no such request
+   to `plausible.io`, which has no goal for either. Reloading the set must
+   report the creation events once, and so must leaving the set and returning to
+   it with the browser's Back button: the visit keeps the pages, and the set's
+   own page is restored from Turbo's cache with the creation marker still in it.
+   Now return to the entry panel with two sheets in the visit, confirm the same
+   suggestion appears there, and confirm **Not now** leaves it out of the next
+   page rendered.
 7. From a generated page, choose **Add another song**, add a second song, and
    print the set. Confirm exactly one `Songbook Created` arrives for the second
    song and no `Songbook Created From Offer`, because a set built by adding a
@@ -503,8 +521,11 @@ the log across navigation.
    shows one sheet per song. Adding a third song must not report the creation
    again.
 8. Confirm no other event arrives, custom or automatic. The application emits
-   exactly ten names, so an unexpected custom event means stale
-   instrumentation; an automatic `Form: Submission`, `File Download`, or
+   exactly thirteen names — ten the browser sends to both destinations, two the
+   browser sends to Umami alone (`Songbook Offer Shown`, `Songbook Offer
+   Dismissed`), and one the server sends (`Feedback Submitted`) — so an
+   unexpected custom event means stale instrumentation; an automatic
+   `Form: Submission`, `File Download`, or
    `Outbound Link: Click` means the `plausible.init` flags did not take
    effect, and on a saved page it reports the real token. Submit a `button_to`
    form on a saved page — **Make a songbook**, **Add another song**, or a
@@ -514,8 +535,12 @@ the log across navigation.
    `/lyrics/:token`, never the real token, and a songbook must report
    `/songbooks/:token`; that holds for the trailing-slash form Rails serves as
    the same page, `/lyrics/<token>/`. The entry form in songbook context reports its
-   `songbook` parameter as `:token`, never the real value. No payload may
-   contain lyrics, song title, artist, album, or source ID.
+   `songbook` parameter as `:token`, never the real value. No tracker payload may
+   contain lyrics, song title, artist, album, or source ID. The one payload that
+   carries a visitor's own words is the server-sent `Feedback Submitted` event,
+   which exists to carry the song they typed and the note they wrote: it must
+   reach `analytics.printlyrics.app` and must never reach `plausible.io`, and it
+   must never carry the reply address from the same form.
 10. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
     Search** segment after a genuine organic visit and confirm its attribution.
 11. Confirm the same flow reaches Umami. The tracker loads from
@@ -525,7 +550,9 @@ the log across navigation.
     `/lyrics/:token` or `/songbooks/:token` on saved surfaces. Read them back in
     the dashboard's **Events** report and their properties under **Event data**;
     the realtime view confirms delivery within seconds. A song title, an artist,
-    or a real token in any payload is the privacy incident below.
+    or a real token in any browser-sent payload is the privacy incident below;
+    the server-sent `Feedback Submitted` event carries the song the visitor
+    typed by design, and reaching Plausible with it is the incident there.
     Umami stores only what the application sent — there is no auto-collected
     event that could carry a document URL behind the redaction, the way the
     Google tag's own events could. The tracker's capture is off at initialization
@@ -551,15 +578,24 @@ are still assembling sets by hand, and a closing gap means the songbook surface
 absorbed the work. `Print Dialog Opened` minus `Songbook Printed` is the
 single-sheet prints, which no goal reports directly.
 
-The sheet that crosses two in a tab offers the visitor the sheets it already
+The sheet that crosses two in a visit offers the visitor the sheets it already
 has, as a songbook, so the offer and `Second Print Page Generated` fire from the
-same moment. The entry panel carries the same offer, because that is where a
-visit that already made sheets returns for the next one; the strip is one
-component rendered in both places and silenced for the tab by either answer.
-Neither the offer nor its dismissal sends an event.
+same moment. The offer is rendered from the visit the server holds, so every tab
+gathers the same set and the entry panel — where a visit that already made
+sheets returns for the next one — carries it as the same component. Either
+answer settles it for the rest of the visit: **Make a songbook** is the creation
+itself, and **Not now** is held in the same place, so the next page rendered
+leaves the offer out.
+
+The offer's own moments are Umami's alone: `Songbook Offer Shown` when a response
+renders the strip, and `Songbook Offer Dismissed` when the visitor answers it
+with **Not now**. They are properties-carried readings rather than goals — the
+count a showing carries is the same `page_count_in_session` the sheet events
+use — so they exist to say whether the offer was there at all, which is the
+question `Songbook Created From Offer` alone cannot answer.
 
 Read the offer's conversion as `Songbook Created From Offer` over
-`Songbook Created`. `Second Print Page Generated` counts visits that made a
+`Songbook Offer Shown`. `Second Print Page Generated` counts visits that made a
 second sheet, by any route, so it is the denominator for how much of that demand
 the suggestion reaches at all.
 
@@ -575,8 +611,9 @@ each leave `window.umami` undefined and drop every event silently while
 Plausible keeps reporting — and that the website ID in the dashboard is the one
 in `config/deploy.yml`. If events duplicate, stop
 the measurement launch and fix the Turbo/pageview lifecycle before collecting a
-baseline. If a real token or song metadata is
-present, treat it as a privacy incident: disable the affected instrumentation,
+baseline. If a real token appears in any payload, or a song title or other song
+metadata appears in a browser-sent payload or anywhere at Plausible, treat it as
+a privacy incident: disable the affected instrumentation,
 deploy the redaction fix, and exclude the contaminated test period. The
 `analyticsUrl` helper in `app/javascript/lib/analytics.js` is the single place
 that rewrites tokens, and the title and referrer every destination reports are
@@ -591,8 +628,11 @@ the snippet disables it at initialization rather than relying on site settings.
 Run Umami and Plausible together for two weeks, then compare
 `Print Page Generated` and `Print Dialog Opened` over the same window in each
 dashboard, beside the four properties only Umami can read. What matters is that
-every one of the nine events is present in both and that the two series move
-together. The counts will not match exactly, because the two products define a
+every one of the ten events Plausible receives is present in both and that the
+two series move together — the three names that are Umami's alone
+(`Feedback Submitted`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) are
+absent from Plausible by design rather than a gap. The counts
+will not match exactly, because the two products define a
 visit and a visitor differently and because Plausible filters non-human traffic
 in layers Umami does not have, so a lower Umami figure is not by itself a
 failure — but an event missing from either is an instrumentation problem, and
@@ -703,9 +743,12 @@ scope.
 
 Every review also reads the feedback visitors sent, because it is the one
 channel that holds what no dashboard can: the songs they asked for and could
-not get. In production that is `bin/kamal feedback`, newest first, and the
-queries there are the demand list the next source addition or tool is chosen
-from. A miss counts in Umami; what was missed lives only there.
+not get. In production the table is read with `bin/kamal feedback`, newest
+first, and it is the demand list the next source addition or tool is chosen
+from. A miss counts in Umami, and a stored submission is reported there as
+`Feedback Submitted` with the query, the note, and the surface as properties, so
+the demand can be read beside the counts that surround it. The table stays the
+record: it alone holds the reply address.
 
 ### Recorded baseline, 2026-09-14
 
