@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/body-clock/printlyrics/compare/v1.13.0...v1.14.0) (2026-10-07)
+
+
+### Features
+
+* read the demand list in Umami and gather a visit's sheets ([#97](https://github.com/body-clock/printlyrics/issues/97)) ([d1b1222](https://github.com/body-clock/printlyrics/commit/d1b1222051e80cd93b5078c2fcd4b9aabb245f05))
+
 ## [1.13.0](https://github.com/body-clock/printlyrics/compare/v1.12.0...v1.13.0) (2026-10-06)
 
 
