@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.1](https://github.com/body-clock/printlyrics/compare/v1.14.0...v1.14.1) (2026-10-07)
+
+
+### Documentation
+
+* write down the git conventions for commits, branches, and promotions ([#100](https://github.com/body-clock/printlyrics/issues/100)) ([727a32a](https://github.com/body-clock/printlyrics/commit/727a32a46c42d65781110fc2854ab6557915d4b2))
+
 ## [1.14.0](https://github.com/body-clock/printlyrics/compare/v1.13.0...v1.14.0) (2026-10-07)
 
 
