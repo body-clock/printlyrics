@@ -55,8 +55,7 @@ bin/rails lyrics:purge_expired
 
 Visitors can describe what they were printing and what got in the way, from the
 prompt under a search that found nothing or from the `/feedback` page.
-Submissions are stored in the `feedbacks` table — nothing about them is sent to
-analytics — and read with:
+Submissions are stored in the `feedbacks` table and read with:
 
 ```sh
 bin/rails feedback:list   # newest first, 50 by default
@@ -65,6 +64,13 @@ LIMIT=200 bin/rails feedback:list
 
 The `kamal feedback` alias runs the same task against the deployed container,
 which is where production submissions are read.
+
+A stored submission is also reported to the site's own analytics service as
+`Feedback Submitted`, carrying the song query, the note, and the surface it came
+from, so the demand can be read beside the counts around it. That report is
+Umami's alone — never Plausible's — and the reply address is not part of it. The
+[measurement contract](docs/measurement-contract.md) owns the rule and the
+event's properties.
 
 The form is gated by Cloudflare Turnstile. The site key and the accepted
 hostnames are public and live in `config/deploy.yml`; the widget secret is a

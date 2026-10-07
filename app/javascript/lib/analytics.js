@@ -1,5 +1,5 @@
 import { sessionStore } from "lib/settings_store"
-import { rememberCreatedSongbook, rememberSessionPage, sessionPages } from "lib/session_pages"
+import { rememberCreatedSongbook, rememberReportedOffer, rememberReportedSheet } from "lib/reported_events"
 
 // The trailing slash is optional because Rails serves `/lyrics/<token>/` as the
 // same page, and a shared link that gained one would otherwise report the real
@@ -63,6 +63,34 @@ export function trackEvent(name, props = {}) {
 export function trackSubmittedEvent(form) {
   const name = form.dataset?.analyticsSubmit
   if (name) trackEvent(name)
+
+  // A second name a form may carry when only this site's own service is to
+  // receive it — the offer's dismissal. It is declared in the same place and
+  // read here rather than at the control, so a form has one place to look.
+  const umamiOnly = form.dataset?.analyticsUmamiSubmit
+  if (umamiOnly) trackUmamiEvent(umamiOnly)
+}
+
+// An outcome the server rendered into a whole page rather than into a frame: the
+// songbook offer, which is in the markup every tab and every restored page
+// carries. It is reported on the load that follows the response, and the
+// response names itself so a snapshot the browser replays — the same markup,
+// the same key — cannot report the same offer twice.
+export function trackPageResponses(root) {
+  root.querySelectorAll("[data-analytics-page-response]").forEach((marker) => {
+    const responseKey = marker.dataset.analyticsResponseKey
+    if (responseKey && !rememberReportedOffer(responseKey)) return
+
+    trackUmamiEvent(marker.dataset.analyticsPageResponse)
+  })
+}
+
+// An event this site's own service is the only destination for. Umami reads the
+// properties these exist for and Plausible's plan cannot, so they would be a
+// goal whose answer is invisible there; the goal list stays short on purpose.
+// None of these payloads carries a visitor's own words.
+export function trackUmamiEvent(name, props = {}) {
+  sendToUmami(name, props)
 }
 
 // An outcome the server knows and the client cannot: the marker is rendered
@@ -76,16 +104,18 @@ export function trackResponseEvents(root) {
   })
 }
 
-// Each distinct print page is counted once per session. The running total is
-// what separates a one-off visitor from someone assembling a packet, which is
-// the difference between a utility and a product. Counting happens in session
-// storage, so it identifies no one and survives navigation within a visit.
+// Each distinct print page is counted once per visit. The count itself is the
+// server's, rendered from the visit it holds in the session, so this only keeps
+// a replay of the same response from reporting the sheet twice.
 export function trackGeneratedPage() {
-  const pages = rememberSessionPage(document.body.dataset.generatedPageKey)
-  if (!pages) return
+  const pageKey = document.body.dataset.generatedPageKey
+  if (!pageKey || !rememberReportedSheet(pageKey)) return
 
-  trackEvent("Print Page Generated", sessionPageCountProperties(pages.length))
-  if (pages.length === 2) trackEvent("Second Print Page Generated")
+  const count = visitSheetCount()
+  trackEvent("Print Page Generated", sessionPageCountProperties(count))
+  // The visit's second sheet, in whichever tab made it: this is the moment the
+  // sitting turned into a packet.
+  if (count === 2) trackEvent("Second Print Page Generated")
 }
 
 // A songbook is only a set once it holds more than one song. The server decides
@@ -124,9 +154,16 @@ export function songbookSizeProperties(size) {
 }
 
 // The bucket, not the raw number, keeps the property low-cardinality. It is a
-// running count at the moment the event fired, not a final session total.
-export function sessionPageCountProperties(count = sessionPages().length) {
+// running count at the moment the event fired, not a final visit total.
+export function sessionPageCountProperties(count = visitSheetCount()) {
   return { page_count_in_session: pageCountBucket(count) }
+}
+
+// The visit's running total, rendered by the server with the rest of the page:
+// the visit is a browser session, so its count is the same in every tab and
+// survives navigation within it.
+function visitSheetCount() {
+  return Number(document.body.dataset.visitSheetCount || 0)
 }
 
 function pageCountBucket(count) {

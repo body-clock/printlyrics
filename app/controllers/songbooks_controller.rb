@@ -1,8 +1,4 @@
 class SongbooksController < ApplicationController
-  # A session holds a few sheets, not a catalog, and the set is built from
-  # browser-supplied tokens, so the request is bounded rather than trusted.
-  MAX_SONGS = 25
-
   rescue_from ActiveRecord::RecordNotFound, with: :songbook_not_found
 
   def create
@@ -32,6 +28,9 @@ class SongbooksController < ApplicationController
     @songbook = Songbook.renew_retention!(params[:token])
     @generated_page_key = generated_page_key
     @created_songbook = created_songbook
+    # A song added to a set lands here rather than on its own page, and the
+    # visit made that sheet like any other.
+    remember_visit_sheet(@generated_page_key)
   end
 
   def destroy_song
@@ -45,12 +44,13 @@ class SongbooksController < ApplicationController
 
   # The request order is the set order, so this resolves tokens against active
   # pages and drops anything unknown, expired, or repeated without disturbing
-  # the order that survived. One sheet or several arrive the same way.
+  # the order that survived. One sheet or several arrive the same way, and a
+  # request that arrives with more than a set may hold is cut to size.
   def requested_lyrics
     tokens = Array(params[:lyric_tokens].presence || params[:lyric_token])
       .map(&:to_s)
       .uniq
-      .first(MAX_SONGS)
+      .first(Songbook::MAX_SONGS)
     by_token = Lyric.active.where(token: tokens).index_by(&:token)
 
     tokens.filter_map { |token| by_token[token] }

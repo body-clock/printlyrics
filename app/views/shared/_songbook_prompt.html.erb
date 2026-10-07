@@ -1,27 +1,37 @@
 <%#
-  Offered wherever the tab already holds more than one sheet: the sheet just
-  generated, and the entry panel a visitor returns to for the next one. Whether
-  there is more than one is session storage, so the strip stays hidden until the
-  controller confirms it.
+  Offered wherever the visit already holds more than one sheet: the sheet that
+  was just generated, and the entry panel the visit returns to for the next one.
 
-  The form breaks out of the entry panel's Turbo frame: creating a set lands on
-  the set's own page, which is not a frame render.
+  The server decides, from the visit it holds in the session, so every tab of the
+  visit sees the same set and the offer is part of the markup a restored page
+  replays. Accepting gathers the visit's sheets in generation order; the same
+  route takes one sheet or a set of them.
+
+  The offer is an outcome the server renders into a page rather than into a
+  frame, so it reports on the load that follows this response, and the response
+  names itself in `data-analytics-response-key` so a snapshot Turbo replays
+  cannot report the same offer twice.
 %>
-<div class="songbook-prompt no-print <%= local_assigns[:class_name] %>"
-     data-controller="songbook-prompt"
-     hidden>
-  <p class="songbook-prompt-message"
-     data-songbook-prompt-target="message"
-     data-template="<%= t("shared.songbook_prompt.message") %>"
-     role="status"></p>
+<% if visit.offer_pending? %>
+  <div class="songbook-prompt no-print <%= local_assigns[:class_name] %>"
+       data-analytics-page-response="Songbook Offer Shown"
+       data-analytics-response-key="<%= visit.offer_key %>">
+    <p class="songbook-prompt-message" role="status">
+      <%= t("shared.songbook_prompt.message", count: visit.sheet_count) %>
+    </p>
 
-  <%= button_to t("shared.songbook_prompt.action"),
-        songbooks_path,
-        class: "button button-primary button-songbook",
-        data: { action: "songbook-prompt#accept" },
-        form: { data: { songbook_prompt_target: "form", turbo_frame: "_top" } } %>
+    <%= button_to t("shared.songbook_prompt.action"),
+          songbooks_path,
+          params: { lyric_tokens: visit.sheets },
+          class: "button button-primary button-songbook",
+          form: { data: { turbo_frame: "_top" } } %>
 
-  <button type="button"
-          class="songbook-prompt-dismiss"
-          data-action="songbook-prompt#dismiss"><%= t("shared.songbook_prompt.dismiss") %></button>
-</div>
+    <%# The answer settles the offer for the rest of the visit, and the visit is
+        the server's, so the next page it renders leaves the offer out. %>
+    <%= button_to t("shared.songbook_prompt.dismiss"),
+          songbook_offer_path,
+          method: :delete,
+          class: "songbook-prompt-dismiss",
+          form: { data: { turbo_frame: "_top", analytics_umami_submit: "Songbook Offer Dismissed" } } %>
+  </div>
+<% end %>

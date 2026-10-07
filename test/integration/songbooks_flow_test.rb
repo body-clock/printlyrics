@@ -1,6 +1,74 @@
 require "test_helper"
 
 class SongbooksFlowTest < ActionDispatch::IntegrationTest
+  test "the offer gathers the visit's sheets in the order they were made" do
+    first = generate_sheet(title: "First Song")
+    second = generate_sheet(title: "Second Song")
+
+    get root_path
+
+    assert_select "form[action='#{songbooks_path}']" do
+      assert_select "input[name='lyric_tokens[]'][value='#{first.token}']"
+      assert_select "input[name='lyric_tokens[]'][value='#{second.token}']"
+    end
+
+    post songbooks_path, params: { lyric_tokens: [ first.token, second.token ] }
+
+    assert_equal [ "First Song", "Second Song" ], Songbook.last.lyrics.map(&:title)
+  end
+
+  test "the second sheet a visit makes carries the offer with it" do
+    generate_sheet(title: "First Song")
+    post lyrics_path, params: { lyric: { title: "Second Song", lyrics: "Second line" } }
+    follow_redirect!
+
+    assert_response :success
+    assert_select ".songbook-prompt", text: /2 sheets so far/
+  end
+
+  test "a sheet the visitor did not generate does not join the visit" do
+    shared = Lyric.create!(lyrics: "Someone else's line", title: "Shared Sheet")
+
+    get lyric_path(shared)
+
+    assert_select "body[data-visit-sheet-count='0']"
+    assert_select ".songbook-prompt", count: 0
+  end
+
+  test "dismissing the offer settles it for the rest of the visit" do
+    generate_sheet(title: "First Song")
+    generate_sheet(title: "Second Song")
+    get root_path
+    assert_select ".songbook-prompt .button-songbook"
+
+    delete songbook_offer_path
+
+    get root_path
+    assert_select ".songbook-prompt", count: 0
+
+    # A later sheet in the same visit does not ask again, and the answer is the
+    # server's, so it holds for every page it renders.
+    generate_sheet(title: "Third Song")
+    assert_select ".songbook-prompt", count: 0
+  end
+
+  test "a song added to a set joins the visit like any other sheet" do
+    generate_sheet(title: "First Song")
+    songbook = Songbook.start_with(Lyric.last)
+
+    post lyrics_path, params: {
+      songbook: songbook.token,
+      lyric: { title: "Second Song", lyrics: "Second line" }
+    }
+    follow_redirect!
+
+    # The generation landed on the set rather than on the sheet's own page, and
+    # the visit counts it the same way: the second sheet is what the count says.
+    assert_response :success
+    assert_select "body[data-visit-sheet-count='2']"
+    assert_select ".songbook-track", count: 2
+  end
+
   test "adding another song from a generated page goes on to the entry form" do
     lyric = Lyric.create!(lyrics: "First line", title: "First Song")
 
@@ -59,11 +127,11 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
   end
 
   test "a set is bounded to what one session can hold" do
-    lyrics = (SongbooksController::MAX_SONGS + 2).times.map { |index| Lyric.create!(lyrics: "Line #{index}") }
+    lyrics = (Songbook::MAX_SONGS + 2).times.map { |index| Lyric.create!(lyrics: "Line #{index}") }
 
     post songbooks_path, params: { lyric_tokens: lyrics.map(&:token) }
 
-    assert_equal SongbooksController::MAX_SONGS, Songbook.last.lyrics.count
+    assert_equal Songbook::MAX_SONGS, Songbook.last.lyrics.count
   end
 
   test "generating from the songbook context appends the song and lands on the set" do

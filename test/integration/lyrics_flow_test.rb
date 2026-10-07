@@ -139,11 +139,28 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "the entry panel offers the songbook unless a set is already being built" do
+  test "the entry panel offers the songbook once the visit holds two sheets" do
     get root_path
-    assert_select ".songbook-prompt[hidden] .button-songbook"
+    assert_select ".songbook-prompt", count: 0
 
-    songbook = Songbook.start_with(Lyric.create!(lyrics: "First line"))
+    # One sheet is not a set, so there is nothing to offer yet.
+    generate_sheet(title: "First Song")
+    get root_path
+    assert_select ".songbook-prompt", count: 0
+
+    # The second sheet of the visit is what turns the panel into an offer, in
+    # whichever tab it was generated.
+    generate_sheet(title: "Second Song")
+    get root_path
+    assert_select ".songbook-prompt .button-songbook", /Make a songbook/
+    assert_select ".songbook-prompt", text: /2 sheets so far/
+  end
+
+  test "the entry panel offers nothing while a set is already being built" do
+    generate_sheet(title: "First Song")
+    generate_sheet(title: "Second Song")
+    songbook = Songbook.start_with(Lyric.last)
+
     get root_path(songbook: songbook.token)
 
     assert_select ".songbook-prompt", count: 0

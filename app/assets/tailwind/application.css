@@ -682,6 +682,13 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--line);
 }
 
+/* The block that follows the list draws its own top rule (the resource links,
+   the guide callout), so the last row's edge would leave two lines around an
+   empty band. The list ends where the next block's rule begins. */
+.faq details:last-of-type {
+  border-bottom: 0;
+}
+
 .faq summary {
   padding: 1rem 2rem 1rem 0;
   cursor: pointer;

@@ -26,6 +26,30 @@ module TurnstileClientInjection
   end
 end
 
+module SheetGeneration
+  # Makes a sheet the way the form does and loads it, which is what a visit
+  # records: the generation is one-shot session state, and the page that follows
+  # is where it is claimed. Two test files build visits, so it lives here.
+  def generate_sheet(title: "A Song", lyrics: "A line to print")
+    post lyrics_path, params: { lyric: { title: title, lyrics: lyrics } }
+    follow_redirect!
+    assert_response :success
+    Lyric.last
+  end
+end
+
+module UmamiClientInjection
+  # Replace the controller's analytics sender for the duration of the block, so
+  # higher-level tests never reach Umami.
+  def with_umami_client(client)
+    previous = FeedbacksController.umami_client_factory
+    FeedbacksController.umami_client_factory = -> { client }
+    yield
+  ensure
+    FeedbacksController.umami_client_factory = previous
+  end
+end
+
 module TurnstileSiteKey
   # The widget renders only when a site key is configured. The test environment
   # leaves it unset, so no page loads Cloudflare's script by default.
@@ -41,7 +65,9 @@ end
 module ActiveSupport
   class TestCase
     include LrcLibClientInjection
+    include SheetGeneration
     include TurnstileClientInjection
+    include UmamiClientInjection
     include TurnstileSiteKey
 
     # Run tests in parallel with specified workers. Rails templates the worker

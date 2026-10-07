@@ -1,7 +1,12 @@
 # A visitor's own words, from the search-miss prompt on the entry panel or the
-# feedback page. This table and the operator's terminal are the only places a
-# submission appears: a song query, a note, and an opt-in address are never sent
-# to analytics, and no lyric, title, or saved-page token travels with them.
+# feedback page. This table is the record: a song query, a note, and an opt-in
+# address, with no lyric, title, or saved-page token among them.
+#
+# A stored submission is also reported to this site's own analytics service as
+# `Feedback Submitted`, carrying the query, the note, and the surface, so the
+# demand it holds can be read beside the counts around it
+# (app/services/umami_client.rb). That report is Umami's alone; the reply
+# address is not part of it, and docs/measurement-contract.md owns the rule.
 class Feedback < ApplicationRecord
   # Where the form was shown. The value is allowlisted rather than free-form so
   # a submission can only be labelled with a surface this application renders.

@@ -19,6 +19,11 @@ Rails.application.routes.draw do
   get "feedback", to: "feedbacks#new", as: :feedback
   post "feedback", to: "feedbacks#create", as: :submit_feedback
 
+  # The offer's "not now" is a state the next page render reads, so it is a
+  # request rather than a client-side flag: the offer lives in the HTML, and a
+  # dismissal only one tab knows about would come back on the next page.
+  delete "songbook-offer", to: "songbook_offers#destroy", as: :songbook_offer
+
   get "sitemap", to: "sitemaps#show", defaults: { format: :xml }, as: :sitemap
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
