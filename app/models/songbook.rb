@@ -6,6 +6,11 @@ class Songbook < ApplicationRecord
   # this is the threshold the creation event reports.
   SET_SIZE = 2
 
+  # A set holds a few songs, not a catalog. The offer gathers the sheets a visit
+  # already made, so the visit's own list is bounded by the same number, and a
+  # set built by hand in one request cannot exceed it either.
+  MAX_SONGS = 25
+
   has_many :entries, -> { order(:position) },
     class_name: "SongbookEntry", dependent: :destroy, inverse_of: :songbook
   has_many :lyrics, through: :entries

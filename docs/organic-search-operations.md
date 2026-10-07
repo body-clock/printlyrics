@@ -16,7 +16,7 @@ Copy this table into the launch issue and fill every field.
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
 | Plausible goals | Site owner | All ten exact event names exist, automatic goals off in settings and disabled in the snippet | |
-| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, all ten browser events plus every property arrive beside Plausible's, and the server-sent `Feedback Submitted` arrives in Umami | |
+| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the ten shared events plus every property arrive beside Plausible's, and the three names that are Umami's alone (`Feedback Submitted`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
 | Organic Search segment | Site owner | Saved site segment can be reopened | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
@@ -445,8 +445,9 @@ it, and it never reads the database.
   the closing record in section 4 is its summary.
 - **No single goals grid.** The Events report gives both counts per event, but
   the ten goals are read as ten rows or as saved goals, not as one table.
-  `Feedback Submitted` is the exception on both sides: it is Umami's alone, and
-  it is read from **Event data** rather than from a goal.
+  `Feedback Submitted` and the offer's two events are the exceptions on both
+  sides: they are Umami's alone, and they are read from **Event data** rather
+  than from a goal.
 - **No automatic events to filter out.** That is the point, and it is also what
   has to be rechecked after an upgrade: the tag's `data-auto-track="false"` and a
   `/api/send` that stores only what it was sent are the two claims the production
@@ -494,21 +495,24 @@ the log across navigation.
    browser invokes its native print dialog, and that `Songbook Printed` is not
    sent, because a single sheet is not a set. Canceling the dialog is
    sufficient.
-5. Without closing the tab, generate a second song's print page. Confirm
+5. Generate a second song's print page in the same visit. Confirm
    `Second Print Page Generated` arrives exactly once. Generate a third song and
    confirm it does not arrive again. Reloading the first page must not add a
-   count either.
+   count either, and the count must be the visit's: generating the second sheet
+   in a second tab must still arrive as one visit's second sheet.
 6. On that second sheet, confirm the songbook suggestion appears with both
    sheets counted, then choose **Make a songbook**. Confirm the set opens with
    every sheet in generation order, that it lists each song, and that exactly
-   one `Songbook Created` and one `Songbook Created From Offer` arrive. The
-   suggestion itself sends no event, and **Not now** must send none either.
-   Reloading the set must report neither again, and so must leaving the set and
-   returning to it with the browser's Back button: the sheet list keeps the
-   pages, and the set's own page is restored from Turbo's cache with the
-   creation marker still in it. Now clear the suggestion's session flag, return
-   to the entry panel with two sheets in the tab, and confirm the same
-   suggestion appears there with both sheets counted.
+   one `Songbook Created` and one `Songbook Created From Offer` arrive.
+   `Songbook Offer Shown` arrives in Umami alone when the offer renders, and
+   `Songbook Offer Dismissed` when **Not now** is chosen — with no such request
+   to `plausible.io`, which has no goal for either. Reloading the set must
+   report the creation events once, and so must leaving the set and returning to
+   it with the browser's Back button: the visit keeps the pages, and the set's
+   own page is restored from Turbo's cache with the creation marker still in it.
+   Now return to the entry panel with two sheets in the visit, confirm the same
+   suggestion appears there, and confirm **Not now** leaves it out of the next
+   page rendered.
 7. From a generated page, choose **Add another song**, add a second song, and
    print the set. Confirm exactly one `Songbook Created` arrives for the second
    song and no `Songbook Created From Offer`, because a set built by adding a
@@ -517,9 +521,11 @@ the log across navigation.
    shows one sheet per song. Adding a third song must not report the creation
    again.
 8. Confirm no other event arrives, custom or automatic. The application emits
-   exactly eleven names — ten from the browser plus `Feedback Submitted`, which
-   the server sends — so an unexpected custom event means stale
-   instrumentation; an automatic `Form: Submission`, `File Download`, or
+   exactly thirteen names — ten the browser sends to both destinations, two the
+   browser sends to Umami alone (`Songbook Offer Shown`, `Songbook Offer
+   Dismissed`), and one the server sends (`Feedback Submitted`) — so an
+   unexpected custom event means stale instrumentation; an automatic
+   `Form: Submission`, `File Download`, or
    `Outbound Link: Click` means the `plausible.init` flags did not take
    effect, and on a saved page it reports the real token. Submit a `button_to`
    form on a saved page — **Make a songbook**, **Add another song**, or a
@@ -572,15 +578,24 @@ are still assembling sets by hand, and a closing gap means the songbook surface
 absorbed the work. `Print Dialog Opened` minus `Songbook Printed` is the
 single-sheet prints, which no goal reports directly.
 
-The sheet that crosses two in a tab offers the visitor the sheets it already
+The sheet that crosses two in a visit offers the visitor the sheets it already
 has, as a songbook, so the offer and `Second Print Page Generated` fire from the
-same moment. The entry panel carries the same offer, because that is where a
-visit that already made sheets returns for the next one; the strip is one
-component rendered in both places and silenced for the tab by either answer.
-Neither the offer nor its dismissal sends an event.
+same moment. The offer is rendered from the visit the server holds, so every tab
+gathers the same set and the entry panel — where a visit that already made
+sheets returns for the next one — carries it as the same component. Either
+answer settles it for the rest of the visit: **Make a songbook** is the creation
+itself, and **Not now** is held in the same place, so the next page rendered
+leaves the offer out.
+
+The offer's own moments are Umami's alone: `Songbook Offer Shown` when a response
+renders the strip, and `Songbook Offer Dismissed` when the visitor answers it
+with **Not now**. They are properties-carried readings rather than goals — the
+count a showing carries is the same `page_count_in_session` the sheet events
+use — so they exist to say whether the offer was there at all, which is the
+question `Songbook Created From Offer` alone cannot answer.
 
 Read the offer's conversion as `Songbook Created From Offer` over
-`Songbook Created`. `Second Print Page Generated` counts visits that made a
+`Songbook Offer Shown`. `Second Print Page Generated` counts visits that made a
 second sheet, by any route, so it is the denominator for how much of that demand
 the suggestion reaches at all.
 
@@ -613,9 +628,10 @@ the snippet disables it at initialization rather than relying on site settings.
 Run Umami and Plausible together for two weeks, then compare
 `Print Page Generated` and `Print Dialog Opened` over the same window in each
 dashboard, beside the four properties only Umami can read. What matters is that
-every one of the ten events the browser sends is present in both and that the
-two series move together — `Feedback Submitted` is the eleventh and is Umami's
-alone, so its absence from Plausible is correct rather than a gap. The counts
+every one of the ten events Plausible receives is present in both and that the
+two series move together — the three names that are Umami's alone
+(`Feedback Submitted`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) are
+absent from Plausible by design rather than a gap. The counts
 will not match exactly, because the two products define a
 visit and a visitor differently and because Plausible filters non-human traffic
 in layers Umami does not have, so a lower Umami figure is not by itself a

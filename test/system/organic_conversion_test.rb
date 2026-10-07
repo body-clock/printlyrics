@@ -227,7 +227,6 @@ class OrganicConversionTest < ApplicationSystemTestCase
   test "generating a second sheet in one session records packet intent once" do
     visit root_path
     install_persistent_analytics_capture
-    page.execute_script("sessionStorage.removeItem('printlyrics:session-pages')")
 
     fill_in "Lyrics", with: "First song line"
     click_button "Generate print page"
@@ -311,7 +310,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal [ "First Song", "Second Song" ], all(".paper .lyric-header h1").map(&:text)
   end
 
-  test "the entry panel offers the sheets the tab already made" do
+  test "the entry panel offers the sheets the visit already made" do
     visit root_path
     refute_selector ".songbook-prompt"
 
@@ -333,7 +332,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_selector ".songbook-track", count: 2
   end
 
-  test "declining the songbook suggestion keeps it away for the tab" do
+  test "declining the songbook suggestion keeps it away for the visit" do
     visit root_path
     fill_in "Lyrics", with: "First song line"
     click_button "Generate print page"
@@ -351,6 +350,33 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     assert_selector ".paper"
     refute_selector ".songbook-prompt"
+
+    # The answer is the visit's, so the next page the server renders leaves the
+    # offer out rather than asking again.
+    click_link "Back"
+    refute_selector ".songbook-prompt"
+  end
+
+  test "the offer's own moments reach this site's service alone" do
+    visit root_path
+    install_persistent_analytics_capture
+    page.execute_script(analytics_capture_source)
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    click_link "Back"
+    fill_in "Lyrics", with: "Second song line"
+    click_button "Generate print page"
+
+    assert_selector ".songbook-prompt", text: "2 sheets so far"
+    assert_includes captured_umami_events.map(&:first), "Songbook Offer Shown"
+    refute_includes captured_analytics_calls.to_json, "Songbook Offer Shown"
+
+    click_button "Not now"
+    refute_selector ".songbook-prompt"
+
+    assert_includes captured_umami_events.map(&:first), "Songbook Offer Dismissed"
+    refute_includes captured_analytics_calls.to_json, "Songbook Offer Dismissed"
   end
 
   test "adding another song goes straight to the entry form" do

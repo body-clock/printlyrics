@@ -37,11 +37,11 @@ reads a tool's attempt to its output is named `<entry> to <outcome>` in the
 product's own words. The print tool's three are `Search to sheet`, `Paste to
 sheet`, and `Sheet to printer`.
 
-The eleven names in use, grouped by the flow that fires them:
+The thirteen names in use, grouped by the flow that fires them:
 
 - Print flow: `Print Page Generated`, `Second Print Page Generated`, `Print
   Dialog Opened`, `Songbook Created`, `Songbook Created From Offer`, `Songbook
-  Printed`.
+  Printed`, `Songbook Offer Shown`, `Songbook Offer Dismissed`.
 - Entry flow: `Song Search Submitted`, `Song Search Missed`, `Song Result
   Selected`, `Manual Entry Submitted`, `Feedback Submitted`.
 
@@ -74,15 +74,18 @@ has no funnel report.
 
 ## How an entry surface reports its events
 
-Three mechanisms report the eleven names, and the first two are declared in the
-view by the server, so the event a control reports is visible beside the control
-that fires it.
+The names reach a destination in five shapes. Two are declared in the view by
+the server, so the event a control reports is visible beside the control that
+fires it.
 
 A form that reports its own submit carries `data-analytics-submit` with the
 event name as its value. In `app/views/lyrics/new.html.erb` the search form, the
 manual pasted-lyrics form, and each result's select form report
 `Song Search Submitted`, `Manual Entry Submitted`, and `Song Result Selected`.
-That listener lives in `app/javascript/application.js`.
+A form whose event only this site's own service is to receive carries
+`data-analytics-umami-submit` instead, which the same listener reads: the
+offer's **Not now** reports `Songbook Offer Dismissed` that way and reaches no
+third party. That listener lives in `app/javascript/application.js`.
 
 An outcome the server knows and the client cannot carries
 `data-analytics-response` with the event name as its value, on the element the
@@ -93,11 +96,20 @@ cached snapshot restoration does not fire `turbo:frame-load` either, so a panel
 restored by the Back button cannot report it twice. The reporting function is
 `trackResponseEvents` in `app/javascript/lib/analytics.js`.
 
+An outcome the server renders into a whole page carries
+`data-analytics-page-response`, read on the load that follows the response, and
+`data-analytics-response-key` naming the response that carried it, so a snapshot
+Turbo replays — same markup, same key — reports nothing: the songbook offer, by
+`trackPageResponses` in that file. The entry panel's offer arrives with a frame
+render as well as with a page, so both ends of a response are read.
+
 Page-level markers ride `<body>` data attributes and are reported on
 `turbo:load`: `trackPageview`, `trackGeneratedPage`, and `trackCreatedSongbook`,
-all in `app/javascript/application.js`.
+all in `app/javascript/application.js`. `data-visit-sheet-count`, which
+`sessionPageCountProperties` reads, is the visit's own total rather than a report
+of its own.
 
-The third reports from the server, to Umami alone: a feedback submission that
+The fifth reports from the server, to Umami alone: a feedback submission that
 passed the challenge and was saved is sent by `UmamiClient`
 (`app/services/umami_client.rb`) after the row is written, as
 `Feedback Submitted`. Nothing refused, unjudged, or unsaved is reported, and no
@@ -126,8 +138,11 @@ the operator's replies.
 
 Counts and sizes travel as buckets, not raw values: `page_count_in_session` and
 `songbook_size` through `songbookSizeProperties` and
-`sessionPageCountProperties` in that file. Campaign values are allowlisted by
-the server in `AnalyticsCampaigns` (`app/models/analytics_campaigns.rb`).
+`sessionPageCountProperties` in that file. The visit's total is the server's
+(`app/models/visit.rb`): one list of the sheets a browser session made, in every
+tab, and the same window Umami expires a visit on. The offer's two events carry
+that same bucket and nothing else. Campaign values are allowlisted by the
+server in `AnalyticsCampaigns` (`app/models/analytics_campaigns.rb`).
 
 ## Adding a tool
 
