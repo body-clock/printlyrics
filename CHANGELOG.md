@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/body-clock/printlyrics/compare/v1.12.0...v1.13.0) (2026-10-06)
+
+
+### Features
+
+* **search:** match the visitor's words and keep a miss on the path to a sheet ([#90](https://github.com/body-clock/printlyrics/issues/90)) ([b409754](https://github.com/body-clock/printlyrics/commit/b409754aff994095ec37ae4659328d1f4a7ac234))
+
 ## [1.12.0](https://github.com/body-clock/printlyrics/compare/v1.11.0...v1.12.0) (2026-09-30)
 
 
