@@ -100,8 +100,12 @@ An outcome the server renders into a whole page carries
 `data-analytics-page-response`, read on the load that follows the response, and
 `data-analytics-response-key` naming the response that carried it, so a snapshot
 Turbo replays — same markup, same key — reports nothing: the songbook offer, by
-`trackPageResponses` in that file. The entry panel's offer arrives with a frame
-render as well as with a page, so both ends of a response are read.
+`trackPageResponses` in that file. `data-analytics-offer-surface` names which of
+the offer's two placements rendered it, `sheet` or `entry`, and it is required
+rather than optional: the two report one event, so a strip that did not say
+where it was shown would be a showing nothing can attribute. The entry panel's
+offer arrives with a frame render as well as with a page, so both ends of a
+response are read.
 
 Page-level markers ride `<body>` data attributes and are reported on
 `turbo:load`: `trackPageview`, `trackGeneratedPage`, and `trackCreatedSongbook`,

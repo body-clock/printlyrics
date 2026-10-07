@@ -74,7 +74,7 @@
       <%# The entry panel is where a visit that already made sheets comes back
           for the next one, so the offer belongs here as well as on the sheet.
           A visit already adding to a set is not offered another one. %>
-      <%= render "shared/songbook_prompt", class_name: "songbook-prompt-landing" unless @songbook %>
+      <%= render "shared/songbook_prompt", class_name: "songbook-prompt-landing", surface: "entry" unless @songbook %>
 
       <div class="search-section">
         <div class="section-heading">

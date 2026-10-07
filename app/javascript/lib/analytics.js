@@ -76,12 +76,22 @@ export function trackSubmittedEvent(form) {
 // carries. It is reported on the load that follows the response, and the
 // response names itself so a snapshot the browser replays — the same markup,
 // the same key — cannot report the same offer twice.
+//
+// The offer renders in two places — the sheet that crossed two, and the entry
+// panel the visit comes back to for the next one — and both report the one
+// name, so the reading that separates them travels with it: the marker names
+// its own surface, and the count is the visit's, the same bucket the sheet
+// events carry.
 export function trackPageResponses(root) {
   root.querySelectorAll("[data-analytics-page-response]").forEach((marker) => {
     const responseKey = marker.dataset.analyticsResponseKey
     if (responseKey && !rememberReportedOffer(responseKey)) return
 
-    trackUmamiEvent(marker.dataset.analyticsPageResponse)
+    const surface = marker.dataset.analyticsOfferSurface
+    trackUmamiEvent(marker.dataset.analyticsPageResponse, {
+      ...sessionPageCountProperties(),
+      ...(surface && { songbook_offer_surface: surface })
+    })
   })
 }
 

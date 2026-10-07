@@ -107,9 +107,10 @@ name is the only dimension the dashboard can read. Every split that would
 otherwise be a property is its own goal instead.
 
 The application still sends `entry_method`, `songbook_size`, `songbook_origin`,
-`campaign_source`, `campaign_name`, and `page_count_in_session` with events.
+`campaign_source`, `campaign_name`, `page_count_in_session`, and
+`songbook_offer_surface` with events.
 **Plausible cannot read any of them on this plan, and no reading below depends on
-them here.** Umami records all six as event properties, which is why it runs
+them here.** Umami records all seven as event properties, which is why it runs
 beside Plausible for the two weeks in "Umami beside Plausible" below: it is the
 first destination this site has had that can report them next to the counts.
 
@@ -225,9 +226,10 @@ the ordered questions are read, since this plan has no funnel report of its own.
 Umami is this site's own analytics service. It runs on the same host as the web
 container, as the two accessories in `config/deploy.yml`, and it measures beside
 Plausible until the cutover below. It is the only reason the `entry_method`,
-`songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, and
-`page_count_in_session` parameters the application has always sent can be read
-next to the counts: Umami reports them as event properties, on a plan that costs
+`songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`,
+`page_count_in_session`, and `songbook_offer_surface` parameters the application
+sends with events can be read next to the counts: Umami reports them as event
+properties, on a plan that costs
 nothing at any traffic, where this Plausible plan drops them. It also exposes a
 read-only MCP endpoint, so the same figures can be asked for in sentences instead
 of clicked through.
@@ -349,14 +351,15 @@ name mapping to keep in step, and no per-event charge.
 | Goals grid | **Events** | The row's **Events** count is `Total`; **Visitors** is `Uniques`. |
 | Goals grid | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
 | Funnels | **Funnels** | Build three, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), and **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), the last set to open because a manual-entry visitor can enter at the first step. |
-| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`, and the feedback event's `feedback_surface`, `song_query`, and `feedback_note`. |
+| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`, `songbook_offer_surface`, and the feedback event's `feedback_surface`, `song_query`, and `feedback_note`. |
 | Explore | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
 
 Rules that make those surfaces read correctly:
 
 - **Properties are per event.** `entry_method` rides only on
-  `Print Dialog Opened`, `songbook_origin` only on `Songbook Created`, and the
-  size and page-count buckets only on the events that set them. Event data has no
+  `Print Dialog Opened`, `songbook_origin` only on `Songbook Created`,
+  `songbook_offer_surface` only on `Songbook Offer Shown`, and the size and
+  page-count buckets only on the events that set them. Event data has no
   `(not set)` bucket, so a property that never arrived is absent rather than
   zero, and a breakdown needs the event that carries it.
 - **A pageview is a payload with no name.** Umami files a payload without a name
@@ -589,15 +592,20 @@ leaves the offer out.
 
 The offer's own moments are Umami's alone: `Songbook Offer Shown` when a response
 renders the strip, and `Songbook Offer Dismissed` when the visitor answers it
-with **Not now**. They are properties-carried readings rather than goals — the
-count a showing carries is the same `page_count_in_session` the sheet events
-use — so they exist to say whether the offer was there at all, which is the
-question `Songbook Created From Offer` alone cannot answer.
+with **Not now**. They are properties-carried readings rather than goals: a
+showing carries the same `page_count_in_session` the sheet events use, and
+`songbook_offer_surface`, which is `sheet` on the page that crossed two and
+`entry` on the panel the visit comes back to. They exist to say whether the
+offer was there at all, which the question `Songbook Created From Offer` alone
+cannot answer, and the surface is what separates a strip beside the print button
+from one above a search box the visitor was already leaving.
 
 Read the offer's conversion as `Songbook Created From Offer` over
-`Songbook Offer Shown`. `Second Print Page Generated` counts visits that made a
-second sheet, by any route, so it is the denominator for how much of that demand
-the suggestion reaches at all.
+`Songbook Offer Shown`, and read the two surfaces apart before drawing anything
+from the total: one name over both placements reports a strip nobody saw and a
+strip nobody acted on as the same number. `Second Print Page Generated` counts
+visits that made a second sheet, by any route, so it is the denominator for how
+much of that demand the suggestion reaches at all.
 
 A low offer share next to a healthy remainder means the set surface is being
 found without the nudge doing any work, and the suggestion is the part to

@@ -379,6 +379,31 @@ class OrganicConversionTest < ApplicationSystemTestCase
     refute_includes captured_analytics_calls.to_json, "Songbook Offer Dismissed"
   end
 
+  test "a showing says which placement rendered the offer" do
+    visit root_path
+    install_persistent_analytics_capture
+    page.execute_script(analytics_capture_source)
+
+    fill_in "Lyrics", with: "First song line"
+    click_button "Generate print page"
+    click_link "Back"
+    fill_in "Lyrics", with: "Second song line"
+    click_button "Generate print page"
+
+    # The sheet that crossed two, then the panel the visit came back to for the
+    # next one. Both are one event, and only the marker says which is which.
+    assert_selector ".songbook-prompt", text: "2 sheets so far"
+    click_link "Back"
+    assert_selector ".songbook-prompt", text: "2 sheets so far"
+
+    showings = wait_for_umami_events("Songbook Offer Shown", count: 2)
+
+    assert_equal [ "sheet", "entry" ],
+      showings.map { |_, payload| payload.dig("data", "songbook_offer_surface") }
+    assert_equal [ "2", "2" ],
+      showings.map { |_, payload| payload.dig("data", "page_count_in_session") }
+  end
+
   test "adding another song goes straight to the entry form" do
     visit root_path
     fill_in "Song title", with: "First Song"
@@ -949,5 +974,23 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   def analytics_calls_named(name)
     captured_analytics_calls.select { |call| call[0] == name }
+  end
+
+  # The same wait for a reading only this site's own service receives: an offer
+  # reports on the load that follows a Turbo visit, and the driver's own wait
+  # covers the document's load rather than Turbo's render of it.
+  def wait_for_umami_events(name, count: 1)
+    deadline = Time.now + Capybara.default_max_wait_time
+
+    until umami_events_named(name).size >= count
+      flunk "fewer than #{count} #{name} events arrived" if Time.now > deadline
+      sleep 0.05
+    end
+
+    umami_events_named(name)
+  end
+
+  def umami_events_named(name)
+    captured_umami_events.select { |event| event.first == name }
   end
 end
