@@ -6,12 +6,12 @@ import { sessionStore } from "lib/settings_store"
 // rather than derived from the page.
 //
 // Each list is its own because each is keyed by a different thing: the sheet the
-// visit generated, the response that rendered an offer, and the set that came
-// into being. All three are session storage, which is per tab — and the tab is
-// exactly the scope a snapshot can be replayed in. A stored value in an older
-// format reads as an empty list.
+// visit generated, the response that carried an offer or a feedback prompt, and
+// the set that came into being. All three are session storage, which is per tab
+// — and the tab is exactly the scope a snapshot can be replayed in. A stored
+// value in an older format reads as an empty list.
 const REPORTED_SHEETS_KEY = "printlyrics:reported-sheets"
-const REPORTED_OFFERS_KEY = "printlyrics:reported-offers"
+const REPORTED_RESPONSES_KEY = "printlyrics:reported-responses"
 const CREATED_SONGBOOKS_KEY = "printlyrics:created-songbooks"
 
 // Whether this sheet still needs its generation reported, so one sheet is
@@ -20,11 +20,12 @@ export function rememberReportedSheet(pageKey) {
   return claim(REPORTED_SHEETS_KEY, pageKey)
 }
 
-// Whether this offer still needs its showing reported. The key is the response
-// that carried it, not the offer's contents: a re-rendered page is a new
+// Whether this response still needs the outcome it carried reported. The key is
+// the response itself — the offer's own key, or the sheet a feedback prompt was
+// rendered under — and not the outcome's contents: a re-rendered page is a new
 // response and a genuinely new showing, a replayed one is neither.
-export function rememberReportedOffer(responseKey) {
-  return claim(REPORTED_OFFERS_KEY, responseKey)
+export function rememberReportedResponse(responseKey) {
+  return claim(REPORTED_RESPONSES_KEY, responseKey)
 }
 
 // Whether this set still needs to be reported. A marker with no token has

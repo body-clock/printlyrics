@@ -472,6 +472,7 @@ textarea:focus-visible {
 }
 
 .field input,
+.field select,
 .field textarea {
   width: 100%;
   border: 1px solid var(--line);
@@ -481,7 +482,8 @@ textarea:focus-visible {
   transition: border-color 160ms ease-out, background 160ms ease-out;
 }
 
-.field input {
+.field input,
+.field select {
   height: 3rem;
   padding: 0 0.85rem;
 }
@@ -495,11 +497,13 @@ textarea:focus-visible {
 }
 
 .field input:hover,
+.field select:hover,
 .field textarea:hover {
   border-color: color-mix(in oklch, var(--ink-muted), var(--line) 45%);
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
   border-color: var(--focus);
   background: var(--surface);
@@ -565,11 +569,10 @@ textarea:focus-visible {
   min-height: 9rem;
 }
 
-/* Turnstile sizes its own iframe; reserving the usual height keeps the form
-   from jumping when the widget appears. */
-.turnstile {
-  min-height: 65px;
-}
+/* The widget renders in interaction-only appearance (see the turnstile
+   controller), so it takes no room in the form until Cloudflare actually asks
+   the visitor for something. Reserving its height would instead put a gap in
+   every form that almost no visitor ever fills. */
 
 .landing-footer {
   display: flex;
@@ -1052,6 +1055,16 @@ textarea:focus-visible {
   text-align: right;
 }
 
+/* The sheet's own line, under the paper: an invitation, not the next step, so it
+   stays quieter than the songbook prompt above it. */
+.feedback-prompt {
+  width: 8.5in;
+  margin: 0.85rem auto 0;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
 .songbook-prompt {
   display: flex;
   width: 8.5in;
@@ -1322,6 +1335,10 @@ textarea:focus-visible {
   }
 
   .page-summary {
+    width: calc(100% - 1rem);
+  }
+
+  .feedback-prompt {
     width: calc(100% - 1rem);
   }
 

@@ -7,11 +7,20 @@ class FeedbacksController < ApplicationController
   class_attribute :umami_client_factory, default: -> { UmamiClient.new }
 
   def new
-    @feedback = Feedback.new
+    # The sheet's own prompt links here with both answers already in it, so the
+    # page it lands on is about the print the visitor just made.
+    @feedback = Feedback.new(
+      surface: offered_surface(params[:surface]),
+      reason: params[:reason]
+    )
   end
 
   def create
     @feedback = Feedback.new(feedback_params)
+    # What the visit knew when it wrote: a miss with no sheet behind it is a
+    # visitor who left empty-handed. Only the session knows this, and the row is
+    # read long after that session is gone.
+    @feedback.visit_sheet_count = visit.sheet_count
 
     # Validation runs before the challenge so a half-filled form does not spend
     # the single-use token and make the visitor solve it a second time.
@@ -76,12 +85,18 @@ class FeedbacksController < ApplicationController
   end
 
   def feedback_params
-    permitted = params.require(:feedback).permit(:message, :query, :contact_email, :surface)
+    permitted = params.require(:feedback).permit(:message, :query, :contact_email, :surface, :reason)
     # The surface is a label for reading submissions, not a permission, so an
     # unknown value falls back to the page it was sent from instead of failing
     # the visitor's submission.
-    permitted[:surface] = "feedback_page" unless Feedback::SURFACES.include?(permitted[:surface])
+    permitted[:surface] = offered_surface(permitted[:surface])
 
     permitted
+  end
+
+  # The surfaces this application renders, and the page that asks for the note
+  # for anything else.
+  def offered_surface(value)
+    Feedback::SURFACES.include?(value) ? value : "feedback_page"
   end
 end

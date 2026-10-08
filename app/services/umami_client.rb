@@ -31,9 +31,11 @@ class UmamiClient
 
   # The page a submission reports, in the synthetic form the tracker uses. A
   # submission never reports the page it was written from, because on a saved
-  # sheet that page is a share token.
+  # sheet that page is a share token: the sheet surface reports the same
+  # `:token` location `analyticsUrl` redacts one to.
   SURFACE_PATHS = {
     "search_miss" => "/",
+    "sheet" => "/lyrics/:token",
     "feedback_page" => "/feedback"
   }.freeze
 
@@ -94,13 +96,15 @@ class UmamiClient
   end
 
   # The visitor's own words, which is the whole point of recording them: the
-  # song they wanted and the note they wrote about what got in the way. Blank
-  # halves are left out rather than recorded as empty properties.
+  # song they wanted, the note they wrote about what got in the way, and the one
+  # answer this application offers as a select. Blank halves are left out rather
+  # than recorded as empty properties.
   def data_for(feedback)
     {
       feedback_surface: feedback.surface,
       song_query: feedback.query.presence,
-      feedback_note: feedback.message.presence
+      feedback_note: feedback.message.presence,
+      feedback_reason: feedback.reason.presence
     }.compact
   end
 end

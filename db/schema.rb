@@ -10,15 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_203954) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_160529) do
   create_table "feedbacks", force: :cascade do |t|
-    t.string "contact_email"
-    t.datetime "created_at", null: false
-    t.text "message"
-    t.string "query", limit: 200
     t.string "surface", null: false
-    t.datetime "updated_at", null: false
+    t.string "query", limit: 200
+    t.text "message"
+    t.string "contact_email"
     t.boolean "verified", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "reason"
+    t.integer "visit_sheet_count"
     t.index ["created_at"], name: "index_feedbacks_on_created_at"
   end
 
@@ -38,10 +40,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_203954) do
   end
 
   create_table "songbook_entries", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.integer "songbook_id", null: false
     t.integer "lyric_id", null: false
     t.integer "position", null: false
-    t.integer "songbook_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["lyric_id"], name: "index_songbook_entries_on_lyric_id"
     t.index ["songbook_id", "lyric_id"], name: "index_songbook_entries_on_songbook_id_and_lyric_id", unique: true
@@ -49,9 +51,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_203954) do
   end
 
   create_table "songbooks", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.datetime "expires_at", null: false
     t.string "token", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["expires_at"], name: "index_songbooks_on_expires_at"
     t.index ["token"], name: "index_songbooks_on_token", unique: true

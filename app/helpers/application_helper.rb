@@ -30,6 +30,13 @@ module ApplicationHelper
     TurnstileClient::ACTION
   end
 
+  # The answers the feedback form offers, in the order the model lists them, so a
+  # new one is added in one place. The label is the visitor's words; the value is
+  # what the row and the report carry.
+  def feedback_reason_options
+    Feedback::REASONS.map { |reason| [ t("feedbacks.reasons.#{reason}"), reason ] }
+  end
+
   def page_title
     content_for?(:title) ? content_for(:title) : t("application.meta.default_title")
   end

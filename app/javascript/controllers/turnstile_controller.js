@@ -47,7 +47,12 @@ export default class extends Controller {
 
     this.widgetId = window.turnstile.render(this.element, {
       sitekey: this.siteKeyValue,
-      action: this.actionValue
+      action: this.actionValue,
+      // The widget's own mode is the site key's, set in the Cloudflare
+      // dashboard. This asks it to stay out of the layout until it actually
+      // needs the visitor: the challenge still runs and still mints a token, and
+      // the server still refuses an unjudged one.
+      appearance: "interaction-only"
     })
   }
 
