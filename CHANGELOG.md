@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/body-clock/printlyrics/compare/v1.14.1...v1.15.0) (2026-10-08)
+
+
+### Features
+
+* **analytics:** name the offer's placement and carry its count ([#104](https://github.com/body-clock/printlyrics/issues/104)) ([d080fd7](https://github.com/body-clock/printlyrics/commit/d080fd70204f528173ab8c22ab92f11eaf20d866))
+
 ## [1.14.1](https://github.com/body-clock/printlyrics/compare/v1.14.0...v1.14.1) (2026-10-07)
 
 
