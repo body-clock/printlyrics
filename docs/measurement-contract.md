@@ -35,7 +35,11 @@ example: the subset over the total is the offer's conversion rate.
 A saved funnel carries a name too, and it follows the same rule: the funnel that
 reads a tool's attempt to its output is named `<entry> to <outcome>` in the
 product's own words. The print tool's three are `Search to sheet`, `Paste to
-sheet`, and `Sheet to printer`.
+sheet`, and `Sheet to printer`, and one more carries the selection step that the
+other three cannot: `Search to printer` reads the same attempt through
+`Song Result Selected` and `Print Page Generated` to `Print Dialog Opened`, so
+the search's loss is read as two — a search that found nothing to pick, and a
+result that was picked and never made.
 
 The thirteen names in use, grouped by the flow that fires them:
 
@@ -100,8 +104,12 @@ An outcome the server renders into a whole page carries
 `data-analytics-page-response`, read on the load that follows the response, and
 `data-analytics-response-key` naming the response that carried it, so a snapshot
 Turbo replays — same markup, same key — reports nothing: the songbook offer, by
-`trackPageResponses` in that file. The entry panel's offer arrives with a frame
-render as well as with a page, so both ends of a response are read.
+`trackPageResponses` in that file. `data-analytics-offer-surface` names which of
+the offer's two placements rendered it, `sheet` or `entry`, and it is required
+rather than optional: the two report one event, so a strip that did not say
+where it was shown would be a showing nothing can attribute. The entry panel's
+offer arrives with a frame render as well as with a page, so both ends of a
+response are read.
 
 Page-level markers ride `<body>` data attributes and are reported on
 `turbo:load`: `trackPageview`, `trackGeneratedPage`, and `trackCreatedSongbook`,
@@ -152,7 +160,10 @@ server in `AnalyticsCampaigns` (`app/models/analytics_campaigns.rb`).
 2. Create the goals in Plausible, and confirm them in Umami's Events report.
    Umami needs no registration: a name it receives is a row it lists. An event
    carrying a visitor's own words is Umami's alone and gets no Plausible goal.
-3. Save a funnel from attempt to output in Umami, named `<entry> to <outcome>`.
+3. Save a funnel from attempt to output in Umami, named `<entry> to <outcome>`,
+   and, when the attempt has a step between the two that a drop could be hiding
+   in, a second one that carries it to the completion — `Search to printer` is
+   that shape.
 4. Keep a free-tier limit in application state. Never derive a limit from
    analytics: a blocked, sampled, or bot-polluted client must not change what a
    visitor can do.

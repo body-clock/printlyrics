@@ -62,7 +62,7 @@
 
   <%# A sheet that was just generated is one of the two moments a visit can
       become a set; the other is the entry panel it returns to. %>
-  <%= render "shared/songbook_prompt" if @generated_page_key %>
+  <%= render "shared/songbook_prompt", surface: "sheet" if @generated_page_key %>
 
   <p class="page-summary no-print"
      data-preview-target="pageSummary"
