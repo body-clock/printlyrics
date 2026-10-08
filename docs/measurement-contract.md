@@ -35,7 +35,11 @@ example: the subset over the total is the offer's conversion rate.
 A saved funnel carries a name too, and it follows the same rule: the funnel that
 reads a tool's attempt to its output is named `<entry> to <outcome>` in the
 product's own words. The print tool's three are `Search to sheet`, `Paste to
-sheet`, and `Sheet to printer`.
+sheet`, and `Sheet to printer`, and one more carries the selection step that the
+other three cannot: `Search to printer` reads the same attempt through
+`Song Result Selected` and `Print Page Generated` to `Print Dialog Opened`, so
+the search's loss is read as two — a search that found nothing to pick, and a
+result that was picked and never made.
 
 The thirteen names in use, grouped by the flow that fires them:
 
@@ -156,7 +160,10 @@ server in `AnalyticsCampaigns` (`app/models/analytics_campaigns.rb`).
 2. Create the goals in Plausible, and confirm them in Umami's Events report.
    Umami needs no registration: a name it receives is a row it lists. An event
    carrying a visitor's own words is Umami's alone and gets no Plausible goal.
-3. Save a funnel from attempt to output in Umami, named `<entry> to <outcome>`.
+3. Save a funnel from attempt to output in Umami, named `<entry> to <outcome>`,
+   and, when the attempt has a step between the two that a drop could be hiding
+   in, a second one that carries it to the completion — `Search to printer` is
+   that shape.
 4. Keep a free-tier limit in application state. Never derive a limit from
    analytics: a blocked, sampled, or bot-polluted client must not change what a
    visitor can do.

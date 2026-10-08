@@ -17,7 +17,8 @@ Copy this table into the launch issue and fill every field.
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
 | Plausible goals | Site owner | All ten exact event names exist, automatic goals off in settings and disabled in the snippet | |
 | Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the ten shared events plus every property arrive beside Plausible's, and the three names that are Umami's alone (`Feedback Submitted`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
-| Organic Search segment | Site owner | Saved site segment can be reopened | |
+| Organic Search segment | Site owner | Plausible's saved site segment can be reopened, and the same split is saved in Umami as one referrer segment per search engine — the channels Umami reports are not filterable, so there is no single organic segment to save | |
+| Umami readings saved | Site owner | The four funnels and the saved segments named in "Read the events in Umami" exist and reopen, and the five goals the Events row names are saved | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
 
@@ -197,7 +198,7 @@ is a candidate for removal.
 Plausible requires received events to be configured as goals before they appear
 as conversions; see its [custom-event goal documentation](https://plausible.io/docs/custom-event-goals).
 This plan has no funnel report, so every ordered question is read in Umami,
-where the three funnels are named and built in the section below. Plausible
+where the funnels are named and built in the section below. Plausible
 reads the goals as their own rows, which is what its counts and the reviews
 compare; read `Print Page Generated` and `Print Dialog Opened` separately as
 well as through the Umami funnel, because a manual-entry visitor can
@@ -218,8 +219,12 @@ Create a shared site segment named **Organic Search**:
 
 Plausible documents [channel filtering and saved segments](https://plausible.io/docs/filters-segments).
 Its attribution is visit-level and privacy-preserving; do not try to identify
-individual visitors. The same channel filters the Umami funnels, which is where
-the ordered questions are read, since this plan has no funnel report of its own.
+individual visitors. Umami has no channel filter to match it: it reports the same
+grouping under **Channels**, but its segment builder offers referrer, location,
+environment, UTM, and event instead, so the ordered questions are read under one
+referrer segment per search engine, which "Read the events in Umami" names. The
+funnels stay where the ordered questions live, since this plan has no funnel
+report of its own.
 
 ### Umami beside Plausible
 
@@ -383,12 +388,73 @@ Rules that make those surfaces read correctly:
 - **Umami adds no events.** Unlike the Google tag it replaces, it stores only
   what the application sends, so an unexpected event is instrumentation drift and
   nothing else.
+- **A segment's filters are not a union, and a list belongs inside one value.**
+  Two filters of the same dimension combine rather than union: a segment holding
+  four referrer filters matches nothing, because no visit arrives from four
+  engines, and nothing in the dashboard reports an empty segment. A comma list
+  inside one filter's value is the OR — `referrer` `is` `bing.com,google.com`
+  returns both rows — but a value carrying an operator takes one value only
+  (`c.yahoo.com` returns all eight Yahoo subdomains, `c.yahoo.com,c.duckduckgo.com`
+  returns nothing). One segment per engine is therefore what reads correctly, and
+  a new segment is checked against a count the referrer report already gives
+  before it is trusted.
+- **A funnel takes a segment, not an inline dimension filter.** `run_funnel` with
+  a saved segment scopes its steps correctly (`Mobile`: 44 in, 27 out), while the
+  same call with `filters: { referrer: "bing.com" }` returns zero steps where the
+  unfiltered funnel returns 174. A filtered funnel is therefore always the
+  segment's, and a zero-step funnel is a filter problem before it is a product
+  finding.
+- **Nothing marks a change on the timeline by itself.** Annotate what changes a
+  reading — an instrumentation release, a sitemap submission, an indexing change,
+  the measurement start — because a chart shows an effect and never its cause,
+  and the review reads both. The dashboard names the feature **Notes** and labels
+  the control with that same word; it is a quiet button at the right end of the
+  main chart's legend row, on the website's own route (`/websites/<id>`, no tab
+  selected), and not an entry in the site navigation. Clicking a marker pulls the
+  dashboard onto that note's date when the chart spans more than one day and is
+  not hourly — the one click a review uses instead of re-filtering by hand. A note
+  is written as the change happens and cannot be reconstructed afterwards, which
+  is why the release that added the offer's two events (`0eca1fd`, 2026-10-07) is
+  the worked example of one nobody wrote.
 
 Campaign performance needs no application support: Umami attributes a visit from
 the landing URL's own `utm_source`, `utm_medium`, and `utm_campaign`, and reports
 them under **UTM**. `AnalyticsCampaigns` still serve Plausible's properties, and
 ride on Umami's events as `campaign_source` and `campaign_name`; the cutover
 deletes them, because the native attribution is what the readings use.
+
+#### The readings a count cannot make
+
+Two of the review's questions are attributed or ordered rather than counted, and
+each is one MCP call over events that already arrive. Both are rows in the
+section 4 table, and neither needs an object saved in the dashboard first.
+
+- **Which channel's visitors make a sheet.** `run_attribution` with
+  `conversionType: "event"`, `conversion: "Print Page Generated"`, and
+  `model: "first-click"` reads a conversion against the referrer the visit
+  arrived from. That report counts arrivals and this one counts generations, and
+  the two rank differently: in the first eight days Bing brought three times
+  Google's visitors and Google converted nearly twice their share.
+
+  | Referrer | Visitors | Generating a sheet | Share |
+  | --- | --- | --- | --- |
+  | bing.com | 243 | 67 | 27.6% |
+  | google.com | 77 | 39 | 50.6% |
+  | search.yahoo.com and its subdomains | 168 | 20 | 11.9% |
+  | duckduckgo.com | 55 | 15 | 27.3% |
+
+  The same call answers for UTM, which is the only place a tagged link's channel
+  is legible: seven converting visitors carried `utm_source` from a ChatGPT link,
+  against the three the referrer dimension credits. Tag what is handed out — it
+  is the one acquisition reading the application does not have to build.
+- **Where a search dies.** `run_journey` with `startStep: "/"` continues the path
+  after the landing page. In the same eight days, the step that follows a search
+  is the miss prompt or the paste form about twice as often as a picked result,
+  so the loss is in the picking rather than in the making. **Search to printer**
+  states that as ordered steps; the journey states it before that funnel exists.
+  Read the journey's counts as visits rather than visitors — they sum past the
+  site's visitor total, and what the dashboard's own view shows is what settles
+  the unit.
 
 #### Ask Umami directly (MCP)
 
@@ -427,9 +493,10 @@ it, and it never reads the database.
    `list_segments`, `list_funnels`, `run_funnel`, `get_goals`, `run_journey`,
    `run_retention`, `run_attribution`, `get_revenue`, and `get_performance`.
    `get_revenue` and `get_session_stats` answer questions nothing else here
-   asks, so the readings in section 4 do not use them. The list follows the
-   image tag rather than this document: after an image bump, ask the server
-   itself with `tools/list`.
+   asks, so the readings in section 4 do not use them, and `run_retention` and
+   `get_performance` are refused for the reasons in "What Umami does not carry".
+   The list follows the image tag rather than this document: after an image bump,
+   ask the server itself with `tools/list`.
 4. Dates are ISO 8601 strings, both ends supplied. The questions worth asking are
    the ones section 4 records by hand, so ask the same ones:
 
@@ -437,6 +504,11 @@ it, and it never reads the database.
    > second print page? Show how many printed a songbook as one job.
 
    > Which entry pages brought visits that opened a print dialog in September?
+
+   > Which referrers brought the visitors that generated a print page, and which
+   > UTM sources did they land with?
+
+   > For visits that landed on the homepage, what followed a search?
 
 5. Delete the key under **Settings > API keys** to revoke every client using it.
    Nothing in this document depends on MCP; it reads the reports the dashboard
@@ -446,11 +518,11 @@ it, and it never reads the database.
 
 - **No history.** Nothing already in Plausible can be imported. Keep the export;
   the closing record in section 4 is its summary.
-- **No single goals grid.** The Events report gives both counts per event, but
-  the ten goals are read as ten rows or as saved goals, not as one table.
-  `Feedback Submitted` and the offer's two events are the exceptions on both
-  sides: they are Umami's alone, and they are read from **Event data** rather
-  than from a goal.
+- **No single goals grid.** The Events report gives both counts per event, so
+  every goal on the Plausible side is a row here, or one of the saved goals, and
+  never one table. `Feedback Submitted` and the offer's two events are the
+  exceptions on both sides: they are Umami's alone, and they are read from
+  **Event data** rather than from a goal.
 - **No automatic events to filter out.** That is the point, and it is also what
   has to be rechecked after an upgrade: the tag's `data-auto-track="false"` and a
   `/api/send` that stores only what it was sent are the two claims the production
@@ -471,6 +543,25 @@ it, and it never reads the database.
   form out of the demand list. Umami answers 200 whether it stored the event or
   dropped it, so a clean return from `UmamiClient` confirms acceptance and not
   storage.
+- **No page experience under this configuration.** The tracker installs its Core
+  Web Vitals collectors from inside the initialization that
+  `data-auto-track="false"` disables, so adding `data-performance="true"` alone
+  collects nothing — and the only way to make it collect is to switch the
+  tracker's own capture on, which sends a second nameless payload per load
+  carrying the raw `location.href` and `document.title`. That doubles the
+  pageview count and reports a saved page's token and song title, so the report
+  stays empty on purpose. Read page experience from Search Console's Core Web
+  Vitals report instead: it covers the three public surfaces and never sees a
+  token-addressed page.
+- **No session replay.** The instance serves `recorder.js` beside `script.js`,
+  and nothing loads it. A recording captures the DOM of whatever page it runs on,
+  and some of those pages are somebody's saved sheet, so loading it would be the
+  privacy incident the smoke test looks for rather than a feature to switch on.
+- **No retention.** A cohort here is the salted visitor hash, which rotates
+  monthly and which no product surface can be tied to: `docs/measurement-contract.md`
+  declines durable identity, so a returning-visitor reading would describe a hash
+  rather than a visitor.
+- **No revenue.** Nothing on the site is sold, so the report has nothing to read.
 
 ### Production event smoke test
 
@@ -720,10 +811,12 @@ On launch day, record zero or current values for the previous 30 days:
 | `Print Page Generated` from organic visits | Plausible goal |
 | `Print Dialog Opened` from organic visits | Plausible goal |
 | Generated-to-dialog conversion rate | Umami funnel **Sheet to printer** |
+| Where a search is lost: nothing picked, or picked and not made | Umami funnel **Search to printer**, or `run_journey` from `/` |
 | `Second Print Page Generated` from organic visits | Plausible goal |
 | Share of generating visits that reach a second sheet | Plausible goal `Second Print Page Generated` |
 | Sets printed as one job | Plausible goal `Songbook Printed` |
 | Sets created, and how many came from the suggestion | Plausible goals `Songbook Created` and `Songbook Created From Offer` |
+| Referrers that generated a sheet, and each one's share of its arrivals | Umami `run_attribution` over `Print Page Generated`, first click |
 
 The parallel run reads every one of these twice. Record both figures for the same
 window and label which system each came from: the **Source** column above names
@@ -828,14 +921,49 @@ period before the migration. Keep the exported CSVs with the launch issue.
 
 The 90-day target above is written in Plausible's unit: 25 `Print Dialog Opened`
 events, unique per visit, attributed to Organic Search. In Umami the same
-quantity is that event's **Visitors** count under the **Organic Search**
-segment. The two numbers will not match, and a smaller Umami number is not by
+quantity is that event's **Visitors** count under the organic segments — the
+referrer segments, one per engine, because referrer is the acquisition dimension
+Umami can filter on. Its **Channels** report groups the same traffic but cannot
+be saved as a filter, so a channel figure is a reading of its own rather than a
+segment's. The two numbers will not match, and a smaller Umami number is not by
 itself a failure: Umami derives a visitor from a salted hash of address and user
 agent, rotates that salt monthly, and files a payload with no name as a pageview,
 so its unit differs from Plausible's in ways neither product controls. Record
 which system a figure came from in every review, and never compare a Umami count
 against a Plausible baseline as though the two measured the same thing. Restart
 the window at the cutover so all 90 days come from one system.
+
+### First Umami reading, 2026-10-07
+
+The first eight days of the Umami series, from the site's creation on 2026-09-30
+to this reading: 2,338 pageviews, 642 visitors, and 744 visits, over 45
+countries. These are Umami's figures, so they are not a comparison against the
+Plausible baseline above; they are the window the 30-day review stacks against,
+and the first window that holds the whole songbook surface, which shipped on
+2026-09-21.
+
+The population, which is the figure every reading uses rather than the visitor
+and pageview totals: `Song Search Submitted` 1,254 · `Print Page Generated` 723 ·
+`Manual Entry Submitted` 639 · `Print Dialog Opened` 441 · `Song Search Missed`
+185 · `Song Result Selected` 144 · `Second Print Page Generated` 87 ·
+`Songbook Printed` 78 · `Songbook Created` 54 · `Songbook Created From Offer` 8 ·
+`Feedback Submitted` 1.
+
+| Reading | Value |
+| --- | --- |
+| Search to sheet | 317 in, 141 out — 55.5% lost |
+| Paste to sheet | 161 in, 161 out |
+| Sheet to printer | 174 in, 118 out — 32.2% lost |
+| Search to printer | 318 in, 40 picked a result (87.4% lost), 30 generated a sheet, 19 opened the dialog |
+| Mobile | 44 of 163 mobile visitors generated a sheet, the same share as the 174 of 642 overall |
+| Searches that picked a result | 144 of 1,254 submissions, with 185 carrying the miss prompt |
+| Generating visitors by first-click referrer | Bing 67 · Google 39 · Yahoo 20 · DuckDuckGo 15, of 174 |
+| Journeys from `/` that take no further step | the largest single group in the report, 266 of its counts |
+| Visitors by device | laptop 452 · mobile 163 · desktop 16 · tablet 11 |
+| Visitors by channel | organicSearch 379 · referral 170 · direct 115 · llm 5, as the channel report scopes them |
+| Properties | `entry_method` print_page 363 / songbook 78 · `songbook_origin` add_song 46 / offer 8 · `page_count_in_session` and `songbook_size` in their buckets · one feedback record |
+| The three the closing record lists as unverified | confirmed in Umami: `Songbook Created` 54, `Songbook Created From Offer` 8, `Songbook Printed` 78; Plausible's half of that check is still the operator's |
+| The offer's two Umami-only events | both arrive: `Songbook Offer Shown` 46 and `Songbook Offer Dismissed` 3 by 2026-10-08. This reading recorded no rows for them because it was taken before the first showing, at 2026-10-07T22:24:52Z — the release shipped that day, so the observation was unmade rather than the event missing, and it is made now |
 
 ## 5. Monitor and recover
 
@@ -886,7 +1014,8 @@ the withdrawn URLs leave the index.
 A second operator, or the site owner in a separate walkthrough, checks each
 launch-record row using only this document. Record their name, date, omissions,
 and corrections in the launch issue. U6 is operationally ready when that person
-can reproduce the Search Console property and sitemap submission, all nine
-events in both dashboards, the Umami properties, the MCP endpoint with their own
-API key, the organic segment or comparison, the baseline, the review dates, and
-every recovery path without undocumented knowledge.
+can reproduce the Search Console property and sitemap submission, every event in
+the dashboard that receives it, the four Umami funnels and the saved segments,
+the Umami properties, the MCP endpoint with their own API key, the organic
+segment or comparison, the baseline, the review dates, and every recovery path
+without undocumented knowledge.
