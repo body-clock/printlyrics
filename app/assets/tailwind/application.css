@@ -850,6 +850,16 @@ textarea:focus-visible {
   background: oklch(0.91 0.008 85);
 }
 
+/* The sheet is taller than a phone, and the scrollbar that appears partway
+   through it takes width off the page. That is the width the preview fits the
+   paper to, so the fit has to hold whichever way the scrollbar goes: reserving
+   the gutter keeps the layout width the same whether or not it is there. A
+   browser reports a new scrollbar asynchronously, so no measurement taken while
+   the height is set can rule this out. */
+html:has(body.preview-body) {
+  scrollbar-gutter: stable;
+}
+
 .preview-shell {
   min-height: 100vh;
   padding: 6.25rem 1.5rem 3rem;

@@ -187,21 +187,9 @@ export default class extends Controller {
 
     const page = this.pagesTarget.firstElementChild
     if (!page) return
-
-    // The scale is measured against the frame's width, and the height it
-    // produces can be what makes the document scroll. A scrollbar then takes
-    // width off the frame, so the first answer describes a frame that no longer
-    // exists — the sheet's own height decides its own fit. Measuring once more
-    // lands on the width the frame actually ends up with.
-    let scale = null
-    for (let pass = 0; pass < 2; pass += 1) {
-      const measured = Math.min(1, this.pageFrameTarget.clientWidth / page.offsetWidth)
-      if (measured === scale) break
-
-      scale = measured
-      this.pagesTarget.style.setProperty("--preview-scale", scale)
-      this.pageFrameTarget.style.height = `${this.pagesTarget.scrollHeight * scale}px`
-    }
+    const scale = Math.min(1, this.pageFrameTarget.clientWidth / page.offsetWidth)
+    this.pagesTarget.style.setProperty("--preview-scale", scale)
+    this.pageFrameTarget.style.height = `${this.pagesTarget.scrollHeight * scale}px`
   }
 
   restorePagePreview() {
