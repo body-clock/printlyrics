@@ -2,6 +2,12 @@
   Offered wherever the visit already holds more than one sheet: the sheet that
   was just generated, and the entry panel the visit returns to for the next one.
 
+  `surface` is required and names which of the two rendered it — `sheet` on the
+  page that crossed two, `entry` on the panel it came back to. Both places
+  report the one event, so the attribute is the only thing that says whether the
+  sheet or the panel is the placement a visit answers; a caller that omits it
+  raises rather than reporting an unlabelled showing.
+
   The server decides, from the visit it holds in the session, so every tab of the
   visit sees the same set and the offer is part of the markup a restored page
   replays. Accepting gathers the visit's sheets in generation order; the same
@@ -15,6 +21,7 @@
 <% if visit.offer_pending? %>
   <div class="songbook-prompt no-print <%= local_assigns[:class_name] %>"
        data-analytics-page-response="Songbook Offer Shown"
+       data-analytics-offer-surface="<%= surface %>"
        data-analytics-response-key="<%= visit.offer_key %>">
     <p class="songbook-prompt-message" role="status">
       <%= t("shared.songbook_prompt.message", count: visit.sheet_count) %>
