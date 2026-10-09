@@ -706,6 +706,13 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal "/lyrics/:token", pageview.fetch("title")
     assert_equal "/lyrics/:token", URI(generated.last.fetch("url")).path
     assert_equal "1", generated.last.dig("data", "page_count_in_session")
+
+    # The sheet's own feedback prompt rides in the response that generated the
+    # sheet, so the load that follows it reports the showing — and reports the
+    # sheet in the redacted form, never as the page the visitor is on.
+    prompt = captured_umami_events.find { |name, _| name == "Feedback Prompt Shown" }
+    assert_equal "/lyrics/:token", URI(prompt.last.fetch("url")).path
+
     refute_includes captured_umami_payloads.to_json, lyric.token
     refute_includes captured_umami_payloads.to_json, lyric.title
     refute_includes captured_umami_payloads.to_json, lyric.artist
@@ -716,7 +723,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     # Umami keeps the product's names verbatim, spaces and all, so there is no
     # mapping table between the two, and a pageview is the payload with no name.
     assert_equal(
-      [ "Manual Entry Submitted", nil, "Print Page Generated", "Print Dialog Opened" ],
+      [ "Manual Entry Submitted", nil, "Print Page Generated", "Feedback Prompt Shown", "Print Dialog Opened" ],
       captured_umami_payloads.map { |payload| payload["name"] }
     )
   end

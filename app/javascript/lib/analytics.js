@@ -1,5 +1,5 @@
 import { sessionStore } from "lib/settings_store"
-import { rememberCreatedSongbook, rememberReportedOffer, rememberReportedSheet } from "lib/reported_events"
+import { rememberCreatedSongbook, rememberReportedResponse, rememberReportedSheet } from "lib/reported_events"
 
 // The trailing slash is optional because Rails serves `/lyrics/<token>/` as the
 // same page, and a shared link that gained one would otherwise report the real
@@ -72,20 +72,20 @@ export function trackSubmittedEvent(form) {
 }
 
 // An outcome the server rendered into a whole page rather than into a frame: the
-// songbook offer, which is in the markup every tab and every restored page
-// carries. It is reported on the load that follows the response, and the
-// response names itself so a snapshot the browser replays — the same markup,
-// the same key — cannot report the same offer twice.
+// songbook offer and the sheet's feedback prompt, both of which sit in the
+// markup every tab and every restored page carries. Each is reported on the load
+// that follows its response, and the response names itself so a snapshot the
+// browser replays — the same markup, the same key — cannot report it twice.
 //
 // The offer renders in two places — the sheet that crossed two, and the entry
 // panel the visit comes back to for the next one — and both report the one
 // name, so the reading that separates them travels with it: the marker names
 // its own surface, and the count is the visit's, the same bucket the sheet
-// events carry.
+// events carry. Only the offer has that split; the prompt is one placement.
 export function trackPageResponses(root) {
   root.querySelectorAll("[data-analytics-page-response]").forEach((marker) => {
     const responseKey = marker.dataset.analyticsResponseKey
-    if (responseKey && !rememberReportedOffer(responseKey)) return
+    if (responseKey && !rememberReportedResponse(responseKey)) return
 
     const surface = marker.dataset.analyticsOfferSurface
     trackUmamiEvent(marker.dataset.analyticsPageResponse, {
@@ -124,7 +124,11 @@ export function trackGeneratedPage() {
   const count = visitSheetCount()
   trackEvent("Print Page Generated", sessionPageCountProperties(count))
   // The visit's second sheet, in whichever tab made it: this is the moment the
-  // sitting turned into a packet.
+  // sitting turned into a packet, and it is the visit's own generation rather
+  // than every route to a two-song packet. A set finished by adding a song to a
+  // draft an earlier visit started reports its creation marker alone, because
+  // that visit generated one sheet. See docs/organic-search-operations.md, "Why
+  // these are goals and not properties".
   if (count === 2) trackEvent("Second Print Page Generated")
 }
 

@@ -51,6 +51,34 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     assert_select "form[action='#{feedback_path}'] input[name='feedback[contact_email]']"
   end
 
+  test "the page offers the answers the submission can carry" do
+    get feedback_path
+
+    assert_select "select[name='feedback[reason]']" do
+      Feedback::REASONS.each do |reason|
+        assert_select "option[value='#{reason}']", text: I18n.t("feedbacks.reasons.#{reason}")
+      end
+      assert_select "option[value='']"
+    end
+    # The note is written here, so this is the page the submission reports.
+    assert_select "form[action='#{feedback_path}'] input[name='feedback[surface]'][value='feedback_page']"
+  end
+
+  test "the sheet prompt's link lands with both answers already chosen" do
+    get feedback_path(surface: "sheet", reason: "print_problem")
+
+    assert_response :success
+    assert_select "form[action='#{feedback_path}'] input[name='feedback[surface]'][value='sheet']"
+    assert_select "select[name='feedback[reason]'] option[value='print_problem'][selected]"
+  end
+
+  test "a surface and an answer this application never offered fall back" do
+    get feedback_path(surface: "newsletter", reason: "praise")
+
+    assert_select "form[action='#{feedback_path}'] input[name='feedback[surface]'][value='feedback_page']"
+    assert_select "select[name='feedback[reason]'] option[value='praise'][selected]", count: 0
+  end
+
   test "the page is reachable from the shared resource navigation, without linking to itself" do
     get feedback_path
 
@@ -223,6 +251,65 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     assert_not_includes JSON.generate(sent.first[:body]), "singer@example.com"
   end
 
+  test "the sheet a visit just generated asks about the print it made" do
+    generate_sheet
+
+    assert_select ".feedback-prompt[data-analytics-page-response='Feedback Prompt Shown']", 1
+    assert_select ".feedback-prompt a[href='#{feedback_path(surface: 'sheet', reason: 'print_problem')}']",
+      text: I18n.t("shared.feedback_prompt.action")
+  end
+
+  test "a sheet the visit came back to later does not ask again" do
+    lyric = generate_sheet
+    get lyric_path(lyric)
+
+    assert_response :success
+    assert_select ".feedback-prompt", count: 0
+  end
+
+  test "the print prompt's submission reports the sheet's shape, not its token, and the answer it arrived with" do
+    sent = []
+    with_umami_client(recording_umami_client(sent)) do
+      generate_sheet
+      verify_with(true) do
+        post feedback_path, params: {
+          feedback: { reason: "print_problem", message: "The second verse is cut off.", surface: "sheet" }
+        }
+      end
+    end
+
+    feedback = Feedback.recent.first
+    assert_equal "sheet", feedback.surface
+    assert_equal "print_problem", feedback.reason
+    # What the visit had already made is the context the row is read with.
+    assert_equal 1, feedback.visit_sheet_count
+
+    payload = sent.first[:body]["payload"]
+    assert_equal "/lyrics/:token", payload["url"]
+    assert_equal({
+      "feedback_surface" => "sheet",
+      "feedback_note" => "The second verse is cut off.",
+      "feedback_reason" => "print_problem"
+    }, payload["data"])
+    assert_not_includes JSON.generate(sent.first[:body]), Lyric.last.token
+  end
+
+  test "a submission from a visit that made nothing records no sheets" do
+    verify_with(true) do
+      post feedback_path, params: { feedback: { query: "A song nobody has", surface: "search_miss" } }
+    end
+
+    assert_equal 0, Feedback.recent.first.visit_sheet_count
+  end
+
+  test "an answer this application never offered is not stored" do
+    verify_with(true) do
+      post feedback_path, params: { feedback: { message: "hi", surface: "feedback_page", reason: "praise" } }
+    end
+
+    assert_nil Feedback.recent.first.reason
+  end
+
   test "a rejected challenge reports nothing" do
     reported = report_with do
       verify_with(false) do
@@ -290,6 +377,12 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     assert_select ".search-miss input[name='feedback[query]'][value='not a song']"
     assert_select ".search-miss input[name='feedback[surface]'][value='search_miss']"
     assert_select ".search-miss form[action='#{feedback_path}']"
+
+    # The panel's way out is a lookup for the song the visitor already typed,
+    # opened beside the page so the paste box behind it keeps the query.
+    assert_select ".search-miss a[href^='https://duckduckgo.com/'][target='_blank']" do |links|
+      assert_includes links.first["href"], URI.encode_www_form(q: "not a song lyrics")
+    end
   end
 
   test "an empty search carries the query into the manual form" do

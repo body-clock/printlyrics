@@ -41,13 +41,14 @@ other three cannot: `Search to printer` reads the same attempt through
 the search's loss is read as two — a search that found nothing to pick, and a
 result that was picked and never made.
 
-The thirteen names in use, grouped by the flow that fires them:
+The fourteen names in use, grouped by the flow that fires them:
 
 - Print flow: `Print Page Generated`, `Second Print Page Generated`, `Print
   Dialog Opened`, `Songbook Created`, `Songbook Created From Offer`, `Songbook
   Printed`, `Songbook Offer Shown`, `Songbook Offer Dismissed`.
 - Entry flow: `Song Search Submitted`, `Song Search Missed`, `Song Result
-  Selected`, `Manual Entry Submitted`, `Feedback Submitted`.
+  Selected`, `Manual Entry Submitted`, `Feedback Submitted`, `Feedback Prompt
+  Shown`.
 
 ## The three slots every tool fills
 
@@ -103,13 +104,15 @@ restored by the Back button cannot report it twice. The reporting function is
 An outcome the server renders into a whole page carries
 `data-analytics-page-response`, read on the load that follows the response, and
 `data-analytics-response-key` naming the response that carried it, so a snapshot
-Turbo replays — same markup, same key — reports nothing: the songbook offer, by
-`trackPageResponses` in that file. `data-analytics-offer-surface` names which of
-the offer's two placements rendered it, `sheet` or `entry`, and it is required
-rather than optional: the two report one event, so a strip that did not say
-where it was shown would be a showing nothing can attribute. The entry panel's
-offer arrives with a frame render as well as with a page, so both ends of a
-response are read.
+Turbo replays — same markup, same key — reports nothing: the songbook offer and
+the sheet's feedback prompt, by `trackPageResponses` in that file.
+`data-analytics-offer-surface` names which of the offer's two placements rendered
+it, `sheet` or `entry`, and it is required rather than optional: the two report
+one event, so a strip that did not say where it was shown would be a showing
+nothing can attribute. Only the offer has that split; the prompt renders in one
+place, under the sheet the visit just generated, and its key is that sheet. The
+entry panel's offer arrives with a frame render as well as with a page, so both
+ends of a response are read.
 
 Page-level markers ride `<body>` data attributes and are reported on
 `turbo:load`: `trackPageview`, `trackGeneratedPage`, and `trackCreatedSongbook`,
@@ -125,6 +128,16 @@ browser is involved, so this is the one name with no marker in a view. It is
 also the one payload carrying a visitor's own words — see "What must never
 travel".
 
+A submission reports the surface it was written on, and one written on a sheet
+reports that sheet in the synthetic `:token` form rather than the page it was
+written from. It also carries the single answer the form offers,
+`feedback_reason`, drawn from a fixed vocabulary (`Feedback::REASONS`) rather
+than from anything the visitor typed. Two placements lead to a submission, and
+each is counted on its own terms: the miss prompt renders beside `Song Search
+Missed`, so `Song Search Missed` against `Feedback Submitted` on the search-miss
+surface is that prompt's conversion, while the sheet's prompt carries its own
+name, `Feedback Prompt Shown`, in the response that renders it.
+
 ## What must never travel
 
 No tracker payload carries lyrics, song titles, artists, albums, source IDs,
@@ -136,9 +149,9 @@ alone.
 
 One payload is the deliberate exception, and it is the only one sent from the
 server: a stored feedback submission. `Feedback Submitted` carries the song the
-visitor wanted, the note they wrote, and the surface they wrote it on — which is
-the demand list the runbook's reviews are chosen from — and it travels to
-**Umami only**. Umami is this site's own service; Plausible is a third party
+visitor wanted, the note they wrote, the surface they wrote it on, and the answer
+they chose — which is the demand list the runbook's reviews are chosen from — and
+it travels to **Umami only**. Umami is this site's own service; Plausible is a third party
 that receives every event the browser dispatcher sends, so this payload is never
 routed through `dispatch` in `lib/analytics.js` and has no Plausible goal. The
 reply address a visitor opts into is not part of it: it stays in the table for
@@ -151,6 +164,12 @@ Counts and sizes travel as buckets, not raw values: `page_count_in_session` and
 tab, and the same window Umami expires a visit on. The offer's two events carry
 that same bucket and nothing else. Campaign values are allowlisted by the
 server in `AnalyticsCampaigns` (`app/models/analytics_campaigns.rb`).
+
+The miss panel's lookup link is the one place a query leaves the page, and it
+leaves by the visitor's own click rather than by a tracker: the link carries the
+query to a search engine in a new tab and bears no marker, so no payload gains
+the URL. Giving it one — an outbound-link goal, say — would put the query in
+every destination that reads the marker, which is what this section forbids.
 
 ## Adding a tool
 

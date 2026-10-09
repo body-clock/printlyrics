@@ -19,6 +19,14 @@
 
     <%= form_with model: @feedback, url: feedback_path, method: :post, data: { turbo: false }, class: "feedback-form" do |form| %>
       <div class="field">
+        <div class="field-label-row">
+          <%= form.label :reason, t(".reason") %>
+          <span><%= t(".optional") %></span>
+        </div>
+        <%= form.select :reason, feedback_reason_options, include_blank: t(".reason_blank") %>
+      </div>
+
+      <div class="field">
         <%= form.label :message, t(".message") %>
         <%= form.text_area :message, rows: 6, maxlength: Feedback::MAX_MESSAGE_LENGTH %>
       </div>
@@ -39,7 +47,7 @@
         <%= form.email_field :contact_email, maxlength: 200, autocomplete: "email" %>
       </div>
 
-      <%= hidden_field_tag "feedback[surface]", "feedback_page" %>
+      <%= form.hidden_field :surface %>
       <%= render "shared/turnstile" %>
 
       <%= form.button t(".submit"), class: "button button-primary" %>

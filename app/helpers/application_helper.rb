@@ -30,6 +30,13 @@ module ApplicationHelper
     TurnstileClient::ACTION
   end
 
+  # The answers the feedback form offers, in the order the model lists them, so a
+  # new one is added in one place. The label is the visitor's words; the value is
+  # what the row and the report carry.
+  def feedback_reason_options
+    Feedback::REASONS.map { |reason| [ t("feedbacks.reasons.#{reason}"), reason ] }
+  end
+
   def page_title
     content_for?(:title) ? content_for(:title) : t("application.meta.default_title")
   end
@@ -49,6 +56,17 @@ module ApplicationHelper
   def song_duration(seconds)
     minutes, remainder = seconds.to_i.divmod(60)
     "#{minutes}:#{remainder.to_s.rjust(2, "0")}"
+  end
+
+  # Where the miss panel sends a visitor the source has nothing for: the song
+  # they just typed, at a search engine that will have it, in a new tab so the
+  # paste box behind it keeps the query. DuckDuckGo is the privacy-consistent
+  # default. The link carries no analytics marker, so no payload gains the URL
+  # and the query stays out of every destination; see docs/measurement-contract.md.
+  LYRICS_LOOKUP_URL = "https://duckduckgo.com/"
+
+  def lyrics_lookup_url(query)
+    "#{LYRICS_LOOKUP_URL}?#{URI.encode_www_form(q: "#{query} lyrics")}"
   end
 
   # Saved pages may carry no title at all, and every surface that lists one

@@ -411,9 +411,12 @@ textarea:focus-visible {
   gap: 0.6rem;
 }
 
-/* The path that still produces a sheet, so it reads as the panel's action
-   rather than as another line of the note. */
-.search-miss-continue {
+/* The two exits from a miss: the source has no words, so a search the visitor
+   runs finds them and the paste box is where they land. */
+.search-miss-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
   justify-self: start;
 }
 
@@ -472,6 +475,7 @@ textarea:focus-visible {
 }
 
 .field input,
+.field select,
 .field textarea {
   width: 100%;
   border: 1px solid var(--line);
@@ -481,7 +485,8 @@ textarea:focus-visible {
   transition: border-color 160ms ease-out, background 160ms ease-out;
 }
 
-.field input {
+.field input,
+.field select {
   height: 3rem;
   padding: 0 0.85rem;
 }
@@ -495,11 +500,13 @@ textarea:focus-visible {
 }
 
 .field input:hover,
+.field select:hover,
 .field textarea:hover {
   border-color: color-mix(in oklch, var(--ink-muted), var(--line) 45%);
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
   border-color: var(--focus);
   background: var(--surface);
@@ -565,11 +572,10 @@ textarea:focus-visible {
   min-height: 9rem;
 }
 
-/* Turnstile sizes its own iframe; reserving the usual height keeps the form
-   from jumping when the widget appears. */
-.turnstile {
-  min-height: 65px;
-}
+/* The widget renders in interaction-only appearance (see the turnstile
+   controller), so it takes no room in the form until Cloudflare actually asks
+   the visitor for something. Reserving its height would instead put a gap in
+   every form that almost no visitor ever fills. */
 
 .landing-footer {
   display: flex;
@@ -847,6 +853,16 @@ textarea:focus-visible {
   background: oklch(0.91 0.008 85);
 }
 
+/* The sheet is taller than a phone, and the scrollbar that appears partway
+   through it takes width off the page. That is the width the preview fits the
+   paper to, so the fit has to hold whichever way the scrollbar goes: reserving
+   the gutter keeps the layout width the same whether or not it is there. A
+   browser reports a new scrollbar asynchronously, so no measurement taken while
+   the height is set can rule this out. */
+html:has(body.preview-body) {
+  scrollbar-gutter: stable;
+}
+
 .preview-shell {
   min-height: 100vh;
   padding: 6.25rem 1.5rem 3rem;
@@ -1049,6 +1065,16 @@ textarea:focus-visible {
   color: var(--ink-muted);
   font-size: 0.75rem;
   font-weight: 750;
+  text-align: right;
+}
+
+/* The sheet's own line, under the paper: an invitation, not the next step, so it
+   stays quieter than the songbook prompt above it. */
+.feedback-prompt {
+  width: 8.5in;
+  margin: 0.85rem auto 0;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
   text-align: right;
 }
 
@@ -1322,6 +1348,10 @@ textarea:focus-visible {
   }
 
   .page-summary {
+    width: calc(100% - 1rem);
+  }
+
+  .feedback-prompt {
     width: calc(100% - 1rem);
   }
 
