@@ -123,7 +123,11 @@ read without properties:
   they were looking for sits in the feedback table, and submitting the miss
   prompt also reports it as `Feedback Submitted` in Umami alone.
 - `Second Print Page Generated` is the subset of `Print Page Generated` at the
-  second distinct sheet of a visit.
+  second distinct sheet of a visit — the visit's own generation, not every route
+  to a two-song packet. A set finished by adding a song to a draft an earlier
+  visit started is `Songbook Created` with `songbook_origin` of `add_song` and
+  no `Second Print Page Generated`, so the two names are independent rather
+  than nested.
 - `Songbook Printed` is the subset of `Print Dialog Opened` where the printed
   surface was a set. `Print Dialog Opened` still counts every print, so its
   series and its 90-day target stay continuous.
@@ -689,14 +693,28 @@ showing carries the same `page_count_in_session` the sheet events use, and
 `entry` on the panel the visit comes back to. They exist to say whether the
 offer was there at all, which the question `Songbook Created From Offer` alone
 cannot answer, and the surface is what separates a strip beside the print button
-from one above a search box the visitor was already leaving.
+from one above a search box the visitor was already leaving. A showing is a
+response rather than a visit: the entry panel's strip is inside the frame its
+searches re-render, so one visit reports one for the sheet that crossed two and
+one for every frame response beneath it, and the count is of renderings. Read
+both names by session — whether the strip was there, and what the visits that
+saw it went on to do.
 
-Read the offer's conversion as `Songbook Created From Offer` over
-`Songbook Offer Shown`, and read the two surfaces apart before drawing anything
-from the total: one name over both placements reports a strip nobody saw and a
-strip nobody acted on as the same number. `Second Print Page Generated` counts
-visits that made a second sheet, by any route, so it is the denominator for how
-much of that demand the suggestion reaches at all.
+Read the offer's conversion as the subset over the total the contract names —
+`Songbook Created From Offer` over `Songbook Created` — and not over
+`Songbook Offer Shown`: a rate over renderings answers how often a response
+converted, not how often the offer did. Read the two surfaces apart before
+drawing anything from either total: one name over both placements reports a strip
+nobody saw and a strip nobody acted on as the same number.
+
+`Second Print Page Generated` is the demand the suggestion can reach, because the
+offer renders only to a visit that already holds two sheets, and it keeps the
+definition above: the second distinct sheet of a visit, by whichever route that
+visit made it. A visit that instead reaches two songs by adding one to a draft an
+earlier visit started generated one sheet of its own, and reports
+`Songbook Created` with `songbook_origin` of `add_song` and no
+`Second Print Page Generated`. That set was finished rather than started, so read
+the two names together and never as one another's denominator.
 
 A low offer share next to a healthy remainder means the set surface is being
 found without the nudge doing any work, and the suggestion is the part to

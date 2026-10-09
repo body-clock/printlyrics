@@ -124,7 +124,11 @@ export function trackGeneratedPage() {
   const count = visitSheetCount()
   trackEvent("Print Page Generated", sessionPageCountProperties(count))
   // The visit's second sheet, in whichever tab made it: this is the moment the
-  // sitting turned into a packet.
+  // sitting turned into a packet, and it is the visit's own generation rather
+  // than every route to a two-song packet. A set finished by adding a song to a
+  // draft an earlier visit started reports its creation marker alone, because
+  // that visit generated one sheet. See docs/organic-search-operations.md, "Why
+  // these are goals and not properties".
   if (count === 2) trackEvent("Second Print Page Generated")
 }
 
