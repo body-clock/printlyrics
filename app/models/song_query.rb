@@ -35,6 +35,14 @@ class SongQuery
   TYPO_LENGTH = 4
   TYPO_DISTANCE = 1
 
+  # What the edit budget above cannot reach: the source's own spelling of a word
+  # the visitor spelled another way — its "Taio Cruz" for "Taio Cruise", which
+  # is three edits from the visitor's word and no prefix of it. One such word
+  # per record is forgiven and no more, because two words that only start alike
+  # are otherwise a different song that happens to be spelled the same way.
+  VARIANT_PREFIX = 3
+  VARIANT_LIMIT = 1
+
   # A token shorter than this is too weak to carry meaning on its own.
   MIN_SIGNIFICANT_LENGTH = 2
 
@@ -113,6 +121,15 @@ class SongQuery
     edit_distance(left, right) <= TYPO_DISTANCE
   end
 
+  # A word the source spells its own way, past what the edit budget reaches.
+  # Both tokens need enough length to carry a stem before the stems are
+  # compared, so a short word cannot be forgiven on three shared letters alone.
+  def self.variant?(left, right)
+    return false if left.length < TYPO_LENGTH || right.length < TYPO_LENGTH
+
+    left[0, VARIANT_PREFIX] == right[0, VARIANT_PREFIX]
+  end
+
   # Damerau-Levenshtein with adjacent transpositions, so "thtat" is one edit
   # from "that" rather than two.
   def self.edit_distance(left, right)
@@ -186,10 +203,16 @@ class SongQuery
   def covered(result)
     haystack = self.class.tokenize("#{result.title} #{result.artist}").map { |token| self.class.fold(token) }
 
-    significant_tokens.count do |token|
+    matches = significant_tokens.map do |token|
       folded = self.class.fold(token)
-      haystack.any? { |candidate| self.class.same_word?(folded, candidate) }
+      if haystack.any? { |candidate| self.class.same_word?(folded, candidate) }
+        :word
+      elsif haystack.any? { |candidate| self.class.variant?(folded, candidate) }
+        :variant
+      end
     end
+
+    matches.count(:word) + [ matches.count(:variant), VARIANT_LIMIT ].min
   end
 
   def required

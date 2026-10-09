@@ -165,6 +165,12 @@ tab, and the same window Umami expires a visit on. The offer's two events carry
 that same bucket and nothing else. Campaign values are allowlisted by the
 server in `AnalyticsCampaigns` (`app/models/analytics_campaigns.rb`).
 
+The miss panel's lookup link is the one place a query leaves the page, and it
+leaves by the visitor's own click rather than by a tracker: the link carries the
+query to a search engine in a new tab and bears no marker, so no payload gains
+the URL. Giving it one — an outbound-link goal, say — would put the query in
+every destination that reads the marker, which is what this section forbids.
+
 ## Adding a tool
 
 1. Declare the attempt and output events before the tool ships, and put the
