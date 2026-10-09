@@ -52,6 +52,20 @@ class SongQueryTest < ActiveSupport::TestCase
     assert query.accepts?([ row(title: "Rikki Don't Lose That Number", artist: "Steely Dan") ])
   end
 
+  test "accepts the record the visitor meant when the source spells a word its own way" do
+    # The source holds "Taio Cruz"; the visitor typed "Taio Cruise", which is
+    # three edits from it and no prefix of it, so the typo budget cannot reach.
+    assert SongQuery.new("Dynamite taio cruise")
+      .accepts?([ row(title: "Dynamite", artist: "Taio Cruz") ])
+  end
+
+  test "forgives one differently spelled word and not two" do
+    # Every word here only shares three letters with the record's, so one
+    # forgiven word does not carry a record the visitor did not ask for.
+    assert_not SongQuery.new("brittany sparce womanizer")
+      .accepts?([ row(title: "Woman", artist: "Britney Spars") ])
+  end
+
   test "accepts a record that drops words the source never stored" do
     assert SongQuery.new("HAPPY TRAILS TO YOU").accepts?([ row(title: "Happy Trails", artist: "Quicksilver Messenger Service") ])
   end

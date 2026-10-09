@@ -49,7 +49,7 @@ en:
       status:
         one: "1 match found. Choose a song."
         other: "%{count} matches found. Choose a song."
-      empty: "No matches found. Check the spelling or paste your lyrics below."
+      empty: "No matches found. Check the spelling, or find the lyrics and paste them below."
     new:
       seo:
         title: "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
@@ -90,8 +90,9 @@ en:
         close: "Close search results"
         matches_label: "Song matches"
         miss:
-          prompt: "You can still print it. Paste the words you have and PrintLyrics will lay them out."
-          continue: "Paste your lyrics"
+          prompt: "You can still make the sheet. Open a search for the song, then paste the words you find here."
+          find: "Find the lyrics"
+          continue: "Paste lyrics I have"
           feedback: "Or tell me the song you wanted, and I'll look for it."
           query: "Song title or artist"
           submit: "Send it"

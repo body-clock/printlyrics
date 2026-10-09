@@ -377,6 +377,12 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     assert_select ".search-miss input[name='feedback[query]'][value='not a song']"
     assert_select ".search-miss input[name='feedback[surface]'][value='search_miss']"
     assert_select ".search-miss form[action='#{feedback_path}']"
+
+    # The panel's way out is a lookup for the song the visitor already typed,
+    # opened beside the page so the paste box behind it keeps the query.
+    assert_select ".search-miss a[href^='https://duckduckgo.com/'][target='_blank']" do |links|
+      assert_includes links.first["href"], URI.encode_www_form(q: "not a song lyrics")
+    end
   end
 
   test "an empty search carries the query into the manual form" do

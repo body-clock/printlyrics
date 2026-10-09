@@ -585,8 +585,11 @@ the log across navigation.
    confirm exactly one `Song Result Selected` arrives, before the lyrics load.
    Generate the print page from it and confirm `Print Page Generated` arrives
    once. Then search for something that cannot match and confirm the miss
-   arrives once and that no `Song Result Selected` follows it. Submit the miss
-   prompt with the song you wanted: the note is stored, and `Feedback Submitted`
+   arrives once and that no `Song Result Selected` follows it. Open the panel's
+   **Find the lyrics** link and confirm it carries the query to a search engine
+   in a new tab and that no event, to either destination, carries that URL.
+   Submit the miss prompt with the song you wanted: the note is stored, and
+   `Feedback Submitted`
    arrives at `analytics.printlyrics.app` carrying the song, the note, and
    `feedback_surface=search_miss` — from the server, so the request carries no
    browser event, and nothing carrying that query may reach `plausible.io`.

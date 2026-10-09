@@ -411,9 +411,12 @@ textarea:focus-visible {
   gap: 0.6rem;
 }
 
-/* The path that still produces a sheet, so it reads as the panel's action
-   rather than as another line of the note. */
-.search-miss-continue {
+/* The two exits from a miss: the source has no words, so a search the visitor
+   runs finds them and the paste box is where they land. */
+.search-miss-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
   justify-self: start;
 }
 

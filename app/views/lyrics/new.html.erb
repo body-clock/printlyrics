@@ -182,14 +182,26 @@
                 <div class="search-miss" data-analytics-response="Song Search Missed">
                   <p><%= t(".search.miss.prompt") %></p>
 
-                  <%# A miss is not a dead end. The manual form is on this same
-                      page and already carries the query as the song title, so
-                      the panel sends the visitor there first and keeps the
-                      demand note as the alternative. %>
-                  <%= link_to t(".search.miss.continue"),
-                        "#lyric_lyrics",
-                        class: "button button-primary search-miss-continue",
-                        data: { action: "lyric-search#continueManually" } %>
+                  <%# A miss is not a dead end, but the source has nothing to
+                      offer, so the words have to come from somewhere else. The
+                      lookup takes the song the visitor already typed to a search
+                      engine in a new tab, and the manual form on this same page
+                      — which already carries the query as the song title — is
+                      where the words come back. The lookup is left unmarked on
+                      purpose: the tracker reads only marked elements, and an
+                      event carrying the external URL would carry the query. %>
+                  <div class="search-miss-actions">
+                    <%= link_to t(".search.miss.find"),
+                          lyrics_lookup_url(@query),
+                          class: "button button-primary",
+                          target: "_blank",
+                          rel: "noopener" %>
+
+                    <%= link_to t(".search.miss.continue"),
+                          "#lyric_lyrics",
+                          class: "button button-secondary",
+                          data: { action: "lyric-search#continueManually" } %>
+                  </div>
 
                   <p><%= t(".search.miss.feedback") %></p>
 
