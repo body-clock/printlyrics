@@ -89,4 +89,8 @@
     </div>
   </div>
 
+  <%# Under the paper rather than over it: the lyrics come first, and the visitor
+      who has just read a bad page is the one with something to say. %>
+  <%= render "shared/feedback_prompt", page_key: @generated_page_key %>
+
 </div>

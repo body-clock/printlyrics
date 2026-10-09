@@ -16,7 +16,7 @@ Copy this table into the launch issue and fill every field.
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
 | Plausible goals | Site owner | All ten exact event names exist, automatic goals off in settings and disabled in the snippet | |
-| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the ten shared events plus every property arrive beside Plausible's, and the three names that are Umami's alone (`Feedback Submitted`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
+| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the ten shared events plus every property arrive beside Plausible's, and the four names that are Umami's alone (`Feedback Submitted`, `Feedback Prompt Shown`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
 | Organic Search segment | Site owner | Plausible's saved site segment can be reopened, and the same split is saved in Umami as one referrer segment per search engine — the channels Umami reports are not filterable, so there is no single organic segment to save | |
 | Umami readings saved | Site owner | The four funnels and the saved segments named in "Read the events in Umami" exist and reopen, and the five goals the Events row names are saved | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
@@ -360,7 +360,7 @@ name mapping to keep in step, and no per-event charge.
 | Goals grid | **Events** | The row's **Events** count is `Total`; **Visitors** is `Uniques`. |
 | Goals grid | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
 | Funnels | **Funnels** | Build three, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), and **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), the last set to open because a manual-entry visitor can enter at the first step. |
-| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`, `songbook_offer_surface`, and the feedback event's `feedback_surface`, `song_query`, and `feedback_note`. |
+| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`, `songbook_offer_surface`, and the feedback event's `feedback_surface`, `song_query`, `feedback_note`, and `feedback_reason`. |
 | Explore | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
 
 Rules that make those surfaces read correctly:
@@ -524,9 +524,10 @@ it, and it never reads the database.
   the closing record in section 4 is its summary.
 - **No single goals grid.** The Events report gives both counts per event, so
   every goal on the Plausible side is a row here, or one of the saved goals, and
-  never one table. `Feedback Submitted` and the offer's two events are the
-  exceptions on both sides: they are Umami's alone, and they are read from
-  **Event data** rather than from a goal.
+  never one table. `Feedback Submitted`, `Feedback Prompt Shown`, and the offer's
+  two events are the exceptions on both sides: they are Umami's alone, and the
+  submission that carries a visitor's own words is read from **Event data**
+  rather than from a goal.
 - **No automatic events to filter out.** That is the point, and it is also what
   has to be rechecked after an upgrade: the tag's `data-auto-track="false"` and a
   `/api/send` that stores only what it was sent are the two claims the production
@@ -589,6 +590,10 @@ the log across navigation.
    arrives at `analytics.printlyrics.app` carrying the song, the note, and
    `feedback_surface=search_miss` — from the server, so the request carries no
    browser event, and nothing carrying that query may reach `plausible.io`.
+   The sheet that generation produced carries a line under the paper —
+   "Something wrong with this print?" — which reports `Feedback Prompt Shown` to
+   Umami alone, and whose link lands on `/feedback` with the surface and the
+   print answer already chosen.
 4. Open the print dialog. Confirm `Print Dialog Opened` is sent before the
    browser invokes its native print dialog, and that `Songbook Printed` is not
    sent, because a single sheet is not a set. Canceling the dialog is
@@ -862,12 +867,16 @@ scope.
 
 Every review also reads the feedback visitors sent, because it is the one
 channel that holds what no dashboard can: the songs they asked for and could
-not get. In production the table is read with `bin/kamal feedback`, newest
-first, and it is the demand list the next source addition or tool is chosen
-from. A miss counts in Umami, and a stored submission is reported there as
-`Feedback Submitted` with the query, the note, and the surface as properties, so
-the demand can be read beside the counts that surround it. The table stays the
-record: it alone holds the reply address.
+not get, and what was wrong with the prints that did come out. In production the
+demand is read with `bin/kamal feedback-demand`, which ranks the requested songs
+most-asked-first and counts one request however many spellings of it arrived;
+`bin/kamal feedback` prints the rows themselves, newest first. That ranking is
+the list the next source addition or tool is chosen from. A stored submission is
+also reported as `Feedback Submitted` with the query, the note, the surface, and
+the answer the visitor chose as its properties, so the demand can be read beside
+the counts that surround it, and the sheet's own prompt counts its showings as
+`Feedback Prompt Shown`. The table stays the record: it alone holds the reply
+address and the visit's sheet count.
 
 ### Recorded baseline, 2026-09-14
 
@@ -995,6 +1004,7 @@ Review these symptoms weekly during the first 90 days:
 | Impressions rise but completions do not | Compare entry pages and funnel drop-off; improve the tool path |
 | Songbook guide earns impressions but no `Songbook Created` | Read the guide's entry pages against `Second Print Page Generated` and the offer; fix the path from the guide into a second sheet before rewriting the guide |
 | Events disappear or duplicate | Repeat production smoke test and repair measurement before analysis |
+| The Events report's metrics bar and chart each show **Something went wrong.** | Known bug in the pinned Umami 3.4.0: `events/stats` and `events/series` answer 503 to the dashboard's own authenticated requests while the same URLs answer 200 to an API key (umami-software/umami#4570, open; nothing in this repository can change it). The page's own Event Count table, the **Event data** report, and the MCP endpoint all still work, and the `feedbacks` table is unaffected: read the counts and properties from those until the image tag can move past 3.4.0 |
 | A real share token or saved path appears in a dashboard, export, or report | Privacy incident: confirm the `data-auto-track="false"` tag and the `plausible.init` flags in `app/views/layouts/application.html.erb`, check a saved page with and without a trailing slash, then exclude the contaminated days instead of reinterpreting them |
 | Umami events lag or stop while Plausible's continue | Check `UMAMI_WEBSITE_ID` in `config/deploy.yml`, that `analytics.printlyrics.app` resolves and serves `/script.js`, that the policy still allows that origin, and that the accessory is running (`bin/kamal accessory details umami`); the two destinations fail independently |
 | Every page's own scripts stall before the page becomes interactive | The tracker is deferred and therefore on the critical path. Confirm the analytics host answers instead of hanging — `curl -sI https://analytics.printlyrics.app/script.js` — and restart the accessory if it is not; the service is on the same machine, so a healthy failure is immediate, and a hanging one is the symptom worth catching |

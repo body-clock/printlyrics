@@ -1,0 +1,19 @@
+<%#
+  The sheet's own way to complain. A search that finds nothing says what the
+  visitor wanted; only a print says what was wrong with it, and the visitor
+  looking at the bad page is the only one who knows.
+
+  The link carries both answers — the surface, and the answer the feedback page
+  then arrives with already chosen — so this prompt asks nothing of the visitor.
+  `page_key` is the sheet the visit just generated, which is also what keeps a
+  page Turbo restores from reporting the showing twice.
+%>
+<% if local_assigns[:page_key].present? %>
+  <p class="feedback-prompt no-print"
+     data-analytics-page-response="Feedback Prompt Shown"
+     data-analytics-response-key="<%= page_key %>">
+    <%= t("shared.feedback_prompt.message") %>
+    <%= link_to t("shared.feedback_prompt.action"),
+          feedback_path(surface: "sheet", reason: "print_problem") %>
+  </p>
+<% end %>

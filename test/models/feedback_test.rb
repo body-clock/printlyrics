@@ -20,6 +20,24 @@ class FeedbackTest < ActiveSupport::TestCase
     assert_not Feedback.new(surface: "newsletter", message: "hi").valid?
   end
 
+  test "the sheet is a surface this application renders" do
+    assert Feedback.new(surface: "sheet", message: "The second verse is cut off.").valid?
+  end
+
+  test "keeps an answer it offered" do
+    feedback = Feedback.new(surface: "sheet", message: "hi", reason: "print_problem")
+
+    assert feedback.valid?
+    assert_equal "print_problem", feedback.reason
+  end
+
+  test "drops an answer it never offered instead of refusing the words" do
+    feedback = Feedback.new(surface: "feedback_page", message: "hi", reason: "praise")
+
+    assert feedback.valid?
+    assert_nil feedback.reason
+  end
+
   test "keeps a note inside its bound" do
     feedback = Feedback.new(surface: "feedback_page", message: "x" * (Feedback::MAX_MESSAGE_LENGTH + 1))
 

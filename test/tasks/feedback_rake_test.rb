@@ -18,16 +18,60 @@ class FeedbackRakeTest < ActiveSupport::TestCase
     assert_operator output.index("Three columns, please."), :<, output.index("A song nobody has")
   end
 
+  test "list prints the answer and what the visit had already made" do
+    Feedback.create!(surface: "sheet", message: "The second verse is cut off.",
+      reason: "print_problem", visit_sheet_count: 2)
+
+    output, = capture_io { list_task.invoke }
+
+    assert_includes output, "reason: print_problem"
+    assert_includes output, "sheets already made this visit: 2"
+  end
+
   test "list says so when nothing has been sent" do
     output, = capture_io { list_task.invoke }
 
     assert_includes output, "No feedback yet."
   end
 
+  test "demand ranks the requests by how often they were made" do
+    Feedback.create!(surface: "search_miss", query: "Mahal Magmahl")
+    Feedback.create!(surface: "search_miss", query: "mahal  magmahl")
+    Feedback.create!(surface: "search_miss", query: "Dynamite taio cruise")
+
+    output, = capture_io { demand_task.invoke }
+
+    assert_includes output, "3 song requests"
+    assert_match(/2×\s+mahal\s+magmahl/, output.downcase)
+    assert_operator output.downcase.index("2×"), :<, output.downcase.index("dynamite")
+  end
+
+  test "demand counts the surfaces and the answers" do
+    Feedback.create!(surface: "sheet", message: "Cut off.", query: "A Song", reason: "print_problem")
+    Feedback.create!(surface: "search_miss", query: "Another Song")
+
+    output, = capture_io { demand_task.invoke }
+
+    assert_includes output, "Surfaces  search_miss 1 · sheet 1"
+    assert_includes output, "Reasons   print_problem 1 · unlabelled 1"
+    assert_includes output, "Notes     1"
+  end
+
+  test "demand says so when no song has been asked for" do
+    Feedback.create!(surface: "feedback_page", message: "Three columns, please.")
+
+    output, = capture_io { demand_task.invoke }
+
+    assert_includes output, "No songs have been asked for yet."
+  end
+
   private
 
-  def list_task
-    Rails.application.load_tasks unless Rake::Task.task_defined?("feedback:list")
-    Rake::Task["feedback:list"].tap(&:reenable)
+  def list_task = rake_task("feedback:list")
+  def demand_task = rake_task("feedback:demand")
+
+  def rake_task(name)
+    Rails.application.load_tasks unless Rake::Task.task_defined?(name)
+    Rake::Task[name].tap(&:reenable)
   end
 end

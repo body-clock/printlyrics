@@ -19,12 +19,24 @@ en:
         description: "Tell me what you were trying to print, what got in the way, or what you would want next."
       heading: "Tell me what you were trying to do"
       intro: "PrintLyrics is built and maintained by one person. A sentence about what you were printing, or what stopped you, is what I can act on."
+      reason: "What's this about?"
+      reason_blank: "Choose one"
       message: "What were you trying to print, and what got in the way?"
       query: "Song you couldn't find"
       optional: "Optional"
       contact_email: "Email"
       contact_email_note: "Only if you want a reply"
       submit: "Send feedback"
+
+    # The one answer the form offers, in the visitor's words. The sheet prompt's
+    # link carries its own answer, so that surface asks the visitor nothing, and
+    # the miss prompt asks nothing either: a search that found no song has
+    # already said it.
+    reasons:
+      missing_song: "A song I couldn't find"
+      print_problem: "Something about the print"
+      wrong_lyrics: "The lyrics were wrong"
+      idea: "An idea or a request"
 
   lyrics:
     status:
@@ -290,6 +302,9 @@ en:
       message: "%{count} sheets so far — put them in a songbook to print as one job."
       action: "Make a songbook"
       dismiss: "Not now"
+    feedback_prompt:
+      message: "Something wrong with this print?"
+      action: "Tell me what's wrong"
     preview_controls:
       size: "Size"
       sizes:
