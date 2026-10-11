@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/body-clock/printlyrics/compare/v1.15.0...v1.16.0) (2026-10-09)
+
+
+### Features
+
+* recover a search miss, ask about the print, and rank the demand ([#109](https://github.com/body-clock/printlyrics/issues/109)) ([c161f89](https://github.com/body-clock/printlyrics/commit/c161f89b494af0861b4d53727f52bf0023dc3f8d))
+
 ## [1.15.0](https://github.com/body-clock/printlyrics/compare/v1.14.1...v1.15.0) (2026-10-08)
 
 
