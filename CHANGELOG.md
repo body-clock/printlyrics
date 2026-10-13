@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.0](https://github.com/body-clock/printlyrics/compare/v1.16.0...v1.17.0) (2026-10-13)
+
+
+### Features
+
+* **sheet:** put a scannable mark on every printed page ([#112](https://github.com/body-clock/printlyrics/issues/112)) ([c1a8ff7](https://github.com/body-clock/printlyrics/commit/c1a8ff747e65e496257a164cb7e6356b35af60e8))
+
 ## [1.16.0](https://github.com/body-clock/printlyrics/compare/v1.15.0...v1.16.0) (2026-10-09)
 
 
