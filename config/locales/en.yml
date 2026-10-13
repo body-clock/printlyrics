@@ -299,6 +299,10 @@ en:
       service: "Song search is temporarily unavailable. You can still paste lyrics below."
 
   shared:
+    sheet_mark:
+      # The domain beside the code on a printed sheet. It is the brand for a
+      # reader who will not scan, and the site that can make another sheet.
+      label: "printlyrics.app"
     songbook_prompt:
       message: "%{count} sheets so far — put them in a songbook to print as one job."
       action: "Make a songbook"

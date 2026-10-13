@@ -1,0 +1,9 @@
+<%# The mark is read from here and cloned onto every page the preview builds, so
+    a set carries it on every sheet, the bare page a long song continues onto
+    included. It is rendered once per response for that reason. %>
+<template data-preview-mark>
+  <div class="sheet-mark">
+    <span class="sheet-mark-label"><%= t(".label") %></span>
+    <%= sheet_mark_svg %>
+  </div>
+</template>

@@ -11,6 +11,11 @@ export default class extends Controller {
   connect() {
     this.settings = new SettingsStore()
     this.songs = this.songSources()
+    // Read before the first render replaces the sources with the pages it
+    // builds, the way the songs above it are. The mark is one element however
+    // many songs the surface holds, because it is cloned onto every page rather
+    // than repeated in the markup.
+    this.mark = this.element.querySelector("template[data-preview-mark]")?.content.firstElementChild.cloneNode(true)
     this.size = this.settings.get(SIZE_KEY, "m")
     this.columns = this.settings.get(COLUMNS_KEY, "1")
     this.updatePressedState(this.sizeButtonTargets, "size", this.size)
@@ -127,6 +132,10 @@ export default class extends Controller {
       lyrics.append(column)
     }
     paper.append(lyrics)
+    // A printed set carries the code on each of its sheets, including the bare
+    // one a long song continues onto: a loose page still says where it came
+    // from.
+    if (this.mark) paper.append(this.mark.cloneNode(true))
     this.pagesTarget.append(paper)
     return paper
   }

@@ -191,13 +191,22 @@ support:
 https://printlyrics.app/?utm_source=outreach&utm_campaign=worship_handouts
 ```
 
+The printed sheet carries `utm_source=paper` on the code it prints (`SheetMark`),
+and the address that code sends a scan to is the homepage rather than a saved
+page, so the value survives in the reported location and the native attribution
+above reads this channel the way it reads any other campaign. The events the
+visit fires also carry the allowlisted `campaign_source` property, which is how
+the same arrivals are read in Umami. A scan that fires no event is still
+invisible, so none of these counts is a count of scans.
+
 The application additionally keeps an allowlisted copy of those values in
 session storage and sends them as `campaign_source` and `campaign_name`
 properties. Those properties cannot be read on this plan, and performance comes
 from the native attribution above, so the machinery has no effect:
 `AnalyticsCampaigns` holds the allowlists and is rendered into the page for
-`app/javascript/lib/analytics.js`. Nothing in this document depends on it, and it
-is a candidate for removal.
+`app/javascript/lib/analytics.js`. The printed sheet's value is listed there with
+the rest so both reads agree, but nothing here depends on it, and it is a
+candidate for removal.
 
 Plausible requires received events to be configured as goals before they appear
 as conversions; see its [custom-event goal documentation](https://plausible.io/docs/custom-event-goals).
