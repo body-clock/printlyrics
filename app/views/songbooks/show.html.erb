@@ -44,6 +44,8 @@
      data-many-pages-label="<%= t(".page_count.other") %>"
      aria-live="polite"></p>
 
+  <%= render "shared/sheet_mark" %>
+
   <section class="songbook-tracks no-print" aria-label="<%= t(".tracks.label") %>">
     <ol>
       <% @songbook.entries.each_with_index do |entry, index| %>

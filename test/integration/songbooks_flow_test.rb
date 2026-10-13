@@ -147,6 +147,11 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal [ "First Song", "Second Song" ],
       css_select("[data-preview-song] .lyric-header h1").map(&:text)
+
+    # One mark for the response, not one per song: it is the site's, and the
+    # preview clones it onto every page it builds.
+    assert_select "template[data-preview-mark] svg[aria-hidden='true']", count: 1
+    assert_select "template[data-preview-mark] .sheet-mark-label", "printlyrics.app"
   end
 
   test "a stale songbook token generates an ordinary single page" do

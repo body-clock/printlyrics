@@ -53,6 +53,23 @@ module ApplicationHelper
     content_for?(:canonical_url) ? content_for(:canonical_url) : request.base_url + request.path
   end
 
+  # The mark a printed sheet carries sends a scan to the site rather than to the
+  # sheet it was printed from, tagged with the campaign value that makes the
+  # visit readable as one that came off paper. Built here rather than in the
+  # partial so the address and the code travel together, and so the markup holds
+  # no address of its own: only the modules do.
+  def sheet_mark_svg
+    mark = SheetMark.new(root_url(utm_source: AnalyticsCampaigns::SHEET_SOURCE))
+
+    content_tag(
+      :svg,
+      mark.path.html_safe,
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: "0 0 #{mark.extent} #{mark.extent}",
+      aria: { hidden: "true" }
+    )
+  end
+
   def song_duration(seconds)
     minutes, remainder = seconds.to_i.divmod(60)
     "#{minutes}:#{remainder.to_s.rjust(2, "0")}"
