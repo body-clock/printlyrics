@@ -560,6 +560,11 @@ class OrganicConversionTest < ApplicationSystemTestCase
     # One heading per song: the set never runs two titles together, and a
     # continuation sheet carries only lyrics.
     assert_equal [ "Long Song", "Short Song" ], all(".paper .lyric-header h1").map(&:text)
+
+    # Every printed page carries the mark, the bare continuation sheet
+    # included, so a loose page from the middle of a set still says where it
+    # came from.
+    assert_selector "[data-preview-page] .sheet-mark", count: all("[data-preview-page]").count
   end
 
   test "songbook analytics redact both tokens" do

@@ -1138,6 +1138,7 @@ html:has(body.preview-body) {
   flex-direction: column;
   margin: 0;
   padding: 0.75in;
+  position: relative;
   background: white;
   box-shadow: var(--shadow);
   color: black;
@@ -1220,6 +1221,40 @@ html:has(body.preview-body) {
   orphans: 2;
   white-space: pre-wrap;
   widows: 2;
+}
+
+/* The mark a printed sheet carries: the code sends a scan to the site, and the
+   domain beside it is what a reader without a scanner can type. It sits in the
+   paper's own bottom margin rather than in the text column, so no stanza has to
+   move and no sheet grows a page to make room for it.
+
+   Two edges fix the size. The code has to clear the unprintable strip most
+   printers keep along the paper edge, which is why it sits 0.22in in, and its
+   ink has to stay below the text column, whose box ends 0.75in up. At 0.56in
+   the modules print about 0.384mm wide, which scans at reading distance. */
+.sheet-mark {
+  position: absolute;
+  right: 0.35in;
+  bottom: 0.22in;
+  display: flex;
+  align-items: center;
+  gap: 0.14in;
+  color: black;
+}
+
+.sheet-mark svg {
+  display: block;
+  /* Modules are drawn on a fractional grid at this size, and a scanner wants
+     square edges rather than the anti-aliased grey a scaled path renders. */
+  shape-rendering: crispEdges;
+  width: 0.56in;
+  height: 0.56in;
+}
+
+.sheet-mark-label {
+  color: oklch(0.42 0.01 70);
+  font-size: 7pt;
+  letter-spacing: 0.01em;
 }
 
 @media screen and (max-width: 700px) {

@@ -138,6 +138,18 @@ Missed`, so `Song Search Missed` against `Feedback Submitted` on the search-miss
 surface is that prompt's conversion, while the sheet's prompt carries its own
 name, `Feedback Prompt Shown`, in the response that renders it.
 
+One entry surface reports nothing at all. A printed sheet carries a code
+(`SheetMark`, rendered once by `app/views/shared/_sheet_mark.html.erb` and cloned
+onto every page the preview builds) that sends a scan to the homepage rather
+than to the sheet it was printed from, tagged with the `paper` campaign value.
+The address on paper therefore holds no token: a sheet that is photographed,
+handed on, or lost cannot be used to open the page it was printed from, and the
+entry form is what a scan lands on. The visit a scan produces reports an ordinary
+pageview and then whatever the visitor does next, so the paper channel is read as
+the allowlisted `campaign_source` property on those events rather than as an
+event of its own: there is no name for a scan, and a scan that fires no event is
+not visible.
+
 ## What must never travel
 
 No tracker payload carries lyrics, song titles, artists, albums, source IDs,

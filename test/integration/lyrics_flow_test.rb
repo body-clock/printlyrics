@@ -339,6 +339,14 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "meta[name='robots'][content='noindex, nofollow']", 1
     assert_select "body[data-generated-page-key]", count: 0
     assert_select "button[data-action='preview#print']", count: 1
+
+    # The mark a printed sheet carries. The address itself is inside the code, so
+    # the code's own size is what the markup can be read for: it has to be the
+    # code for the site's tagged address, not a shorter one.
+    mark = SheetMark.new(root_url(utm_source: AnalyticsCampaigns::SHEET_SOURCE))
+    assert_select "template[data-preview-mark] svg[aria-hidden='true']" \
+                  "[viewBox='0 0 #{mark.extent} #{mark.extent}']", count: 1
+    assert_select "template[data-preview-mark] .sheet-mark-label", "printlyrics.app"
   end
 
   test "every page exposes the allowlisted campaign values to analytics" do
