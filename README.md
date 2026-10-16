@@ -37,20 +37,21 @@ user generates the print page.
 ## Songbooks
 
 A generated page can be extended into an ordered songbook that prints as one job.
-Guests can make one songbook per calendar day, limited by the browser session.
-Optional email/password accounts also have one free songbook per calendar day,
-claim guest songbooks from that browser when they sign in, and provide a
-cross-device library for reopening account-owned sets. Free-owned and guest
-songbooks retain a 180-day sliding window. Owner-only songbooks require
-authentication; guest token links remain unlisted and are not an authentication
-mechanism.
+A songbook that no premium account owns holds up to ten songs. Guests can make one
+songbook per calendar day, limited by the browser session. Optional email/password
+accounts keep up to five stored songbooks, claim guest songbooks from that browser
+when they sign in, and provide a cross-device library for reopening account-owned
+sets. Premium access lifts both ceilings. Free-owned and guest songbooks retain a
+180-day sliding window, so a book that lapses frees the place it held. Owner-only
+songbooks require authentication; guest token links remain unlisted and are not an
+authentication mechanism.
 
 Paid access is $3/month, $25/year, or $1/24 hours, bought through Stripe Checkout.
-It adds unlimited songbook creation, durable reprints, revocable read-only share
-links that work only while premium access is active, and printed sheets that carry
-no code. Guest songbook links remain separate and retain their existing behavior.
-`/save-songbooks` explains the account options and is indexed as a distinct
-practical page.
+It removes the songbook and song ceilings, adds durable reprints, revocable
+read-only share links that work only while premium access is active, and printed
+sheets that carry no code. Guest songbook links remain separate and retain their
+existing behavior. `/save-songbooks` explains the account options and is indexed as
+a distinct practical page.
 
 Access is granted by the Stripe webhook, never by returning from the checkout
 page: `checkout.session.completed` writes the ledger row that grants it, a day

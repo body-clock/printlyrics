@@ -9,7 +9,7 @@
     <header>
       <h1><%= t("accounts.library.heading") %></h1>
       <p><%= t("accounts.library.intro") %></p>
-      <p><%= account_access_status(current_user) %></p>
+      <p><%= account_access_status(current_user, stored: @songbooks.size) %></p>
     </header>
 
     <%# The visitor comes back here from Stripe's checkout page, where the

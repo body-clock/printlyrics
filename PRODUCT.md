@@ -15,20 +15,21 @@ PrintLyrics turns pasted or extracted song lyrics into a durable, shareable, pri
 ## Account and Songbook Experiment
 
 Accounts stay optional; search, manual entry, editing, preview, and printing
-remain free without sign-in. A free account adds a cross-device songbook
-library, claims the visitor's active guest songbooks on registration, and keeps
-the same one-songbook-per-calendar-day allowance and 180-day retention window.
+remain free without sign-in. A free account adds a cross-device songbook library
+that keeps up to five songbooks of ten songs each, claims the visitor's active
+guest songbooks on registration, and keeps the same 180-day retention window. A
+book that lapses frees the place it held.
 
-The proposed $3 monthly, $25 yearly, and $1 24-hour premium access removes the
-daily songbook limit, preserves account-owned songbooks for reprinting, enables
-revocable read-only share links while premium access is active, and prints
-sheets without the code a free or guest sheet carries. Guest songbook links
-remain unchanged. Where the deployment holds the Stripe values, the plans are
-bought through Stripe Checkout and access is granted by Stripe's webhook rather
-than by returning from the payment page; a host without them renders the plans
-as the proposal they describe and takes no payment. Google sign-in is the one
-third-party sign-in, optional beside the email and password form; no other
-provider is part of this prototype.
+The proposed $3 monthly, $25 yearly, and $1 24-hour premium access removes both
+ceilings, preserves account-owned songbooks for reprinting, enables revocable
+read-only share links while premium access is active, and prints sheets without
+the code a free or guest sheet carries. Guest songbook links remain unchanged.
+Where the deployment holds the Stripe values, the plans are bought through Stripe
+Checkout and access is granted by Stripe's webhook rather than by returning from
+the payment page; a host without them renders the plans as the proposal they
+describe and takes no payment. Google sign-in is the one third-party sign-in,
+optional beside the email and password form; no other provider is part of this
+prototype.
 
 The first product questions are whether free accounts return to their library,
 whether premium users reprint or share sets, and whether read-only sharing helps

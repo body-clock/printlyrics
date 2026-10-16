@@ -34,7 +34,7 @@ en:
       title: "Create an account | PrintLyrics"
       description: "Create a free PrintLyrics account to manage songbooks and explore saved reprinting."
       heading: "Create an account"
-      intro: "Core lyric printing remains free. A free account can make one songbook each day."
+      intro: "Core lyric printing remains free. A free account stores up to five songbooks of ten songs each, and finds them from another device."
       submit: "Create account"
       rate_limited: "Too many account attempts. Please wait a few minutes and try again."
     forgot_password: "Forgot your password?"
@@ -60,7 +60,7 @@ en:
       # The account's access, stated: an expiry the visitor paid for is not
       # something to leave to be inferred from which controls happen to appear.
       access:
-        free: "Free access: one songbook per calendar day."
+        free: "Free access: %{count} of %{limit} songbooks stored, ten songs each."
         premium: "Premium access is active until %{date}."
       empty: "You have no active songbooks saved to this account."
       make_one: "Make a songbook"
@@ -91,23 +91,23 @@ en:
   songbook_saving:
     seo:
       title: "Save Songbooks to Reprint Later | PrintLyrics"
-      description: "Keep songbooks with an account and return to reprint them later. Compare the free daily allowance with proposed monthly and 24-hour plans."
-      description_available: "Keep songbooks with an account and return to reprint them later. Compare the free daily allowance with the monthly and 24-hour plans."
+      description: "Keep songbooks with an account and return to reprint them later. Compare the free allowance of five stored songbooks with proposed monthly and 24-hour plans."
+      description_available: "Keep songbooks with an account and return to reprint them later. Compare the free allowance of five stored songbooks with the monthly and 24-hour plans."
     eyebrow: "Songbook access"
     heading: "Save songbooks to reprint later"
-    intro: "PrintLyrics keeps lyric printing free. A free account adds a cross-device songbook library while keeping the same one-songbook-per-day allowance."
+    intro: "PrintLyrics keeps lyric printing free. A free account adds a cross-device songbook library that holds up to five songbooks of ten songs each."
     answer:
       heading: "What changes with an account?"
-      body: "A free account can make one songbook per calendar day and find its account-owned songbooks from another device. Free songbooks follow the existing 180-day retention window. The proposed paid access adds unlimited songbook creation, keeps account-owned songbooks for reprinting, and lets you create revocable, read-only share links while premium access is active. Songbooks are unlisted, not published or indexed."
+      body: "A free account keeps up to five songbooks of ten songs each, and finds them from another device. Free songbooks follow the existing 180-day retention window. The proposed paid access removes both limits, keeps account-owned songbooks for reprinting, and lets you create revocable, read-only share links while premium access is active. Songbooks are unlisted, not published or indexed."
     options:
       heading: "Proposed plans"
       # The same plans as facts rather than proposals, for a host that can
       # actually sell them. The proposal wording above is what an unconfigured
       # host renders, unchanged.
       heading_available: "Plans"
-      free: "Free: core lyric search, editing, and printing remain free; one songbook per day, with a cross-device library."
-      monthly: "$3 per month: proposed premium access for unlimited songbooks, saved reprints, and read-only share links."
-      monthly_available: "$3 per month: unlimited songbooks, saved reprints, and read-only share links while your access is active."
+      free: "Free: core lyric search, editing, and printing remain free; five stored songbooks of up to ten songs each, with a cross-device library."
+      monthly: "$3 per month: proposed premium access for unlimited songbooks and songs, saved reprints, and read-only share links."
+      monthly_available: "$3 per month: unlimited songbooks and songs, saved reprints, and read-only share links while your access is active."
       annual: "$25 per year: the same proposed premium access, billed once for a year."
       annual_available: "$25 per year: the same access as the monthly plan, billed once for a year."
       day_pass: "$1 for 24 hours: proposed one-time premium access when you only need it once."
@@ -372,7 +372,7 @@ en:
         questions:
           count:
             heading: "How many songs can one songbook hold?"
-            body: "Up to 25 songs. A songbook becomes a set at its second song, so a songbook holding one song is still a draft sheet rather than a set."
+            body: "Up to ten songs on a free account, and as many as you like with premium access. A songbook becomes a set at its second song, so a songbook holding one song is still a draft sheet rather than a set."
           own_sheet:
             heading: "Does each song print on its own page?"
             body: "Yes. Every song opens a sheet of its own, so two titles never share a page, and a song that runs past one sheet continues onto a plain page."
@@ -393,9 +393,18 @@ en:
   songbooks:
     errors:
       expired: "That songbook expired or wasn't found"
-      daily_limit: "The free allowance is one songbook per day. The paid options are not available yet."
-      daily_limit_available: "The free allowance is one songbook per day. Unlimited songbooks come with premium access."
+      # Two different promises, so two different sentences: a guest's allowance is
+      # per day and per browser, an account's is what it can keep.
+      guest_limit: "You can make one songbook per day without an account. A free account keeps five, and premium access removes the limit."
+      storage_limit: "A free account keeps up to %{limit} songbooks, and all of them are in use. The paid options are not available yet."
+      storage_limit_available: "A free account keeps up to %{limit} songbooks, and all of them are in use. Unlimited songbooks come with premium access."
+      song_limit: "A free songbook holds up to %{limit} songs. The paid options are not available yet."
+      song_limit_available: "A free songbook holds up to %{limit} songs. Unlimited songs come with premium access."
       premium_sharing: "Premium access is required to create a songbook share link."
+    # Said once, on the page a set lands on, when the visitor picked more songs than
+    # a free book holds and got the first ones they picked.
+    notices:
+      song_limit: "A free songbook holds up to %{limit} songs, so this one holds the first %{limit}."
     show:
       seo:
         title: "Songbook | PrintLyrics"

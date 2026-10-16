@@ -79,14 +79,16 @@
   and finds a returning visitor by the provider's own subject rather than by an
   address either side could have changed. Public lyric flows remain
   optional-account; authorize
-  account-owned resources against the current user. Free users may create one
-  songbook per calendar day; premium access uses an explicit expiry, and no
-  payment is implied without a configured checkout provider. Where one is
-  configured, `StripeGateway` is the only thing that talks to Stripe and the
-  webhook is the only thing that grants access: a redirect back from the payment
-  page proves nothing, the ledger's provider reference is the idempotency key,
-  and the entitlement only ever moves forward. A printed sheet carries the
-  `SheetMark` code unless the account it belongs to has active premium access.
+  account-owned resources against the current user. A book no premium account owns
+  holds ten songs and a free account keeps five of them, both read from one
+  predicate and two constants rather than a flag; premium access lifts both
+  ceilings. Premium access uses an explicit expiry, and no payment is implied
+  without a configured checkout provider. Where one is configured, `StripeGateway`
+  is the only thing that talks to Stripe and the webhook is the only thing that
+  grants access: a redirect back from the payment page proves nothing, the ledger's
+  provider reference is the idempotency key, and the entitlement only ever moves
+  forward. A printed sheet carries the `SheetMark` code unless the account it
+  belongs to has active premium access.
 
 ## External input and integrations
 

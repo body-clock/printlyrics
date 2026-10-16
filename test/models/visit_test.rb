@@ -39,14 +39,14 @@ class VisitTest < ActiveSupport::TestCase
     assert_equal [], visit.sheets
   end
 
-  test "keeps the newest sheets a set can hold" do
+  test "keeps the newest sheets a visit can hold" do
     visit = build_visit
 
-    (Songbook::MAX_SONGS + 3).times { |index| visit.record_sheet("sheet-#{index}") }
+    (Visit::SHEET_LIMIT + 3).times { |index| visit.record_sheet("sheet-#{index}") }
 
-    assert_equal Songbook::MAX_SONGS, visit.sheet_count
+    assert_equal Visit::SHEET_LIMIT, visit.sheet_count
     assert_equal "sheet-3", visit.sheets.first
-    assert_equal "sheet-#{Songbook::MAX_SONGS + 2}", visit.sheets.last
+    assert_equal "sheet-#{Visit::SHEET_LIMIT + 2}", visit.sheets.last
   end
 
   test "offers the set once the visit holds a second sheet" do

@@ -13,6 +13,10 @@ class LyricsController < ApplicationController
   def create
     @songbook = songbook_context
 
+    # A free book already holding its last song must not cost the visitor a page:
+    # the song cannot join it, so the sheet they were about to make is not made.
+    return redirect_to(save_songbooks_path, alert: song_limit_message) if @songbook&.full?
+
     creation = LyricPageCreation.new(
       attributes: lyric_params,
       catalog_token: params[:catalog_token]
@@ -30,6 +34,10 @@ class LyricsController < ApplicationController
     @lyric = creation.lyric
     session[:generated_lyric_token] = @lyric.token
     redirect_to destination_for(@lyric)
+  rescue Songbook::SongLimitReached
+    # The book filled between the check above and the append — two tabs adding at
+    # once — and the model's own limit is what caught it.
+    redirect_to save_songbooks_path, alert: song_limit_message
   end
 
   def search
@@ -96,6 +104,14 @@ class LyricsController < ApplicationController
 
     songbook = Songbook.active.find_by(token: params[:songbook])
     songbook if songbook && (songbook.user_id.nil? || songbook.user_id == current_user&.id)
+  end
+
+  # A book that is full is refused in the words of whoever owns it; what they can do
+  # about it depends on whether this host can sell anything, which is the predicate
+  # the saving page reads before rendering the plans as controls.
+  def song_limit_message
+    t(StripeGateway.configured? ? "songbooks.errors.song_limit_available" : "songbooks.errors.song_limit",
+      limit: Songbook::FREE_SONG_LIMIT)
   end
 
   def destination_for(lyric)

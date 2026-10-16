@@ -114,4 +114,32 @@ class SongbookTest < ActiveSupport::TestCase
     assert_equal [ kept.id ], songbook.reload.lyrics.pluck(:id)
     assert_equal 1, songbook.entries.count
   end
+
+  # What a book holds, and whose access lifts the ceiling.
+  test "a book without premium access takes songs only up to the free limit" do
+    songbook = Songbook.start_with(Lyric.create!(lyrics: "First line"))
+
+    (Songbook::FREE_SONG_LIMIT - 1).times { |index| songbook.append!(Lyric.create!(lyrics: "Line #{index}")) }
+
+    assert_equal Songbook::FREE_SONG_LIMIT, songbook.entries.count
+    assert songbook.full?
+    assert_raises(Songbook::SongLimitReached) { songbook.append!(Lyric.create!(lyrics: "One too many")) }
+    assert_equal Songbook::FREE_SONG_LIMIT, songbook.reload.entries.count
+  end
+
+  test "a premium account's book has no song limit to reach" do
+    user = User.create!(
+      email_address: "book-owner@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      premium_until: 24.hours.from_now
+    )
+    songbook = Songbook.start_with(Lyric.create!(lyrics: "First line"), user: user)
+
+    (Songbook::FREE_SONG_LIMIT + 1).times { |index| songbook.append!(Lyric.create!(lyrics: "Line #{index}")) }
+
+    assert_equal Songbook::FREE_SONG_LIMIT + 2, songbook.entries.count
+    assert_nil songbook.song_limit
+    assert_not songbook.full?
+  end
 end

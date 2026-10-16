@@ -29,4 +29,55 @@ class UserTest < ActiveSupport::TestCase
 
     assert user.update(email_address: "elsewhere@example.test")
   end
+
+  # What a free account keeps for reprinting, and what premium removes the ceiling
+  # from. A place comes free again when the book holding it lapses.
+  test "a free account holds five songbooks and no more" do
+    user = create_user
+
+    (User::FREE_SONGBOOK_LIMIT - 1).times { Songbook.start_with(Lyric.create!(lyrics: "A line"), user: user) }
+    assert user.can_create_songbook?
+
+    Songbook.start_with(Lyric.create!(lyrics: "One more"), user: user)
+    assert_not user.can_create_songbook?
+    assert_equal User::FREE_SONGBOOK_LIMIT, user.songbooks.active.count
+
+    assert_raises(Songbook::StorageLimitReached) do
+      Songbook.start_with(Lyric.create!(lyrics: "Too many"), user: user)
+    end
+    assert_equal User::FREE_SONGBOOK_LIMIT, user.songbooks.active.count
+  end
+
+  test "a lapsed songbook frees the place it held" do
+    user = create_user
+    books = User::FREE_SONGBOOK_LIMIT.times.map do
+      Songbook.start_with(Lyric.create!(lyrics: "A line"), user: user)
+    end
+    assert_not user.can_create_songbook?
+
+    books.first.update!(expires_at: 1.minute.ago)
+
+    assert user.can_create_songbook?
+  end
+
+  test "premium access leaves the account with no ceiling" do
+    user = create_user(premium_until: 24.hours.from_now)
+
+    (User::FREE_SONGBOOK_LIMIT + 1).times { Songbook.start_with(Lyric.create!(lyrics: "A line"), user: user) }
+
+    assert user.can_create_songbook?
+    assert_equal User::FREE_SONGBOOK_LIMIT + 1, user.songbooks.active.count
+  end
+
+  private
+
+  def create_user(**attributes)
+    @user_count = (@user_count || 0) + 1
+    User.create!(
+      email_address: "keeper#{@user_count}@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      **attributes
+    )
+  end
 end

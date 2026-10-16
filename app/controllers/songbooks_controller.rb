@@ -5,10 +5,16 @@ class SongbooksController < ApplicationController
   def create
     lyrics = requested_lyrics
     return songbook_not_found if lyrics.empty?
-    return redirect_to(save_songbooks_path, alert: daily_limit_message) unless can_create_songbook?
+    return redirect_to(save_songbooks_path, alert: limit_message) unless can_create_songbook?
 
     songbook = Songbook.start_with(*lyrics, user: current_user, visitor_key: songbook_visitor_key)
     session[:songbooks_created_on] = Date.current.iso8601 unless current_user
+
+    # The visitor picked more songs than a free book holds. They get the ones they
+    # picked, in order, and the page they land on says why the last are missing.
+    if @songs_cut_by_plan
+      flash[:notice] = t("songbooks.notices.song_limit", limit: Songbook::FREE_SONG_LIMIT)
+    end
 
     # This action gathers sheets the visitor already made, so a set that is
     # already complete here came from the offer. Continuing to add a song starts
@@ -31,8 +37,8 @@ class SongbooksController < ApplicationController
     else
       redirect_to songbook
     end
-  rescue Songbook::DailyLimitReached
-    redirect_to save_songbooks_path, alert: daily_limit_message
+  rescue Songbook::StorageLimitReached
+    redirect_to save_songbooks_path, alert: limit_message
   end
 
   def show
@@ -107,11 +113,15 @@ class SongbooksController < ApplicationController
     end
   end
 
-  # The allowance is a product rule either way; what the visitor can do about it
-  # depends on whether this host can sell anything, which is the same predicate
-  # the saving page reads before rendering the plans as controls.
-  def daily_limit_message
-    t(StripeGateway.configured? ? "songbooks.errors.daily_limit_available" : "songbooks.errors.daily_limit")
+  # A guest is refused by a per-day rule they can leave behind by making an account;
+  # an account is refused by what it may keep. What either can do about it depends on
+  # whether this host can sell anything, which is the predicate the saving page reads
+  # before rendering the plans as controls.
+  def limit_message
+    return t("songbooks.errors.guest_limit") if current_user.nil?
+
+    t(StripeGateway.configured? ? "songbooks.errors.storage_limit_available" : "songbooks.errors.storage_limit",
+      limit: User::FREE_SONGBOOK_LIMIT)
   end
 
   def songbook_visitor_key
@@ -119,17 +129,23 @@ class SongbooksController < ApplicationController
   end
 
   # The request order is the set order, so this resolves tokens against active
-  # pages and drops anything unknown, expired, or repeated without disturbing
-  # the order that survived. One sheet or several arrive the same way, and a
-  # request that arrives with more than a set may hold is cut to size.
+  # pages and drops anything unknown, expired, or repeated without disturbing the
+  # order that survived. One sheet or several arrive the same way, and a request
+  # that asks for more than this application will take is cut to size: first by the
+  # guard every request meets, then by the limit the account's plan sets, which is
+  # the cut the visitor is told about.
   def requested_lyrics
     tokens = Array(params[:lyric_tokens].presence || params[:lyric_token])
       .map(&:to_s)
       .uniq
-      .first(Songbook::MAX_SONGS)
+      .first(Songbook::REQUEST_LIMIT)
     by_token = Lyric.active.where(token: tokens).index_by(&:token)
+    lyrics = tokens.filter_map { |token| by_token[token] }
+    limit = Songbook.song_limit_for(current_user)
+    return lyrics if limit.nil? || lyrics.size <= limit
 
-    tokens.filter_map { |token| by_token[token] }
+    @songs_cut_by_plan = true
+    lyrics.first(limit)
   end
 
   # The generation event belongs to the page that was just made, so it follows

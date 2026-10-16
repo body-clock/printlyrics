@@ -80,7 +80,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     # A contextual in-body link carrying head-query anchor text.
     assert_select ".guide-answer a[href='#{root_path}']", text: /print your lyrics/i
     assert_select "main", /one job/i
-    assert_select "main", /25 songs/i
+    assert_select "main", /ten songs/i
     assert_select "main", /180 days/i
     assert_select "section[aria-labelledby='songbook-questions'] details", minimum: 3
     # The document-editor alternative and the "lyric book" synonym people use.

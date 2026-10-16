@@ -92,7 +92,7 @@ class GoogleSignInFlowTest < ActionDispatch::IntegrationTest
     # The callback started the session, which is what makes the library available.
     get account_songbooks_path
     assert_response :success
-    assert_select "p", /Free access: one songbook per calendar day/
+    assert_select "p", /0 of #{User::FREE_SONGBOOK_LIMIT} songbooks stored/
   end
 
   test "a returning account signs in without a second account or a creation event" do

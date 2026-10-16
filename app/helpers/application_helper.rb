@@ -49,13 +49,14 @@ module ApplicationHelper
     GoogleSignIn.configured?
   end
 
-  # What an account's access is right now, in the words the library shows it.
-  # The expiry is what the visitor paid for, so the state is stated rather than
-  # left to be inferred from which controls happen to appear.
-  def account_access_status(user)
-    return t("accounts.library.access.free") unless user.premium?
+  # What an account's access is right now, in the words the library shows it. The
+  # expiry is what the visitor paid for, so the state is stated rather than left to
+  # be inferred from which controls happen to appear, and a free account is told how
+  # much of its allowance is in use.
+  def account_access_status(user, stored:)
+    return t("accounts.library.access.premium", date: l(user.premium_until.to_date, format: :long)) if user.premium?
 
-    t("accounts.library.access.premium", date: l(user.premium_until.to_date, format: :long))
+    t("accounts.library.access.free", count: stored, limit: User::FREE_SONGBOOK_LIMIT)
   end
 
   def page_title

@@ -2,7 +2,16 @@ class Songbook < ApplicationRecord
   include Retained
 
   SET_SIZE = 2
-  MAX_SONGS = 25
+
+  # What one book holds. A book owned by an account with active premium access is
+  # bounded by nothing here: it grows a song at a time, and the visit that gathers
+  # sheets into one is bounded by the session cookie that holds those sheets.
+  FREE_SONG_LIMIT = 10
+
+  # The most tokens one request may claim. A guard on the work a single request can
+  # ask for rather than a product rule — no flow reaches it, because the visit's own
+  # list is shorter — and a book grows past it one song at a time.
+  REQUEST_LIMIT = 100
 
   belongs_to :user, optional: true
   validates :share_token, uniqueness: true, allow_nil: true
@@ -10,7 +19,15 @@ class Songbook < ApplicationRecord
     class_name: "SongbookEntry", dependent: :destroy, inverse_of: :songbook
   has_many :lyrics, through: :entries
 
-  class DailyLimitReached < StandardError; end
+  class StorageLimitReached < StandardError; end
+  class SongLimitReached < StandardError; end
+
+  # The songs one book may hold, or nil when the account that owns it has premium
+  # access and there is no product limit to apply. One definition, read by the
+  # request that fills a book and by the book itself.
+  def self.song_limit_for(user)
+    user&.premium? ? nil : FREE_SONG_LIMIT
+  end
 
   def self.start_with(*lyrics, user: nil, visitor_key: nil)
     lyrics = lyrics.flatten
@@ -18,7 +35,7 @@ class Songbook < ApplicationRecord
     transaction do
       if user
         user.with_lock do
-          raise DailyLimitReached unless user.can_create_songbook?
+          raise StorageLimitReached unless user.can_create_songbook?
 
           create_with_lyrics(lyrics, user, visitor_key)
         end
@@ -47,8 +64,18 @@ class Songbook < ApplicationRecord
     songbook
   end
 
+  # The limit on this book, or nil when its account's premium access removes it.
+  def song_limit = self.class.song_limit_for(user)
+
+  def full?
+    limit = song_limit
+    limit.present? && entries.count >= limit
+  end
+
   def append!(lyric)
     with_lock do
+      raise SongLimitReached if full?
+
       entries.create!(lyric: lyric, position: (entries.maximum(:position) || 0) + 1)
       lyric.update_column(:expires_at, nil) if expires_at.nil?
     end

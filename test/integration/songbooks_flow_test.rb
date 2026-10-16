@@ -126,12 +126,51 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
-  test "a set is bounded to what one session can hold" do
-    lyrics = (Songbook::MAX_SONGS + 2).times.map { |index| Lyric.create!(lyrics: "Line #{index}") }
+  test "a free book holds the first songs of what the request asks for" do
+    lyrics = (Songbook::FREE_SONG_LIMIT + 2).times.map { |index| Lyric.create!(lyrics: "Line #{index}", title: "Song #{index}") }
 
     post songbooks_path, params: { lyric_tokens: lyrics.map(&:token) }
 
-    assert_equal Songbook::MAX_SONGS, Songbook.last.lyrics.count
+    songbook = Songbook.order(:id).last
+    assert_equal Songbook::FREE_SONG_LIMIT, songbook.lyrics.count
+    # The songs the visitor picked, in the order they picked them.
+    assert_equal lyrics.first(Songbook::FREE_SONG_LIMIT).map(&:title),
+      songbook.entries.map { |entry| entry.lyric.title }
+
+    follow_redirect!
+    assert_select ".flash", /holds up to #{Songbook::FREE_SONG_LIMIT} songs/
+  end
+
+  test "a premium book takes every song the request asks for" do
+    user = User.create!(
+      email_address: "premium-set@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      premium_until: 24.hours.from_now
+    )
+    post session_path, params: { email_address: user.email_address, password: "long-password" }
+    lyrics = (Songbook::FREE_SONG_LIMIT + 2).times.map { |index| Lyric.create!(lyrics: "Line #{index}") }
+
+    post songbooks_path, params: { lyric_tokens: lyrics.map(&:token) }
+
+    assert_equal lyrics.size, Songbook.order(:id).last.lyrics.count
+    follow_redirect!
+    assert_select ".flash", count: 0
+  end
+
+  test "one request cannot claim more than the guard allows, premium or not" do
+    user = User.create!(
+      email_address: "guard@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      premium_until: 24.hours.from_now
+    )
+    post session_path, params: { email_address: user.email_address, password: "long-password" }
+    lyrics = (Songbook::REQUEST_LIMIT + 2).times.map { |index| Lyric.create!(lyrics: "Line #{index}") }
+
+    post songbooks_path, params: { lyric_tokens: lyrics.map(&:token) }
+
+    assert_equal Songbook::REQUEST_LIMIT, Songbook.order(:id).last.lyrics.count
   end
 
   test "generating from the songbook context appends the song and lands on the set" do

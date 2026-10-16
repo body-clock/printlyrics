@@ -26,20 +26,43 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "a free account owns its songbook and cannot create a second on the same day" do
+  test "a free account keeps five songbooks and is refused the next" do
     user = User.create!(email_address: "writer@example.test", password: "long-password", password_confirmation: "long-password")
-    first = Lyric.create!(lyrics: "First line")
-    second = Lyric.create!(lyrics: "Second line")
     sign_in(user)
 
-    post songbooks_path, params: { lyric_token: first.token }
+    post songbooks_path, params: { lyric_token: Lyric.create!(lyrics: "First line").token }
     songbook = Songbook.order(:id).last
     assert_equal user, songbook.user
     assert songbook.expires_at.present?
 
-    post songbooks_path, params: { lyric_token: second.token }
+    (User::FREE_SONGBOOK_LIMIT - 1).times do |index|
+      post songbooks_path, params: { lyric_token: Lyric.create!(lyrics: "Line #{index}").token }
+    end
+    assert_equal User::FREE_SONGBOOK_LIMIT, user.songbooks.active.count
+
+    post songbooks_path, params: { lyric_token: Lyric.create!(lyrics: "One more").token }
+
     assert_redirected_to save_songbooks_path
-    assert_equal 1, user.songbooks.where(created_at: Time.current.all_day).count
+    assert_equal User::FREE_SONGBOOK_LIMIT, user.songbooks.active.count
+    follow_redirect!
+    assert_select "[role=alert]", /keeps up to #{User::FREE_SONGBOOK_LIMIT} songbooks/
+  end
+
+  test "a premium account is not held to the free allowance" do
+    user = User.create!(
+      email_address: "premium-writer@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      premium_until: 24.hours.from_now
+    )
+    sign_in(user)
+
+    (User::FREE_SONGBOOK_LIMIT + 1).times do |index|
+      post songbooks_path, params: { lyric_token: Lyric.create!(lyrics: "Line #{index}").token }
+    end
+
+    assert_equal User::FREE_SONGBOOK_LIMIT + 1, user.songbooks.active.count
+    assert_redirected_to songbook_path(Songbook.order(:id).last)
   end
 
   test "registration claims the guest songbooks made in the same browser" do
@@ -92,7 +115,7 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     sign_in(free)
     get account_songbooks_path
     assert_response :success
-    assert_select "p", /Free access: one songbook per calendar day/
+    assert_select "p", /0 of #{User::FREE_SONGBOOK_LIMIT} songbooks stored/
 
     sign_out
     premium = User.create!(

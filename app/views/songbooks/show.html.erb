@@ -21,6 +21,9 @@
      data-songbook-size="<%= @songbook.entries.size %>"
      data-premium-songbook="<%= @premium_songbook ? "true" : "false" %>"
      data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
+  <%# A set page is where a gathered book lands, so the one notice a limited book
+      produces is said here. The stylesheet hides flashes in print. %>
+  <%= render "shared/flash" %>
   <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
       <% if @can_edit_songbook %>

@@ -15,6 +15,11 @@ class User < ApplicationRecord
     format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password, length: { minimum: PASSWORD_MINIMUM_LENGTH }, allow_nil: true
 
+  # What a free account keeps for reprinting, and what premium access removes the
+  # ceiling from. An account already holding this many cannot add another until one
+  # lapses: an expired book is no longer active, so its place comes free.
+  FREE_SONGBOOK_LIMIT = 5
+
   def premium?
     premium_until&.future? || false
   end
@@ -32,6 +37,6 @@ class User < ApplicationRecord
   end
 
   def can_create_songbook?
-    premium? || !songbooks.where(created_at: Time.current.all_day).exists?
+    premium? || songbooks.active.count < FREE_SONGBOOK_LIMIT
   end
 end

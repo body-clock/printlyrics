@@ -184,6 +184,17 @@ module ActiveSupport
     include GoogleConfiguration
     include GoogleAuthentication
 
+    # The Google sign-in's two values live in credentials, which the machine running
+    # the suite may hold — a developer's does, a CI runner's does not. Every test
+    # starts from the host that cannot sign anyone in, so an assertion about that
+    # state does not depend on whose machine it ran on; `with_google_configured` is
+    # how a test says otherwise.
+    setup do
+      Rails.configuration.x.google_client_id = nil
+      Rails.configuration.x.google_client_secret = nil
+      OmniAuth.config.allowed_request_methods = []
+    end
+
     # Run tests in parallel with specified workers. Rails templates the worker
     # number onto the test database name and rebuilds each worker file from
     # db/schema.rb, so workers already have separate SQLite files under storage/
