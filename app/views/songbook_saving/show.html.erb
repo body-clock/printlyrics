@@ -1,5 +1,5 @@
 <%
-  # A host that can sell renders the two plans as controls and states them as
+  # A host that can sell renders the plans as controls and states them as
   # facts, description included. One that cannot keeps today's proposal wording
   # throughout and renders no purchase control at all, so nothing here implies a
   # payment that cannot happen.
@@ -31,6 +31,7 @@
       <ul>
         <li><%= t("songbook_saving.options.free") %></li>
         <li><%= t("songbook_saving.options.monthly#{plans}") %></li>
+        <li><%= t("songbook_saving.options.annual#{plans}") %></li>
         <li><%= t("songbook_saving.options.day_pass#{plans}") %></li>
       </ul>
       <% if @premium_checkout_available %>
@@ -42,6 +43,11 @@
                 premium_checkout_path,
                 params: { plan: "monthly" },
                 class: "button button-primary",
+                form: { data: { analytics_submit: "Premium Checkout Started" } } %>
+          <%= button_to t("songbook_saving.checkout.annual"),
+                premium_checkout_path,
+                params: { plan: "annual" },
+                class: "button button-secondary",
                 form: { data: { analytics_submit: "Premium Checkout Started" } } %>
           <%= button_to t("songbook_saving.checkout.day_pass"),
                 premium_checkout_path,

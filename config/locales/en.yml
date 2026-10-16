@@ -74,7 +74,7 @@ en:
     checkout:
       # Shown when the checkout action refuses, which it does for a plan this
       # application does not sell and for a host that cannot sell at all.
-      unknown_plan: "Choose one of the two plans."
+      unknown_plan: "Choose one of the plans."
       unavailable: "Paid access is not available right now."
       failed: "Stripe could not start that checkout, so nothing was charged. Please try again."
     billing_portal:
@@ -99,14 +99,17 @@ en:
       # host renders, unchanged.
       heading_available: "Plans"
       free: "Free: core lyric search, editing, and printing remain free; one songbook per day, with a cross-device library."
-      monthly: "$5 per month: proposed premium access for unlimited songbooks, saved reprints, and read-only share links."
-      monthly_available: "$5 per month: unlimited songbooks, saved reprints, and read-only share links while your access is active."
+      monthly: "$3 per month: proposed premium access for unlimited songbooks, saved reprints, and read-only share links."
+      monthly_available: "$3 per month: unlimited songbooks, saved reprints, and read-only share links while your access is active."
+      annual: "$25 per year: the same proposed premium access, billed once for a year."
+      annual_available: "$25 per year: the same access as the monthly plan, billed once for a year."
       day_pass: "$1 for 24 hours: proposed one-time premium access when you only need it once."
       day_pass_available: "$1 for 24 hours: one-time premium access when you only need it once."
     payment_status: "These prices are an experiment proposal, not an active checkout. No payment is taken and no paid access can currently be purchased."
     checkout:
       intro: "Stripe takes the payment on its own page, and your access starts when Stripe confirms it. You can cancel from your songbook library."
-      monthly: "Subscribe for $5 per month"
+      monthly: "Subscribe for $3 per month"
+      annual: "Subscribe for $25 per year"
       day_pass: "Buy 24 hours for $1"
     callout:
       heading: "Try a free account"

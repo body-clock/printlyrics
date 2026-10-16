@@ -55,7 +55,7 @@ class PremiumCheckoutsController < ApplicationController
     @stripe_gateway ||= self.class.stripe_gateway_factory.call
   end
 
-  # The two plan controls sit on a page a signed-out visitor can read, so the
+  # The plan controls sit on a page a signed-out visitor can read, so the
   # sign-in this action requires has to come back to that page: sending the
   # visitor to this action's own URL would be a GET at a route that answers to
   # POST alone. The plan they chose is one click away from where they land.

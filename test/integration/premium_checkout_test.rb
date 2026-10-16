@@ -18,9 +18,10 @@ class PremiumCheckoutTest < ActionDispatch::IntegrationTest
     attr_reader :customers, :checkouts, :portals, :period_lookups
     attr_writer :event
 
-    def initialize(period_end: nil, configured: true)
+    def initialize(period_end: nil, plan: "monthly", configured: true)
       @configured = configured
       @period_end = period_end
+      @plan = plan
       @event = { type: "unhandled.event", data: { object: {} } }
       @customers = []
       @checkouts = []
@@ -53,9 +54,9 @@ class PremiumCheckoutTest < ActionDispatch::IntegrationTest
       "https://billing.stripe.test/session"
     end
 
-    def subscription_period_end(subscription_id)
+    def subscription_billing(subscription_id)
       @period_lookups << subscription_id
-      @period_end
+      StripeGateway::Subscription.new(plan: @plan, period_end: @period_end)
     end
 
     def parse_webhook(payload:, signature:)
@@ -92,18 +93,20 @@ class PremiumCheckoutTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]", premium_checkout_path, count: 0
   end
 
-  test "a configured host renders both plans as controls" do
+  test "a configured host renders every plan as a control" do
     with_stripe_configured do
       get save_songbooks_path
     end
 
     assert_response :success
     assert_select "h2", text: I18n.t("songbook_saving.options.heading_available")
-    assert_select "form[action=?]", premium_checkout_path, count: 2
-    assert_select "form[data-analytics-submit=?]", "Premium Checkout Started", count: 2
+    assert_select "form[action=?]", premium_checkout_path, count: 3
+    assert_select "form[data-analytics-submit=?]", "Premium Checkout Started", count: 3
     assert_select "input[name=plan][value=?]", "monthly", count: 1
+    assert_select "input[name=plan][value=?]", "annual", count: 1
     assert_select "input[name=plan][value=?]", "day_pass", count: 1
     assert_select "button", text: I18n.t("songbook_saving.checkout.monthly")
+    assert_select "button", text: I18n.t("songbook_saving.checkout.annual")
     assert_select "button", text: I18n.t("songbook_saving.checkout.day_pass")
     assert_select "p", text: I18n.t("songbook_saving.payment_status"), count: 0
   end
@@ -294,29 +297,47 @@ class PremiumCheckoutTest < ActionDispatch::IntegrationTest
     assert_equal "monthly", PremiumGrant.sole.kind
   end
 
+  test "the annual plan grants the year it is paid for" do
+    user = new_user
+    period_end = 1.year.from_now
+    gateway = FakeStripeGateway.new(period_end: period_end, plan: "annual")
+    gateway.event = checkout_completed(annual_session(user))
+
+    with_stripe_gateway(gateway) { post_webhook }
+
+    assert_response :success
+    assert_equal "sub_probe_1", user.reload.stripe_subscription_id
+    assert_in_delta period_end, user.premium_until, 0.001
+    assert_equal "annual", PremiumGrant.sole.kind
+    assert_equal 2500, PremiumGrant.sole.amount_cents
+  end
+
   test "a paid invoice extends access to the new period" do
     user = new_user(stripe_customer_id: "cus_probe_existing", premium_until: 1.day.from_now)
     new_period_end = 2.months.from_now
     gateway = FakeStripeGateway.new(period_end: new_period_end)
-    gateway.event = {
-      id: "evt_probe",
-      object: "event",
-      type: "invoice.paid",
-      data: { object: {
-        id: "in_probe_1",
-        object: "invoice",
-        customer: "cus_probe_existing",
-        subscription: "sub_probe_1",
-        amount_paid: 500,
-        currency: "usd"
-      } }
-    }
+    gateway.event = paid_invoice_event
 
     with_stripe_gateway(gateway) { post_webhook }
 
     assert_response :success
     assert_equal "monthly", PremiumGrant.sole.kind
     assert_equal "in_probe_1", PremiumGrant.sole.provider_ref
+    assert_in_delta new_period_end, user.reload.premium_until, 0.001
+  end
+
+  test "a renewal is named by the price the subscription is billed on" do
+    user = new_user(stripe_customer_id: "cus_probe_existing", premium_until: 1.day.from_now)
+    new_period_end = 1.year.from_now
+    gateway = FakeStripeGateway.new(period_end: new_period_end, plan: "annual")
+    gateway.event = paid_invoice_event
+
+    with_stripe_gateway(gateway) { post_webhook }
+
+    assert_response :success
+    # An invoice carries no plan of its own and the session that sold one is long
+    # gone, so the subscription's own price is what names what is being renewed.
+    assert_equal "annual", PremiumGrant.sole.kind
     assert_in_delta new_period_end, user.reload.premium_until, 0.001
   end
 
@@ -376,6 +397,39 @@ class PremiumCheckoutTest < ActionDispatch::IntegrationTest
     assert_equal "checkout session", reports.first.last.dig(:context, :stripe_reference)
   end
 
+  test "a session naming a plan this host does not sell grants nothing" do
+    user = new_user
+    session = day_pass_session(user).merge(metadata: { user_id: user.id.to_s, plan: "lifetime" })
+    gateway = FakeStripeGateway.new
+    gateway.event = checkout_completed(session)
+    reports = []
+
+    recording_honeybadger_notices(reports) do
+      with_stripe_gateway(gateway) { post_webhook }
+    end
+
+    assert_response :success
+    assert_equal 0, PremiumGrant.count
+    assert_nil user.reload.premium_until
+    assert_equal 1, reports.size
+  end
+
+  test "a subscription session with no subscription behind it grants nothing" do
+    user = new_user
+    gateway = FakeStripeGateway.new
+    gateway.event = checkout_completed(subscription_session(user).merge(subscription: nil))
+    reports = []
+
+    recording_honeybadger_notices(reports) do
+      with_stripe_gateway(gateway) { post_webhook }
+    end
+
+    assert_response :success
+    assert_equal 0, PremiumGrant.count
+    assert_nil user.reload.stripe_subscription_id
+    assert_nil user.premium_until
+  end
+
   private
 
   def post_webhook
@@ -408,22 +462,40 @@ class PremiumCheckoutTest < ActionDispatch::IntegrationTest
       amount_total: 100,
       currency: "usd",
       client_reference_id: user&.id&.to_s,
-      metadata: user ? { user_id: user.id.to_s } : {},
+      metadata: user ? { user_id: user.id.to_s, plan: "day_pass" } : {},
       subscription: nil
     }
   end
 
-  def subscription_session(user)
+  # A session for a plan billed as a subscription. Both subscription plans arrive
+  # in this same shape, which is why the plan rides the session's metadata rather
+  # than its mode.
+  def subscription_session(user, id: "cs_probe_monthly", plan: "monthly", amount_total: 300)
     {
-      id: "cs_probe_monthly",
+      id: id,
       object: "checkout.session",
       mode: "subscription",
-      amount_total: 500,
+      amount_total: amount_total,
       currency: "usd",
       client_reference_id: user.id.to_s,
-      metadata: { user_id: user.id.to_s },
+      metadata: { user_id: user.id.to_s, plan: plan },
       subscription: "sub_probe_1"
     }
+  end
+
+  def annual_session(user)
+    subscription_session(user, id: "cs_probe_annual", plan: "annual", amount_total: 2500)
+  end
+
+  def paid_invoice_event
+    { id: "evt_probe", object: "event", type: "invoice.paid", data: { object: {
+      id: "in_probe_1",
+      object: "invoice",
+      customer: "cus_probe_existing",
+      subscription: "sub_probe_1",
+      amount_paid: 500,
+      currency: "usd"
+    } } }
   end
 
   # Minitest 6 ships no stub, so the reporter is swapped by hand for one test and

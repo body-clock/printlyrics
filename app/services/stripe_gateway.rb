@@ -24,25 +24,30 @@ class StripeGateway
   # signing secret to check against. The caller refuses it and writes nothing.
   class SignatureError < Error; end
 
-  # The two plans this application sells, and what each one needs from Stripe: the
-  # Checkout mode it is bought in, and the environment variable the initializer
-  # reads its price from. The plan names are the ledger's `PremiumGrant::KINDS`,
-  # so the visitor's choice, the session Stripe creates, and the grant the
-  # webhook records all come from this one table.
+  # The three plans this application sells, and what each one needs from Stripe:
+  # the Checkout mode it is bought in, and the environment variable the
+  # initializer reads its price from. The plan names are the ledger's
+  # `PremiumGrant::KINDS`, so the visitor's choice, the session Stripe creates,
+  # and the grant the webhook records all come from this one table.
   PLANS = {
     "day_pass" => { mode: "payment", price_config: :stripe_price_day_pass },
-    "monthly" => { mode: "subscription", price_config: :stripe_price_monthly }
+    "monthly" => { mode: "subscription", price_config: :stripe_price_monthly },
+    "annual" => { mode: "subscription", price_config: :stripe_price_annual }
   }.freeze
 
-  PLANS_BY_MODE = PLANS.to_h { |plan, config| [ config[:mode], plan ] }.freeze
-
-  # The plan a Checkout Session's mode buys. A session in a mode this application
-  # does not sell names no plan, and the caller treats that as unattributable.
-  def self.plan_for_checkout_mode(mode)
-    PLANS_BY_MODE[mode.to_s]
+  # Whether a plan is billed as a subscription, which is what decides whether the
+  # purchase grants a billing period or a fixed duration.
+  def self.subscription?(plan)
+    PLANS.dig(plan.to_s, :mode) == "subscription"
   end
 
-  # Whether this host can sell anything at all. All four configured values are
+  # What one subscription is currently billed as: the plan its price buys, and the
+  # end of the period it is paid through. Two of the three plans are billed as
+  # subscriptions, so the price is what tells them apart — the session's mode
+  # names no single plan, and a renewal has no session at all.
+  Subscription = Data.define(:plan, :period_end)
+
+  # Whether this host can sell anything at all. All five configured values are
   # required together: a host that could take a payment but not verify the
   # webhook that grants access would take money and grant nothing. Nothing raises
   # when they are absent — this is the predicate, and it is false.
@@ -50,10 +55,15 @@ class StripeGateway
     new.configured?
   end
 
-  def initialize(secret_key: nil, webhook_secret: nil, monthly_price_id: nil, day_pass_price_id: nil)
+  def initialize(secret_key: nil, webhook_secret: nil, monthly_price_id: nil, annual_price_id: nil,
+    day_pass_price_id: nil)
     @secret_key = secret_key || Rails.configuration.x.stripe_secret_key
     @webhook_secret = webhook_secret || Rails.configuration.x.stripe_webhook_secret
-    overrides = { "monthly" => monthly_price_id, "day_pass" => day_pass_price_id }
+    overrides = {
+      "day_pass" => day_pass_price_id,
+      "monthly" => monthly_price_id,
+      "annual" => annual_price_id
+    }
     @price_ids = PLANS.to_h do |plan, config|
       [ plan, overrides[plan].presence || Rails.configuration.x.public_send(config[:price_config]) ]
     end
@@ -77,6 +87,7 @@ class StripeGateway
   def create_checkout(plan:, customer_id:, success_url:, cancel_url:, reference:)
     config = PLANS.fetch(plan) { raise ArgumentError, "unknown plan: #{plan.inspect}" }
     arguments = {
+      plan: plan,
       customer_id: customer_id,
       price_id: @price_ids.fetch(plan),
       success_url: success_url,
@@ -91,16 +102,16 @@ class StripeGateway
     end
   end
 
-  # A Checkout Session for the recurring plan, answered with the URL Stripe hosts
-  # the payment on.
-  def create_subscription_checkout(customer_id:, price_id:, success_url:, cancel_url:, reference:)
-    checkout_session("subscription", customer_id:, price_id:, success_url:, cancel_url:, reference:)
+  # A Checkout Session for a recurring plan, answered with the URL Stripe hosts the
+  # payment on.
+  def create_subscription_checkout(plan:, customer_id:, price_id:, success_url:, cancel_url:, reference:)
+    checkout_session("subscription", plan:, customer_id:, price_id:, success_url:, cancel_url:, reference:)
   end
 
   # A Checkout Session for the one-time plan: one payment, no subscription behind
   # it.
-  def create_payment_checkout(customer_id:, price_id:, success_url:, cancel_url:, reference:)
-    checkout_session("payment", customer_id:, price_id:, success_url:, cancel_url:, reference:)
+  def create_payment_checkout(plan:, customer_id:, price_id:, success_url:, cancel_url:, reference:)
+    checkout_session("payment", plan:, customer_id:, price_id:, success_url:, cancel_url:, reference:)
   end
 
   # The Stripe-hosted page where an account changes or cancels what it pays for.
@@ -124,21 +135,36 @@ class StripeGateway
     raise ServiceError, error.message
   end
 
-  # The end of the period a subscription is currently paid through. Stripe moved
-  # this from the subscription onto its items, and this call pins the gem's API
-  # version, so the items are what it reads.
-  def subscription_period_end(subscription_id)
-    ensure_configured!
-    subscription = stripe { Stripe::Subscription.retrieve(subscription_id, request_options) }
-    period_end = subscription.items.data.first&.current_period_end
-    raise ServiceError, "subscription #{subscription_id} reports no billing period" if period_end.blank?
+  # The plan a price buys, which is how a renewal is named: the invoice it arrives
+  # on carries no plan of its own, and a plan changed in the billing portal
+  # reports itself by its new price.
+  def plan_for_price_id(price_id)
+    return nil if price_id.blank?
 
-    Time.zone.at(period_end)
+    @price_ids.find { |_plan, configured_id| configured_id == price_id }&.first
+  end
+
+  # What a subscription is currently billed as, and the period it is paid
+  # through. Stripe moved the period from the subscription onto its items, and
+  # this call pins the gem's API version, so the items are what it reads.
+  def subscription_billing(subscription_id)
+    ensure_configured!
+    item = stripe { Stripe::Subscription.retrieve(subscription_id, request_options) }.items.data.first
+    plan = plan_for_price_id(item&.price&.id)
+
+    if plan.nil?
+      raise ServiceError, "subscription #{subscription_id} bills a price this application does not sell"
+    end
+    if item.current_period_end.blank?
+      raise ServiceError, "subscription #{subscription_id} reports no billing period"
+    end
+
+    Subscription.new(plan: plan, period_end: Time.zone.at(item.current_period_end))
   end
 
   private
 
-  def checkout_session(mode, customer_id:, price_id:, success_url:, cancel_url:, reference:)
+  def checkout_session(mode, plan:, customer_id:, price_id:, success_url:, cancel_url:, reference:)
     ensure_configured!
     session = stripe do
       Stripe::Checkout::Session.create(
@@ -148,7 +174,10 @@ class StripeGateway
           client_reference_id: reference,
           # The webhook grants access from the account this names, so the visitor
           # does not have to be signed in on the device the payment confirms on.
-          metadata: { user_id: reference },
+          # The plan travels here as well, because two of the three plans are
+          # billed as subscriptions: the session's mode no longer names one plan,
+          # and this is the value this application set when it opened the session.
+          metadata: { user_id: reference, plan: plan },
           line_items: [ { price: price_id, quantity: 1 } ],
           success_url: success_url,
           cancel_url: cancel_url

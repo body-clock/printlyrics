@@ -9,10 +9,10 @@
 # `User#premium?`); a grant is the record of what bought it.
 class PremiumGrant < ApplicationRecord
   PROVIDERS = %w[stripe].freeze
-  KINDS = %w[day_pass monthly].freeze
+  KINDS = %w[day_pass monthly annual].freeze
 
-  # A day pass is 24 hours from the moment it is granted; the monthly plan's
-  # grant runs to the subscription period Stripe reports.
+  # A day pass is 24 hours from the moment it is granted; a subscription's grant
+  # runs to the billing period Stripe reports for it, monthly or yearly.
   DAY_PASS_DURATION = 24.hours
 
   belongs_to :user

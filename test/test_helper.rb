@@ -77,20 +77,23 @@ module StripeGatewayInjection
 end
 
 module StripeConfiguration
-  # The test environment leaves the four Stripe values unset, which is the state
+  # The test environment leaves the five Stripe values unset, which is the state
   # the unconfigured checks are written against. This is how a test says the host
   # can sell — including the signing secret a webhook payload is signed with.
   def with_stripe_configured(secret_key: "sk_test_probe", webhook_secret: "whsec_probe",
-    monthly_price_id: "price_monthly_probe", day_pass_price_id: "price_day_pass_probe")
+    monthly_price_id: "price_monthly_probe", annual_price_id: "price_annual_probe",
+    day_pass_price_id: "price_day_pass_probe")
     previous = {
       stripe_secret_key: Rails.configuration.x.stripe_secret_key,
       stripe_webhook_secret: Rails.configuration.x.stripe_webhook_secret,
       stripe_price_monthly: Rails.configuration.x.stripe_price_monthly,
+      stripe_price_annual: Rails.configuration.x.stripe_price_annual,
       stripe_price_day_pass: Rails.configuration.x.stripe_price_day_pass
     }
     Rails.configuration.x.stripe_secret_key = secret_key
     Rails.configuration.x.stripe_webhook_secret = webhook_secret
     Rails.configuration.x.stripe_price_monthly = monthly_price_id
+    Rails.configuration.x.stripe_price_annual = annual_price_id
     Rails.configuration.x.stripe_price_day_pass = day_pass_price_id
     yield
   ensure

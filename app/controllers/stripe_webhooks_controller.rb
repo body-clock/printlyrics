@@ -61,47 +61,51 @@ class StripeWebhooksController < ApplicationController
     end
   end
 
-  # The purchase itself. The day pass grants its 24 hours from now; the monthly
-  # plan grants the period the subscription is paid through, which is what a
-  # renewal then moves forward.
+  # The purchase itself. A day pass grants its 24 hours from now; a subscription
+  # grants the period it is paid through, which is what a renewal then moves
+  # forward.
   def record_checkout(session)
     user = user_for_checkout(session)
-    kind = StripeGateway.plan_for_checkout_mode(session[:mode])
-    subscription_id = session[:subscription]
-    # A monthly session with no subscription behind it cannot be granted to the
-    # period it was paid through, so it is a payload this application cannot act
-    # on rather than one it can guess about.
-    unattributable = user.nil? || kind.nil? || (kind == "monthly" && subscription_id.blank?)
+    plan = plan_for_checkout(session)
 
-    if unattributable
+    if user.nil? || plan.nil?
       report_unattributed("checkout session", session[:id])
       return
     end
 
-    ends_at = ends_at_for(kind, subscription_id)
+    billing = subscription_billing(session[:subscription])
+
+    # A subscription plan is granted the period Stripe reports for the
+    # subscription it bought, so a session naming none is a payload this
+    # application cannot act on rather than one it can guess about.
+    if StripeGateway.subscription?(plan) && billing.nil?
+      report_unattributed("checkout session", session[:id])
+      return
+    end
 
     grant = grant_access(
       user: user,
       provider_ref: session[:id],
-      kind: kind,
-      ends_at: ends_at,
+      kind: plan,
+      ends_at: ends_at_for(billing),
       amount_cents: session[:amount_total],
       currency: session[:currency]
     )
 
-    # The subscription the monthly plan bought is the reference the account keeps
-    # while it runs; `customer.subscription.deleted` is what clears it.
-    user.update!(stripe_subscription_id: subscription_id) if subscription_id.present?
+    # The subscription a subscription plan bought is the reference the account
+    # keeps while it runs; `customer.subscription.deleted` is what clears it.
+    user.update!(stripe_subscription_id: session[:subscription]) if billing
 
     report_activation(grant)
   end
 
   # A paid invoice is a renewal: the subscription has advanced into a new period,
   # and the entitlement follows it. The invoice is the idempotency key, so a
-  # retried delivery extends nothing a second time. Only the subscription plan
-  # generates invoices, so this is always the monthly kind; the first invoice of a
-  # new subscription arrives here too, and since access only ever moves forward it
-  # adds a row without moving the entitlement twice.
+  # retried delivery extends nothing a second time; the first invoice of a new
+  # subscription arrives here too, and since access only ever moves forward it
+  # adds a row without moving the entitlement twice. The plan comes from the
+  # subscription's own price, which is what reports a plan the visitor changed in
+  # the billing portal.
   def record_renewal(invoice)
     user = User.find_by(stripe_customer_id: invoice[:customer])
     subscription_id = subscription_id_for(invoice)
@@ -113,13 +117,13 @@ class StripeWebhooksController < ApplicationController
 
     # Read before the row is written: the call can fail, and a grant naming a
     # period this application never read is one it cannot justify.
-    ends_at = stripe_gateway.subscription_period_end(subscription_id)
+    billing = stripe_gateway.subscription_billing(subscription_id)
 
     grant_access(
       user: user,
       provider_ref: invoice[:id],
-      kind: "monthly",
-      ends_at: ends_at,
+      kind: billing.plan,
+      ends_at: billing.period_end,
       amount_cents: invoice[:amount_paid],
       currency: invoice[:currency]
     )
@@ -152,13 +156,30 @@ class StripeWebhooksController < ApplicationController
     )
   end
 
-  # How long the purchase runs: a day pass names its own 24 hours from the moment
-  # it is granted, and the monthly plan runs to the period Stripe reports for the
-  # subscription the session bought.
-  def ends_at_for(kind, subscription_id)
-    return Time.current + PremiumGrant::DAY_PASS_DURATION unless kind == "monthly"
+  # How long the purchase runs: a subscription plan runs to the period Stripe
+  # reports for it, and the one-time plan names its own 24 hours from the moment
+  # it is granted.
+  def ends_at_for(billing)
+    billing&.period_end || Time.current + PremiumGrant::DAY_PASS_DURATION
+  end
 
-    stripe_gateway.subscription_period_end(subscription_id)
+  # What a subscription is billed as, or nil for a session that bought no
+  # subscription — which is the shape the one-time plan arrives in.
+  def subscription_billing(subscription_id)
+    return nil if subscription_id.blank?
+
+    stripe_gateway.subscription_billing(subscription_id)
+  end
+
+  # The plan the session was opened for. Two of the three plans are billed as
+  # subscriptions, so the session's mode no longer names one; the plan rides the
+  # metadata this application set when it opened the session, on a payload whose
+  # signature Stripe signed. A value this application does not sell names no
+  # plan, and the caller treats that as unattributable.
+  def plan_for_checkout(session)
+    plan = session[:metadata]&.[](:plan).to_s
+
+    plan if StripeGateway::PLANS.key?(plan)
   end
 
   # The account the session belongs to: the metadata this application set when it

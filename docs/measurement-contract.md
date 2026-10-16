@@ -92,7 +92,7 @@ A form that reports its own submit carries `data-analytics-submit` with the
 event name as its value. In `app/views/lyrics/new.html.erb` the search form, the
 manual pasted-lyrics form, and each result's select form report
 `Song Search Submitted`, `Manual Entry Submitted`, and `Song Result Selected`.
-The two plan CTAs on `/save-songbooks` report `Premium Checkout Started` the same
+The three plan CTAs on `/save-songbooks` report `Premium Checkout Started` the same
 way, each form carrying the plan it posts; those controls render only on a host
 that can sell, so no attempt is ever reported for a plan nobody can buy.
 

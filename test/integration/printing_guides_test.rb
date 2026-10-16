@@ -104,7 +104,8 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "meta[name='robots'][content*='index, follow']", 1
     assert_select "link[rel='canonical'][href='#{save_songbooks_url}']", 1
     assert_select "h1", "Save songbooks to reprint later"
-    assert_select "main", /\$5 per month/
+    assert_select "main", /\$3 per month/
+    assert_select "main", /\$25 per year/
     assert_select "main", /\$1 for 24 hours/
     assert_select "main", /No payment is taken/
     assert_select "a[href='#{new_registration_path}']", text: /create account/i
