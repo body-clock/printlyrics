@@ -5,16 +5,23 @@
 <div class="guide-shell">
   <article class="guide">
     <header><h1><%= t("accounts.login.heading") %></h1></header>
-    <% if flash[:alert] %><p role="alert"><%= flash[:alert] %></p><% end %>
-    <% if flash[:notice] %><p role="status"><%= flash[:notice] %></p><% end %>
+    <%= render "shared/flash" %>
     <%= form_with url: session_path, class: "account-form" do |form| %>
-      <p><%= form.label :email_address, t("accounts.email") %><br><%= form.email_field :email_address, required: true, autocomplete: "username", value: params[:email_address] %></p>
-      <p><%= form.label :password, t("accounts.password") %><br><%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72 %></p>
+      <div class="field">
+        <%= form.label :email_address, t("accounts.email") %>
+        <%= form.email_field :email_address, required: true, autocomplete: "username", value: params[:email_address] %>
+      </div>
+      <div class="field">
+        <%= form.label :password, t("accounts.password") %>
+        <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72 %>
+      </div>
       <%= form.submit t("accounts.login.submit"), class: "button button-primary" %>
     <% end %>
     <%= render "shared/google_sign_in" if google_sign_in_available? %>
-    <p><%= link_to t("accounts.forgot_password"), new_password_path %></p>
-    <p><%= link_to t("accounts.register_link"), new_registration_path %></p>
+    <div class="account-links">
+      <p><%= link_to t("accounts.forgot_password"), new_password_path %></p>
+      <p><%= link_to t("accounts.register_link"), new_registration_path %></p>
+    </div>
     <%= render "shared/resource_navigation", current_section: :accounts %>
   </article>
 </div>

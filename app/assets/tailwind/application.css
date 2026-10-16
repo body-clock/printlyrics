@@ -800,20 +800,27 @@ textarea:focus-visible {
   color: var(--ink-muted);
 }
 
+/* The account pages read as one column: the same field box the entry form uses —
+   `.field`, three rem tall, with its own label — a steady gap between fields, and
+   the button set apart from the last field rather than sitting on it. */
 .account-form {
+  display: grid;
+  gap: 1.05rem;
   max-width: 32rem;
   margin-top: 1.5rem;
 }
 
-.account-form input:not([type="submit"]) {
+.account-form input[type="submit"] {
   width: 100%;
-  min-height: 2.75rem;
-  margin-top: 0.35rem;
-  border: 1px solid var(--line);
-  border-radius: 0.25rem;
-  padding: 0.5rem 0.7rem;
-  background: var(--surface);
-  color: var(--ink);
+  margin-top: 0.5rem;
+}
+
+/* The links that follow the form, on the same column width. */
+.account-links {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 32rem;
+  margin-top: 1.25rem;
 }
 
 /* The Google control follows the password form on both pages an account is signed

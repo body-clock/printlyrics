@@ -127,7 +127,9 @@ class GoogleSignInFlowTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_session_path
     follow_redirect!
-    assert_select "[role=alert]", I18n.t("accounts.google.refused")
+    # The alert carries the message and its own mark, so the page is asked for the
+    # sentence rather than for that exact text node.
+    assert_select "[role=alert]", /#{Regexp.escape(I18n.t("accounts.google.refused"))}/
     assert_equal 0, User.count
     assert_equal 0, Identity.count
 
@@ -142,7 +144,7 @@ class GoogleSignInFlowTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_session_path
     follow_redirect!
-    assert_select "[role=alert]", I18n.t("accounts.google.refused")
+    assert_select "[role=alert]", /#{Regexp.escape(I18n.t("accounts.google.refused"))}/
     assert_equal 0, User.count
   end
 
@@ -157,7 +159,7 @@ class GoogleSignInFlowTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_redirected_to new_session_path
     follow_redirect!
-    assert_select "[role=alert]", I18n.t("accounts.google.failed")
+    assert_select "[role=alert]", /#{Regexp.escape(I18n.t("accounts.google.failed"))}/
     assert_equal 0, User.count
   end
 
@@ -166,7 +168,7 @@ class GoogleSignInFlowTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_session_path
     follow_redirect!
-    assert_select "[role=alert]", I18n.t("accounts.google.failed")
+    assert_select "[role=alert]", /#{Regexp.escape(I18n.t("accounts.google.failed"))}/
     # The reason arrived in the query string and is deliberately not repeated: the
     # page says one sentence and the log is not written from a URL.
     assert_no_match(/invalid_credentials/, response.body)
