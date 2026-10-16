@@ -113,6 +113,64 @@ module StripeAnalyticsInjection
   end
 end
 
+module GoogleConfiguration
+  # The test environment's credentials hold no Google client, which is the state
+  # the unconfigured checks are written against. This is how a test says the host
+  # can sign someone in with Google — including the request phase, which a host
+  # that cannot sign anyone in refuses outright.
+  def with_google_configured(client_id: "google-client-probe", client_secret: "google-secret-probe")
+    previous = {
+      google_client_id: Rails.configuration.x.google_client_id,
+      google_client_secret: Rails.configuration.x.google_client_secret,
+      allowed_request_methods: OmniAuth.config.allowed_request_methods
+    }
+    Rails.configuration.x.google_client_id = client_id
+    Rails.configuration.x.google_client_secret = client_secret
+    OmniAuth.config.allowed_request_methods = [ :post ]
+    yield
+  ensure
+    Rails.configuration.x.google_client_id = previous[:google_client_id]
+    Rails.configuration.x.google_client_secret = previous[:google_client_secret]
+    OmniAuth.config.allowed_request_methods = previous[:allowed_request_methods]
+  end
+end
+
+module GoogleAuthentication
+  # OmniAuth answers with this payload instead of calling Google, so the middleware
+  # and the callback that run in production are the ones under test. The payload is
+  # the shape the strategy builds: `info.email` is empty unless Google verified the
+  # address, and the unverified one is named separately.
+  def with_google_auth(uid: "google-uid-1", email: "person@example.test", email_verified: true,
+    provider: "google_oauth2")
+    OmniAuth.config.test_mode = true
+    OmniAuth.config.mock_auth[:google_oauth2] = OmniAuth::AuthHash.new(
+      provider: provider,
+      uid: uid,
+      info: {
+        name: "Google Person",
+        email: email_verified ? email : nil,
+        unverified_email: email,
+        email_verified: email_verified
+      }
+    )
+    yield
+  ensure
+    OmniAuth.config.test_mode = false
+    OmniAuth.config.mock_auth[:google_oauth2] = nil
+  end
+
+  # A callback that arrives carrying no payload at all, which is the shape this
+  # action has to survive if the middleware ever hands it one.
+  def with_no_google_payload
+    OmniAuth.config.test_mode = true
+    OmniAuth.config.mock_auth[:google_oauth2] = nil
+    yield
+  ensure
+    OmniAuth.config.test_mode = false
+    OmniAuth.config.mock_auth[:google_oauth2] = nil
+  end
+end
+
 module ActiveSupport
   class TestCase
     include LrcLibClientInjection
@@ -123,6 +181,8 @@ module ActiveSupport
     include StripeGatewayInjection
     include StripeConfiguration
     include StripeAnalyticsInjection
+    include GoogleConfiguration
+    include GoogleAuthentication
 
     # Run tests in parallel with specified workers. Rails templates the worker
     # number onto the test database name and rebuilds each worker file from

@@ -26,8 +26,9 @@ sheets without the code a free or guest sheet carries. Guest songbook links
 remain unchanged. Where the deployment holds the Stripe values, the plans are
 bought through Stripe Checkout and access is granted by Stripe's webhook rather
 than by returning from the payment page; a host without them renders the plans
-as the proposal they describe and takes no payment. OAuth is not part of this
-prototype.
+as the proposal they describe and takes no payment. Google sign-in is the one
+third-party sign-in, optional beside the email and password form; no other
+provider is part of this prototype.
 
 The first product questions are whether free accounts return to their library,
 whether premium users reprint or share sets, and whether read-only sharing helps

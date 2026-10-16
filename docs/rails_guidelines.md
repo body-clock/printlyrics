@@ -74,7 +74,11 @@
   keep the sitemap limited to the homepage, guides, and approved practical pages.
 - Keep password authentication on the generated Rails session foundation, and
   keep a floor on password length: the account guards a saved library and a paid
-  entitlement. Public lyric flows remain optional-account; authorize
+  entitlement. A third-party sign-in adds one `identities` row per provider
+  rather than columns on `users`, links only on an address the provider verified,
+  and finds a returning visitor by the provider's own subject rather than by an
+  address either side could have changed. Public lyric flows remain
+  optional-account; authorize
   account-owned resources against the current user. Free users may create one
   songbook per calendar day; premium access uses an explicit expiry, and no
   payment is implied without a configured checkout provider. Where one is

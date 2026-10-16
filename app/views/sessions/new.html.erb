@@ -12,6 +12,7 @@
       <p><%= form.label :password, t("accounts.password") %><br><%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72 %></p>
       <%= form.submit t("accounts.login.submit"), class: "button button-primary" %>
     <% end %>
+    <%= render "shared/google_sign_in" if google_sign_in_available? %>
     <p><%= link_to t("accounts.forgot_password"), new_password_path %></p>
     <p><%= link_to t("accounts.register_link"), new_registration_path %></p>
     <%= render "shared/resource_navigation", current_section: :accounts %>

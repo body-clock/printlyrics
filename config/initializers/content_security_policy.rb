@@ -21,7 +21,12 @@ Rails.application.configure do
     policy.connect_src :self, config.x.umami_origin, "https://plausible.io"
     # The Turnstile widget is an iframe served by Cloudflare.
     policy.frame_src   "https://challenges.cloudflare.com"
-    policy.form_action :self
+    # The Google sign-in control is a form POST to the request phase, which
+    # answers with a redirect to Google's authorize endpoint. A form submission
+    # that redirects to another origin is checked against form-action, so that one
+    # origin has to be named here: without it the browser blocks the sign-in
+    # outright, before anything is sent, and the visitor sees nothing happen.
+    policy.form_action :self, "https://accounts.google.com"
     policy.frame_ancestors :none
     policy.manifest_src :self
     # The preview controller sets `--preview-scale` on .paper-pages as an inline

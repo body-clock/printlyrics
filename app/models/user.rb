@@ -8,6 +8,7 @@ class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :songbooks, dependent: :destroy
+  has_many :identities, dependent: :destroy
 
   normalizes :email_address, with: ->(email) { email.strip.downcase }
   validates :email_address, presence: true, uniqueness: true, length: { maximum: 255 },

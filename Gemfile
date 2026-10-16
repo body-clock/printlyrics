@@ -65,3 +65,6 @@ end
 gem "rqrcode", "~> 3.2"
 
 gem "stripe", "~> 20.0"
+
+gem "omniauth-google-oauth2", "~> 1.2"
+gem "omniauth-rails_csrf_protection", "~> 2.0"

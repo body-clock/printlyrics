@@ -25,6 +25,8 @@
       <%= form.submit t("accounts.register.submit"), class: "button button-primary" %>
     <% end %>
 
+    <%= render "shared/google_sign_in" if google_sign_in_available? %>
+
     <p><%= link_to t("accounts.login_link"), new_session_path %></p>
     <%= render "shared/resource_navigation", current_section: :accounts %>
   </article>

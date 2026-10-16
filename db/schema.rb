@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_16_181531) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_16_185344) do
   create_table "feedbacks", force: :cascade do |t|
     t.string "surface", null: false
     t.string "query", limit: 200
@@ -22,6 +22,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_181531) do
     t.string "reason"
     t.integer "visit_sheet_count"
     t.index ["created_at"], name: "index_feedbacks_on_created_at"
+  end
+
+  create_table "identities", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "provider", null: false
+    t.string "uid", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "uid"], name: "index_identities_on_provider_and_uid", unique: true
+    t.index ["user_id"], name: "index_identities_on_user_id"
   end
 
   create_table "lyrics", force: :cascade do |t|
@@ -112,6 +122,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_16_181531) do
     t.index ["stripe_customer_id"], name: "index_users_on_stripe_customer_id", unique: true
   end
 
+  add_foreign_key "identities", "users"
   add_foreign_key "lyrics", "songs"
   add_foreign_key "premium_grants", "users"
   add_foreign_key "sessions", "users"

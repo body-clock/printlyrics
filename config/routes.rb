@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   resource :session
   resources :registrations, only: %i[new create], path: "account"
+  # OmniAuth answers the request phase at /auth/google_oauth2 itself, so only the
+  # two ends it hands back are routed here.
+  get "/auth/google_oauth2/callback", to: "omniauth_callbacks#create"
+  get "/auth/failure", to: "omniauth_callbacks#failure"
   get "save-songbooks", to: "songbook_saving#show", as: :save_songbooks
   resources :passwords, param: :token
   get "account/songbooks", to: "account_songbooks#index", as: :account_songbooks

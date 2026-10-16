@@ -99,6 +99,38 @@ credentials through Kamal secrets and the three price identifiers through
 `config/deploy.yml`, beside the analytics and Turnstile values.
 
 
+## Signing in
+
+Accounts use an email address and a password, and optionally Google. No deploy
+wiring is needed for it: the client lives in `config/credentials.yml.enc` under
+`google`, unlocked by `RAILS_MASTER_KEY`, which the container already receives.
+
+```sh
+EDITOR="code --wait" bin/rails credentials:edit
+```
+
+```yaml
+google:
+  client_id: <id>.apps.googleusercontent.com
+  client_secret: GOCSPX-...
+```
+
+The OAuth client's authorized redirect URI must be
+`https://printlyrics.app/auth/google_oauth2/callback`, plus
+`http://127.0.0.1:3000/auth/google_oauth2/callback` (and the same on
+`localhost`) for `bin/dev`: Google compares that string exactly. Leave its
+authorized JavaScript origins empty — the whole flow is server-side, so no Google
+script runs in the browser.
+
+A sign-in resolves to an `identities` row keyed by Google's own `uid`, so a
+returning visitor is found by what Google keeps sending rather than by an address
+either side could have changed. The first link uses the address Google verified:
+it claims the account that already uses it, which is how a password account adds
+Google later, and it creates the account when there is none. An address Google
+will not verify is refused. Without both values the sign-in pages render no
+Google control, the request phase is refused outright, and the callback links
+nothing.
+
 ## Retention
 
 Generated guest and free-account pages expire 180 days after their last visit,

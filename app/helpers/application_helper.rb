@@ -43,6 +43,12 @@ module ApplicationHelper
     t("accounts.password_hint", count: User::PASSWORD_MINIMUM_LENGTH)
   end
 
+  # Whether this host can complete a Google sign-in. The control renders only
+  # where it can, so nothing offers a sign-in that cannot happen.
+  def google_sign_in_available?
+    GoogleSignIn.configured?
+  end
+
   # What an account's access is right now, in the words the library shows it.
   # The expiry is what the visitor paid for, so the state is stated rather than
   # left to be inferred from which controls happen to appear.

@@ -16,6 +16,13 @@ en:
     password_confirmation: "Confirm password"
     login_link: "Already have an account? Sign in."
     register_link: "Create an account"
+    # The one Google control, on both pages an account is signed in or created on,
+    # and the two refusals: one this application decided, one OmniAuth could not
+    # complete. Both end on the sign-in page, and neither repeats what arrived.
+    google:
+      continue: "Continue with Google"
+      refused: "That Google sign-in could not be completed. Try again, or sign in with your email and password."
+      failed: "The Google sign-in did not finish. Try again, or sign in with your email and password."
     login:
       title: "Sign in | PrintLyrics"
       description: "Sign in to manage your saved songbooks."

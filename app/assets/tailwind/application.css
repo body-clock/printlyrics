@@ -816,6 +816,19 @@ textarea:focus-visible {
   color: var(--ink);
 }
 
+/* The Google control follows the password form on both pages an account is signed
+   in or created on, in the same column, at the width a second sign-in route needs
+   to read as a choice rather than a footnote. */
+.google-sign-in {
+  max-width: 32rem;
+  margin-top: 1.25rem;
+}
+
+.google-sign-in form,
+.google-sign-in .button {
+  width: 100%;
+}
+
 /* The two paid plans read as one offer: they are the same choice in two
    lengths, and the controls appear only where the host can sell them. */
 .premium-plans {
