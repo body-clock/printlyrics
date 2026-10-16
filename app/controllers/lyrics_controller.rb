@@ -1,4 +1,5 @@
 class LyricsController < ApplicationController
+  allow_unauthenticated_access
   # Tests inject a fake source client through this seam.
   class_attribute :lrc_lib_client_factory, default: -> { LrcLibClient.new }
 
@@ -93,7 +94,8 @@ class LyricsController < ApplicationController
   def songbook_context
     return if params[:songbook].blank?
 
-    Songbook.active.find_by(token: params[:songbook])
+    songbook = Songbook.active.find_by(token: params[:songbook])
+    songbook if songbook && (songbook.user_id.nil? || songbook.user_id == current_user&.id)
   end
 
   def destination_for(lyric)

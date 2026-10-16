@@ -10,7 +10,30 @@ People who need clean, legible song lyrics on paper: musicians rehearsing, teach
 
 ## Product Purpose
 
-PrintLyrics turns pasted or extracted song lyrics into a durable, shareable, print-optimized page. Success means the preview is trustworthy, the printed result is readable, and users can adjust type size and columns without learning a layout tool. A page can also be extended into a songbook: an ordered set of pages that prints as one job, which is what a rehearsal, a class period, or a service needs. Both flows are documented on a short public guide: the homepage and those two guides are the only crawlable surfaces, and saved sheets and songbooks stay unlisted behind their tokens.
+PrintLyrics turns pasted or extracted song lyrics into a durable, shareable, print-optimized page. Success means the preview is trustworthy, the printed result is readable, and users can adjust type size and columns without learning a layout tool. A page can also be extended into a songbook: an ordered set of pages that prints as one job, which is what a rehearsal, a class period, or a service needs. The homepage and two practical guides explain printing; the songbook-saving page explains the account options for saving songbooks to reprint later, and sells the two plans where the deployment can take a payment. These four surfaces are crawlable. Account-owned books require sign-in; guest and premium share links are unlisted, read-only where applicable, and noindex. Saved resources stay out of the sitemap.
+
+## Account and Songbook Experiment
+
+Accounts stay optional; search, manual entry, editing, preview, and printing
+remain free without sign-in. A free account adds a cross-device songbook
+library, claims the visitor's active guest songbooks on registration, and keeps
+the same one-songbook-per-calendar-day allowance and 180-day retention window.
+
+The proposed $5 monthly and $1 24-hour premium access removes the daily
+songbook limit, preserves account-owned songbooks for reprinting, enables
+revocable read-only share links while premium access is active, and prints
+sheets without the code a free or guest sheet carries. Guest songbook links
+remain unchanged. Where the deployment holds the four Stripe values, the two
+plans are bought through Stripe Checkout and access is granted by Stripe's
+webhook rather than by returning from the payment page; a host without them
+renders the plans as the proposal they describe and takes no payment. OAuth is
+not part of this prototype.
+
+The first product questions are whether free accounts return to their library,
+whether premium users reprint or share sets, and whether read-only sharing helps
+someone who receives a songbook. Measure those outcomes without sending account
+identifiers, song titles, lyrics, or tokens. Do not add more paid features until
+those behaviors show a repeated need.
 
 ## Brand Personality
 

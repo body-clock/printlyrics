@@ -1,4 +1,5 @@
 class FeedbacksController < ApplicationController
+  allow_unauthenticated_access
   # Tests replace the verifier through this seam, so no test reaches Cloudflare.
   class_attribute :turnstile_client_factory, default: -> { TurnstileClient.new }
 

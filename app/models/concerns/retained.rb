@@ -12,7 +12,7 @@ module Retained
 
     validates :token, presence: true, uniqueness: true, length: { is: 16 }
 
-    scope :active, -> { where("expires_at > ?", Time.current) }
+    scope :active, -> { where("expires_at IS NULL OR expires_at > ?", Time.current) }
   end
 
   class_methods do
@@ -35,6 +35,8 @@ module Retained
   end
 
   def touch_retention!
+    return if expires_at.nil?
+
     update_column(:expires_at, RETENTION_PERIOD.from_now)
   end
 

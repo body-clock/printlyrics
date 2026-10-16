@@ -5,6 +5,7 @@
 # render it again. Both answers end the offer for the rest of the visit;
 # accepting it is the creation itself, which lands on the set.
 class SongbookOffersController < ApplicationController
+  allow_unauthenticated_access
   def destroy
     visit.answer_offer!
     redirect_back_or_to root_path, allow_other_host: false

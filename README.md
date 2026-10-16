@@ -36,16 +36,74 @@ user generates the print page.
 
 ## Songbooks
 
-A generated page can be extended into a songbook: an ordered, token-addressed set
-of lyric sheets that prints as one job. A songbook keeps the generated-page
-contract — unlisted link, no account, and excluded from indexing.
+A generated page can be extended into an ordered songbook that prints as one job.
+Guests can make one songbook per calendar day, limited by the browser session.
+Optional email/password accounts also have one free songbook per calendar day,
+claim guest songbooks from that browser when they sign in, and provide a
+cross-device library for reopening account-owned sets. Free-owned and guest
+songbooks retain a 180-day sliding window. Owner-only songbooks require
+authentication; guest token links remain unlisted and are not an authentication
+mechanism.
+
+Paid access is $5/month or $1/24 hours, bought through Stripe Checkout. It adds
+unlimited songbook creation, durable reprints, revocable read-only share links
+that work only while premium access is active, and printed sheets that carry no
+code. Guest songbook links remain separate and retain their existing behavior.
+`/save-songbooks` explains the account options and is indexed as a distinct
+practical page.
+
+Access is granted by the Stripe webhook, never by returning from the checkout
+page: `checkout.session.completed` writes the ledger row that grants it, and a
+day pass runs 24 hours from that moment while the monthly plan runs to the period
+Stripe reports. `PremiumGrant` is the append-only ledger and its unique
+`(provider, provider_ref)` index is the idempotency key, so a delivery Stripe
+retries extends nothing twice. The entitlement itself stays
+`users.premium_until`, read by `User#premium?`, and it only ever moves forward:
+`User#activate_premium_until!` keeps the later expiry, so a day pass bought
+during an active month cannot shorten it and a renewal that arrives early cannot
+either. Grant access by hand for an experiment in a Rails console:
+
+```ruby
+User.find_by!(email_address: "person@example.test").activate_premium_until!(24.hours.from_now)
+```
+
+A sheet printed from an account with active premium access carries no
+`SheetMark` code — the paper channel's return path is what the paid tier removes.
+The set owner's entitlement decides, so a read-only link to a premium account's
+set prints without one too; see the
+[measurement contract](docs/measurement-contract.md).
+
+Premium account songbooks and their member lyrics have no expiry. Account pages,
+saved lyrics, and songbooks remain excluded from indexing.
+
+### Selling plans
+
+The whole feature is off unless all four values are set, and nothing raises when
+they are absent: a host without them renders `/save-songbooks` with today's
+proposal wording, no purchase control, and a checkout action that refuses.
+
+```sh
+STRIPE_SECRET_KEY=sk_live_...       # credential
+STRIPE_WEBHOOK_SECRET=whsec_...     # credential, from the endpoint below
+STRIPE_PRICE_MONTHLY=price_...      # public identifier for the $5/month price
+STRIPE_PRICE_DAY_PASS=price_...     # public identifier for the $1/24-hour price
+```
+
+The webhook endpoint to create in Stripe is `https://printlyrics.app/stripe/webhook`,
+subscribed to `checkout.session.completed`, `invoice.paid`, and
+`customer.subscription.deleted`; its signing secret is `STRIPE_WEBHOOK_SECRET`.
+Stripe moves the account between plans through its own Billing Portal, which the
+library links to once the account has a customer. Deployments pass the two
+credentials through Kamal secrets and the two price identifiers through
+`config/deploy.yml`, beside the analytics and Turnstile values.
+
 
 ## Retention
 
-Generated pages and songbooks expire 180 days after their last visit, and visits
-renew the retention window. Visiting a songbook renews it and every song in it.
-Nothing purges expired rows on its own: cleanup is the explicit task below, which
-the `kamal purge` alias runs against production.
+Generated guest and free-account pages expire 180 days after their last visit,
+and visits renew the retention window. Premium-created songbooks and their
+member lyrics have no expiry. Nothing purges expired rows on its own: cleanup is
+the explicit task below, which the `kamal purge` alias runs against production.
 
 ```sh
 bin/rails lyrics:purge_expired
@@ -124,6 +182,19 @@ UMAMI_APP_SECRET=...    # openssl rand -hex 32
 
 An ordinary deploy does not need those two, and the runbook linked under
 Operations owns the setup.
+
+Selling the paid plans needs two more secrets, plus the two public price
+identifiers in `config/deploy.yml`. They are read at deploy time from Proton
+Pass, so a missing item leaves the feature off rather than failing the deploy:
+
+```sh
+STRIPE_SECRET_KEY=...       # credential, the Stripe account's secret key
+STRIPE_WEBHOOK_SECRET=...   # credential, the endpoint's signing secret
+```
+
+Stripe reaches the webhook at `https://printlyrics.app/stripe/webhook`, so the
+endpoint is created against the production host and its signing secret is the
+one above.
 
 The `printlyrics-prod` GitHub environment also requires `KAMAL_SSH_KEY`.
 CI runs for pull requests and pushes to `main`. Release Please maintains a

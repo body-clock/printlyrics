@@ -96,6 +96,20 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
       "Make the first song's sheet"
   end
 
+  test "songbook saving page explains the proposed plans without implying checkout" do
+    get save_songbooks_path
+
+    assert_response :success
+    assert_select "title", "Save Songbooks to Reprint Later | PrintLyrics"
+    assert_select "meta[name='robots'][content*='index, follow']", 1
+    assert_select "link[rel='canonical'][href='#{save_songbooks_url}']", 1
+    assert_select "h1", "Save songbooks to reprint later"
+    assert_select "main", /\$5 per month/
+    assert_select "main", /\$1 for 24 hours/
+    assert_select "main", /No payment is taken/
+    assert_select "a[href='#{new_registration_path}']", text: /create account/i
+  end
+
   test "crawlable pages link to each other with descriptive anchors" do
     get root_path
 
@@ -105,6 +119,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i
       assert_select "a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
+      assert_select "a[href='#{save_songbooks_path}']", text: /save songbooks to reprint/i
       assert_select "a[href='#{root_path}']", count: 0
     end
 
@@ -115,6 +130,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{root_path}']", text: /print song lyrics/i
       assert_select "a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
+      assert_select "a[href='#{save_songbooks_path}']", text: /save songbooks to reprint/i
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", count: 0
     end
 
@@ -124,6 +140,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "footer[data-resource-navigation]" do
       assert_select "a[href='#{root_path}']", text: /print song lyrics/i
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i
+      assert_select "a[href='#{save_songbooks_path}']", text: /save songbooks to reprint/i
       assert_select "a[href='#{print_a_songbook_path}']", count: 0
     end
   end
@@ -137,7 +154,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "[data-search-navigation]", count: 0
   end
 
-  test "sitemap includes the homepage and both printing guides" do
+  test "sitemap includes the four crawlable pages and no account pages" do
     get sitemap_path(format: :xml)
 
     assert_response :success
@@ -146,5 +163,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_includes locations, root_url
     assert_includes locations, print_lyrics_on_one_page_url
     assert_includes locations, print_a_songbook_url
+    assert_includes locations, save_songbooks_url
+    assert_not_includes locations, new_registration_url
   end
 end

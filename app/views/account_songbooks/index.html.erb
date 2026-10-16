@@ -1,0 +1,48 @@
+<% content_for :title, t("accounts.library.title") %>
+<% content_for :description, t("accounts.library.description") %>
+<% content_for :robots, "noindex, nofollow" %>
+
+<div class="guide-shell">
+  <article class="guide">
+    <%= render "shared/flash" %>
+
+    <header>
+      <h1><%= t("accounts.library.heading") %></h1>
+      <p><%= t("accounts.library.intro") %></p>
+      <p><%= account_access_status(current_user) %></p>
+    </header>
+
+    <%# The visitor comes back here from Stripe's checkout page, where the
+        payment may still be confirming: access is granted by Stripe's webhook,
+        not by arriving on this page, and this says so. %>
+    <% if @checkout_returned %>
+      <p role="status"><%= t("accounts.library.checkout_returned") %></p>
+    <% end %>
+
+    <% if @songbooks.any? %>
+      <ol class="guide-steps">
+        <% @songbooks.each do |songbook| %>
+          <li>
+            <h2><%= link_to t("accounts.library.songbook", date: l(songbook.created_at.to_date, format: :long)), songbook_path(songbook) %></h2>
+            <p><%= t("accounts.library.song_count", count: songbook.entries.size) %></p>
+          </li>
+        <% end %>
+      </ol>
+    <% else %>
+      <p><%= t("accounts.library.empty") %></p>
+      <%= link_to t("accounts.library.make_one"), root_path, class: "button button-primary" %>
+    <% end %>
+
+    <% if @billing_portal_available %>
+      <section aria-labelledby="library-billing">
+        <h2 id="library-billing"><%= t("accounts.library.billing.heading") %></h2>
+        <p><%= t("accounts.library.billing.body") %></p>
+        <%= button_to t("accounts.library.billing.manage"),
+              billing_portal_path,
+              class: "button button-secondary" %>
+      </section>
+    <% end %>
+
+    <%= render "shared/resource_navigation", current_section: :account_library %>
+  </article>
+</div>

@@ -1,0 +1,16 @@
+<% content_for :title, t("accounts.password_reset.title") %>
+<% content_for :description, t("accounts.password_reset.description") %>
+<% content_for :robots, "noindex, nofollow" %>
+
+<div class="guide-shell">
+  <article class="guide">
+    <header><h1><%= t("accounts.password_reset.new_heading") %></h1></header>
+    <% if flash[:alert] %><p role="alert"><%= flash[:alert] %></p><% end %>
+    <%= form_with url: passwords_path, class: "account-form" do |form| %>
+      <p><%= form.label :email_address, t("accounts.email") %><br><%= form.email_field :email_address, required: true, autocomplete: "email", value: params[:email_address] %></p>
+      <%= form.submit t("accounts.password_reset.email_submit"), class: "button button-primary" %>
+    <% end %>
+    <p><%= link_to t("accounts.login_link_short"), new_session_path %></p>
+    <%= render "shared/resource_navigation", current_section: :accounts %>
+  </article>
+</div>

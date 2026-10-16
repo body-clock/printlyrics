@@ -173,11 +173,19 @@ The vocabulary, the funnels, and the properties for this deployment live in
 `docs/measurement-contract.md` and `docs/organic-search-operations.md`. The
 load-bearing constraints for the query plan:
 
-- The nine event names are `Print Page Generated`,
-  `Second Print Page Generated`, `Print Dialog Opened`, `Songbook Created`,
-  `Songbook Created From Offer`, `Songbook Printed`, `Song Search Submitted`,
-  `Song Search Missed`, and `Manual Entry Submitted`. There are no others; a
-  tenth name is drift.
+- The twenty-two event names are `Print Page Generated`, `Second Print Page
+  Generated`, `Print Dialog Opened`, `Songbook Created`, `Songbook Created From
+  Offer`, `Songbook Printed`, `Songbook Offer Shown`, `Songbook Offer
+  Dismissed`, `Song Search Submitted`, `Song Search Missed`, `Song Result
+  Selected`, `Manual Entry Submitted`, `Feedback Submitted`, `Feedback Prompt
+  Shown`, `Account Created`, `Account Library Opened`, `Premium Songbook
+  Printed`, `Premium Checkout Started`, `Premium Activated`, `Songbook Share
+  Link Created`, `Songbook Share Link Revoked`, and
+  `Shared Songbook Opened`. There are no others; an undeclared event is drift.
+- `Premium Activated` is sent by the server when a payment is confirmed, so it
+  carries no visitor session: read it as a count beside `Premium Checkout
+  Started` over the same window, never as a funnel step joining one visitor to
+  the next. It also carries no account, email, or payment reference.
 - `Second Print Page Generated` is not a funnel step. It fires before the second
   print dialog, so it is read as a standalone packet-intent signal.
 - The three saved funnels are `Search to sheet`, `Paste to sheet`, and
@@ -185,8 +193,9 @@ load-bearing constraints for the query plan:
 - The properties are `entry_method`, `songbook_size`, `songbook_origin`,
   `campaign_source`, `campaign_name`, `page_count_in_session`, and
   `songbook_offer_surface`, and each rides only on the events that set it.
-- Saved pages report `/lyrics/:token` and `/songbooks/:token`, so document
-  identity is not recoverable from a reported path.
+- Saved pages report `/lyrics/:token`, `/songbooks/:token`, and
+  `/songbook-shares/:token`, so document identity is not recoverable from a
+  reported path.
 
 ## 5. The output contract
 

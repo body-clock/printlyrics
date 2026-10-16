@@ -1,6 +1,14 @@
 class ApplicationController < ActionController::Base
+  include Authentication
+  before_action :resume_session
+  before_action :consume_analytics_page_responses
+  helper_method :current_user
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and :has.
   allow_browser versions: :modern
+
+  def current_user
+    Current.session&.user
+  end
 
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
@@ -16,6 +24,10 @@ class ApplicationController < ActionController::Base
   helper_method :visit
 
   private
+
+  def consume_analytics_page_responses
+    @analytics_page_responses = session.delete(:analytics_page_responses) || {}
+  end
 
   # A sheet this visit just made joins the visit, wherever the generation landed:
   # its own page, or the set it was added to. It is the same event from the

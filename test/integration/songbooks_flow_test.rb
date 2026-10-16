@@ -154,6 +154,52 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
     assert_select "template[data-preview-mark] .sheet-mark-label", "printlyrics.app"
   end
 
+  test "a premium account's set and its read-only link carry no printed mark" do
+    user = User.create!(
+      email_address: "mark-owner@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      premium_until: 24.hours.from_now
+    )
+    songbook = Songbook.start_with(
+      Lyric.create!(lyrics: "First line", title: "First Song"),
+      user: user
+    )
+    songbook.enable_sharing!
+
+    post session_path, params: { email_address: user.email_address, password: "long-password" }
+    get songbook_path(songbook)
+
+    assert_response :success
+    assert_select "template[data-preview-mark]", count: 0
+
+    delete session_path
+    get shared_songbook_path(songbook.share_token)
+
+    # The entitlement that decides is the set owner's, not the visitor's: someone
+    # holding a premium account's link prints the sheets that account paid for.
+    assert_response :success
+    assert_select "template[data-preview-mark]", count: 0
+  end
+
+  test "a free account's set still carries the printed mark" do
+    user = User.create!(
+      email_address: "mark-free@example.test",
+      password: "long-password",
+      password_confirmation: "long-password"
+    )
+    songbook = Songbook.start_with(
+      Lyric.create!(lyrics: "First line", title: "First Song"),
+      user: user
+    )
+
+    post session_path, params: { email_address: user.email_address, password: "long-password" }
+    get songbook_path(songbook)
+
+    assert_response :success
+    assert_select "template[data-preview-mark] svg[aria-hidden='true']", count: 1
+  end
+
   test "a stale songbook token generates an ordinary single page" do
     post lyrics_path, params: {
       songbook: "missing-token",

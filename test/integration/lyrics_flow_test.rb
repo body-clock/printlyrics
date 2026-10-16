@@ -166,6 +166,30 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".songbook-prompt", count: 0
   end
 
+  test "creating a songbook from the offer settles it for the visit" do
+    first = generate_sheet(title: "First Song")
+    second = generate_sheet(title: "Second Song")
+
+    # The offer's own button gathers the sheets the visit already made.
+    post songbooks_path, params: { lyric_tokens: [ first.token, second.token ] }
+
+    # The entry panel the visit comes back to must not ask again: putting its
+    # sheets in a songbook was the offer's answer, and one answer is enough for
+    # the rest of the visit.
+    get root_path
+    assert_select ".songbook-prompt", count: 0
+  end
+
+  test "adding another song to a set settles the offer too" do
+    first = generate_sheet(title: "First Song")
+    generate_sheet(title: "Second Song")
+
+    post songbooks_path, params: { lyric_tokens: [ first.token ], then: "add_song" }
+
+    get root_path
+    assert_select ".songbook-prompt", count: 0
+  end
+
   test "selecting a result fills the editable form without persisting" do
     result = LrcLibResult.new(
       id: 42,
@@ -347,6 +371,25 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "template[data-preview-mark] svg[aria-hidden='true']" \
                   "[viewBox='0 0 #{mark.extent} #{mark.extent}']", count: 1
     assert_select "template[data-preview-mark] .sheet-mark-label", "printlyrics.app"
+  end
+
+  test "a premium account's sheet carries no printed mark" do
+    user = User.create!(
+      email_address: "marked@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      premium_until: 24.hours.from_now
+    )
+    lyric = Lyric.create!(lyrics: "A printable line", title: "Marked Song")
+
+    post session_path, params: { email_address: user.email_address, password: "long-password" }
+    get lyric_path(lyric)
+
+    assert_response :success
+    assert_select "[data-preview-target='page']", count: 1
+    # The code is the paper channel's only return path, so the paid tier is what
+    # removes it; the sheet is otherwise the sheet a free account prints.
+    assert_select "template[data-preview-mark]", count: 0
   end
 
   test "every page exposes the allowlisted campaign values to analytics" do

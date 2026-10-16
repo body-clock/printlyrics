@@ -70,7 +70,7 @@
      data-many-pages-label="<%= t(".page_count.other") %>"
      aria-live="polite"></p>
 
-  <%= render "shared/sheet_mark" %>
+  <%= render "shared/sheet_mark" if shows_sheet_mark?(current_user) %>
 
   <div class="paper-frame" data-preview-target="pageFrame">
     <div class="paper-pages" data-preview-target="pages">

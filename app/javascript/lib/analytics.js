@@ -1,10 +1,9 @@
 import { sessionStore } from "lib/settings_store"
 import { rememberCreatedSongbook, rememberReportedResponse, rememberReportedSheet } from "lib/reported_events"
 
-// The trailing slash is optional because Rails serves `/lyrics/<token>/` as the
-// same page, and a shared link that gained one would otherwise report the real
-// token to every destination.
-const TOKEN_PATHS = /^\/(lyrics|songbooks)\/[^/]+\/?$/
+// The trailing slash is optional because Rails serves saved-page routes with or
+// without it. Guest, account-private, and premium-share links all redact tokens.
+const TOKEN_PATHS = /^\/(lyrics|songbooks|songbook-shares)\/[^/]+\/?$/
 const CAMPAIGN_KEY = "printlyrics:campaign"
 
 // Campaign values are allowlisted by the server (AnalyticsCampaigns) and read
@@ -71,27 +70,26 @@ export function trackSubmittedEvent(form) {
   if (umamiOnly) trackUmamiEvent(umamiOnly)
 }
 
-// An outcome the server rendered into a whole page rather than into a frame: the
-// songbook offer and the sheet's feedback prompt, both of which sit in the
-// markup every tab and every restored page carries. Each is reported on the load
-// that follows its response, and the response names itself so a snapshot the
-// browser replays — the same markup, the same key — cannot report it twice.
-//
-// The offer renders in two places — the sheet that crossed two, and the entry
-// panel the visit comes back to for the next one — and both report the one
-// name, so the reading that separates them travels with it: the marker names
-// its own surface, and the count is the visit's, the same bucket the sheet
-// events carry. Only the offer has that split; the prompt is one placement.
+// An outcome the server rendered into a whole page rather than into a frame.
+// The marker names the event and a response key prevents Turbo snapshot replay
+// from duplicating it. The offer and feedback prompt carry their documented
+// properties; account and sharing outcomes carry none.
 export function trackPageResponses(root) {
   root.querySelectorAll("[data-analytics-page-response]").forEach((marker) => {
     const responseKey = marker.dataset.analyticsResponseKey
     if (responseKey && !rememberReportedResponse(responseKey)) return
 
-    const surface = marker.dataset.analyticsOfferSurface
-    trackUmamiEvent(marker.dataset.analyticsPageResponse, {
-      ...sessionPageCountProperties(),
-      ...(surface && { songbook_offer_surface: surface })
-    })
+    const eventName = marker.dataset.analyticsPageResponse
+    let properties = {}
+    if (eventName === "Songbook Offer Shown") {
+      properties = {
+        ...sessionPageCountProperties(),
+        songbook_offer_surface: marker.dataset.analyticsOfferSurface
+      }
+    } else if (eventName === "Feedback Prompt Shown") {
+      properties = sessionPageCountProperties()
+    }
+    trackUmamiEvent(eventName, properties)
   })
 }
 

@@ -795,6 +795,70 @@ class OrganicConversionTest < ApplicationSystemTestCase
     refute_includes captured_analytics_calls.to_json, lyric.token
   end
 
+  test "umami redacts premium share-page tokens and account details" do
+    user = User.create!(
+      email_address: "share-owner@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      premium_until: 24.hours.from_now
+    )
+    lyric = Lyric.create!(lyrics: "Private shared words", title: "Private Song")
+    songbook = Songbook.start_with(lyric, user: user)
+    songbook.enable_sharing!
+
+    visit root_path
+    install_persistent_analytics_capture
+    visit shared_songbook_path(songbook.share_token)
+
+    pageview = captured_umami_payloads.find { |payload| !payload["name"] }
+    opened = captured_umami_events.find { |name, _| name == "Shared Songbook Opened" }
+    assert pageview
+    assert opened
+    assert_equal "/songbook-shares/:token", URI(pageview.fetch("url")).path
+    assert_equal "/songbook-shares/:token", pageview.fetch("title")
+    assert_equal "/songbook-shares/:token", URI(opened.last.fetch("url")).path
+    assert_empty opened.last.fetch("data")
+    refute_includes captured_umami_payloads.to_json, songbook.share_token
+    refute_includes captured_umami_payloads.to_json, user.email_address
+    refute_includes captured_umami_payloads.to_json, lyric.title
+  end
+
+  test "premium account songbook prints have a distinct Umami event" do
+    user = User.create!(
+      email_address: "premium-owner@example.test",
+      password: "long-password",
+      password_confirmation: "long-password",
+      premium_until: 24.hours.from_now
+    )
+    songbook = Songbook.start_with(
+      Lyric.create!(lyrics: "First premium line"),
+      Lyric.create!(lyrics: "Second premium line"),
+      user: user
+    )
+
+    visit root_path
+    install_persistent_analytics_capture
+    visit new_session_path
+    fill_in "Email", with: user.email_address
+    fill_in "Password", with: "long-password"
+    click_button "Sign in"
+    assert_current_path root_path
+    assert_link "Your songbooks"
+    visit songbook_path(songbook)
+    assert_current_path songbook_path(songbook)
+    assert_selector ".preview-shell[data-premium-songbook='true']"
+
+    page.execute_script("window.print = () => {}")
+    click_button "Print"
+
+    premium_print = wait_for_umami_events("Premium Songbook Printed").first.last
+    assert_empty premium_print.fetch("data")
+    refute_includes captured_umami_payloads.to_json, user.email_address
+    refute_includes captured_umami_payloads.to_json, songbook.token
+    assert_equal 1, analytics_calls_named("Songbook Printed").length
+    assert_empty analytics_calls_named("Premium Songbook Printed")
+  end
+
   test "a search that finds nothing reports its attempt and its miss once" do
     client = Object.new
     client.define_singleton_method(:search) { |_| [] }
