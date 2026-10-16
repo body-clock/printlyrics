@@ -41,11 +41,16 @@ other three cannot: `Search to printer` reads the same attempt through
 the search's loss is read as two — a search that found nothing to pick, and a
 result that was picked and never made.
 
-The fourteen names in use, grouped by the flow that fires them:
+The twenty-two names in use, grouped by the flow that fires them:
 
 - Print flow: `Print Page Generated`, `Second Print Page Generated`, `Print
   Dialog Opened`, `Songbook Created`, `Songbook Created From Offer`, `Songbook
   Printed`, `Songbook Offer Shown`, `Songbook Offer Dismissed`.
+- Account flow: `Account Created`, `Account Library Opened`,
+  `Premium Songbook Printed`.
+- Paid access flow: `Premium Checkout Started`, `Premium Activated`.
+- Sharing flow: `Songbook Share Link Created`, `Songbook Share Link Revoked`,
+  `Shared Songbook Opened`.
 - Entry flow: `Song Search Submitted`, `Song Search Missed`, `Song Result
   Selected`, `Manual Entry Submitted`, `Feedback Submitted`, `Feedback Prompt
   Shown`.
@@ -87,6 +92,10 @@ A form that reports its own submit carries `data-analytics-submit` with the
 event name as its value. In `app/views/lyrics/new.html.erb` the search form, the
 manual pasted-lyrics form, and each result's select form report
 `Song Search Submitted`, `Manual Entry Submitted`, and `Song Result Selected`.
+The three plan CTAs on `/save-songbooks` report `Premium Checkout Started` the same
+way, each form carrying the plan it posts; those controls render only on a host
+that can sell, so no attempt is ever reported for a plan nobody can buy.
+
 A form whose event only this site's own service is to receive carries
 `data-analytics-umami-submit` instead, which the same listener reads: the
 offer's **Not now** reports `Songbook Offer Dismissed` that way and reaches no
@@ -114,19 +123,43 @@ place, under the sheet the visit just generated, and its key is that sheet. The
 entry panel's offer arrives with a frame render as well as with a page, so both
 ends of a response are read.
 
+The same page-response marker carries account and share outcomes:
+`Account Created`, `Account Library Opened`, `Songbook Share Link Created`,
+`Songbook Share Link Revoked`, and `Shared Songbook Opened`. These events go to
+Umami alone, with no custom properties; their random response keys only prevent
+replayed markup from duplicating an event. They carry no account identifier,
+email, songbook token, or share token.
+
+`Premium Songbook Printed` is an Umami-only event sent by
+`preview_controller#print` alongside the existing `Songbook Printed` event,
+only when the current account owns the book and its premium entitlement is
+active. It has no properties; the distinction measures premium-tier printing
+without an account identifier, book token, or share token.
+
 Page-level markers ride `<body>` data attributes and are reported on
 `turbo:load`: `trackPageview`, `trackGeneratedPage`, and `trackCreatedSongbook`,
 all in `app/javascript/application.js`. `data-visit-sheet-count`, which
 `sessionPageCountProperties` reads, is the visit's own total rather than a report
 of its own.
 
-The fifth reports from the server, to Umami alone: a feedback submission that
-passed the challenge and was saved is sent by `UmamiClient`
-(`app/services/umami_client.rb`) after the row is written, as
-`Feedback Submitted`. Nothing refused, unjudged, or unsaved is reported, and no
-browser is involved, so this is the one name with no marker in a view. It is
-also the one payload carrying a visitor's own words — see "What must never
-travel".
+The fifth shape reports from the server, to Umami alone, through `UmamiClient`
+(`app/services/umami_client.rb`): two names arrive that way, and neither has a
+marker in a view.
+
+A feedback submission that passed the challenge and was saved is sent after the
+row is written, as `Feedback Submitted`. Nothing refused, unjudged, or unsaved is
+reported, and it is the one payload carrying a visitor's own words — see "What
+must never travel".
+
+`Premium Activated` is sent when a verified webhook has written the ledger row
+that grants premium access, once per grant: a delivery Stripe retries finds the
+row instead and reports nothing, so a retry is never a second activation. It
+carries no properties and names no account, email, plan, price, customer, or
+payment. A webhook has no visitor's address or agent to send, so unlike every
+other event here it is not filed under the browser session that reported
+`Premium Checkout Started`: the attempt and the activation are read as two counts
+over the same window rather than as a funnel step joining one visitor to the
+next.
 
 A submission reports the surface it was written on, and one written on a sheet
 reports that sheet in the synthetic `:token` form rather than the page it was
@@ -150,6 +183,15 @@ the allowlisted `campaign_source` property on those events rather than as an
 event of its own: there is no name for a scan, and a scan that fires no event is
 not visible.
 
+The mark is also what the paid tier removes, so this channel reads the sheets a
+free or guest page printed and no others: `shows_sheet_mark?` decides by the
+entitlement of the account the sheet belongs to (`app/helpers/application_helper.rb`),
+and a read-only link to a premium account's set prints without a code however the
+visitor holding it is signed in. Premium printing is not lost to the reading — it
+is counted on its own terms by `Premium Songbook Printed`, from the browser that
+opened the dialog — but a premium sheet carries nothing that a scan could bring
+back.
+
 ## What must never travel
 
 No tracker payload carries lyrics, song titles, artists, albums, source IDs,
@@ -159,15 +201,22 @@ and referrers pass through `analyticsUrl`, `analyticsTitle`, and
 page's path and title with their synthetic forms and leave external referrers
 alone.
 
-One payload is the deliberate exception, and it is the only one sent from the
-server: a stored feedback submission. `Feedback Submitted` carries the song the
-visitor wanted, the note they wrote, the surface they wrote it on, and the answer
-they chose — which is the demand list the runbook's reviews are chosen from — and
-it travels to **Umami only**. Umami is this site's own service; Plausible is a third party
+One payload is the deliberate exception, and it is the only one carrying a
+visitor's own words: a stored feedback submission. `Feedback Submitted` carries
+the song the visitor wanted, the note they wrote, the surface they wrote it on,
+and the answer they chose — which is the demand list the runbook's reviews are
+chosen from — and it travels to **Umami only**. Umami is this site's own service;
+Plausible is a third party
 that receives every event the browser dispatcher sends, so this payload is never
 routed through `dispatch` in `lib/analytics.js` and has no Plausible goal. The
 reply address a visitor opts into is not part of it: it stays in the table for
 the operator's replies.
+
+`Premium Activated` is the other payload sent from the server, and it travels to
+Umami for the same reason `Feedback Submitted` does — Plausible is reached
+through the browser dispatcher, and no browser is involved in a webhook. It
+carries nothing: no account identifier, email, songbook or share token, price,
+customer, session, subscription, or payment reference.
 
 Counts and sizes travel as buckets, not raw values: `page_count_in_session` and
 `songbook_size` through `songbookSizeProperties` and

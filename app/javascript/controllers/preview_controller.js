@@ -1,5 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
-import { sessionPageCountProperties, songbookSizeProperties, trackEvent } from "lib/analytics"
+import {
+  sessionPageCountProperties,
+  songbookSizeProperties,
+  trackEvent,
+  trackUmamiEvent
+} from "lib/analytics"
 import { SettingsStore } from "lib/settings_store"
 
 const SIZE_KEY = "printlyrics-size"
@@ -60,6 +65,10 @@ export default class extends Controller {
     // plan has no custom properties, so `entry_method` alone would leave them
     // invisible there; Umami reports the parameter.
     if (isSet) trackEvent("Songbook Printed", songbookSizeProperties(songbookSize))
+
+    if (isSet && this.element.dataset.premiumSongbook === "true") {
+      trackUmamiEvent("Premium Songbook Printed")
+    }
 
     window.print()
   }

@@ -8,6 +8,122 @@ en:
       default_description: "Find lyrics by song or artist, edit every line, fit them into one or two columns, then print or save as PDF. Free with no account required."
       image_alt: "PrintLyrics - print lyrics for any song"
 
+  accounts:
+    created: "Account created."
+    email: "Email"
+    password: "Password"
+    password_hint: "At least %{count} characters"
+    password_confirmation: "Confirm password"
+    login_link: "Already have an account? Sign in."
+    register_link: "Create an account"
+    # The one Google control, on both pages an account is signed in or created on,
+    # and the two refusals: one this application decided, one OmniAuth could not
+    # complete. Both end on the sign-in page, and neither repeats what arrived.
+    google:
+      continue: "Continue with Google"
+      refused: "That Google sign-in could not be completed. Try again, or sign in with your email and password."
+      failed: "The Google sign-in did not finish. Try again, or sign in with your email and password."
+    login:
+      title: "Sign in | PrintLyrics"
+      description: "Sign in to manage your saved songbooks."
+      heading: "Sign in"
+      submit: "Sign in"
+      failure: "Those sign-in details did not match."
+      rate_limited: "Too many attempts. Please wait a few minutes and try again."
+    register:
+      title: "Create an account | PrintLyrics"
+      description: "Create a free PrintLyrics account to manage songbooks and explore saved reprinting."
+      heading: "Create an account"
+      intro: "Core lyric printing remains free. A free account stores up to five songbooks of ten songs each, and finds them from another device."
+      submit: "Create account"
+      rate_limited: "Too many account attempts. Please wait a few minutes and try again."
+    forgot_password: "Forgot your password?"
+    password_reset:
+      title: "Reset your password | PrintLyrics"
+      description: "Reset the password for your PrintLyrics account."
+      new_heading: "Reset your password"
+      edit_heading: "Choose a new password"
+      email_submit: "Send reset instructions"
+      save_submit: "Save password"
+      rate_limited: "Too many attempts. Please wait a few minutes and try again."
+      sent: "If an account uses that email, reset instructions were sent."
+      updated: "Password updated. Sign in with your new password."
+      mismatch: "The passwords did not match."
+      invalid: "That password reset link is invalid or has expired."
+    login_link_short: "Sign in"
+    logout: "Sign out"
+    library:
+      title: "Your songbooks | PrintLyrics"
+      description: "Open saved songbooks to reprint them."
+      heading: "Your songbooks"
+      intro: "Songbooks attached to your account appear here for reprinting."
+      # The account's access, stated: an expiry the visitor paid for is not
+      # something to leave to be inferred from which controls happen to appear.
+      access:
+        free: "Free access: %{count} of %{limit} songbooks stored, ten songs each."
+        premium: "Premium access is active until %{date}."
+      empty: "You have no active songbooks saved to this account."
+      make_one: "Make a songbook"
+      songbook: "Songbook from %{date}"
+      song_count:
+        one: "%{count} song"
+        other: "%{count} songs"
+      # The return state after Stripe's checkout page. Access is granted by the
+      # webhook that follows the payment, so the page can only promise what it
+      # knows: the payment is being confirmed.
+      checkout_returned: "Thanks — your payment is being confirmed by Stripe. Premium access activates as soon as that confirmation arrives, and this library shows it."
+      billing:
+        heading: "Paid access"
+        body: "Stripe bills your plan. Change or cancel it there, and the access you have already paid for runs to the end of its period."
+        manage: "Manage or cancel paid access"
+
+  premium:
+    checkout:
+      # Shown when the checkout action refuses, which it does for a plan this
+      # application does not sell and for a host that cannot sell at all.
+      unknown_plan: "Choose one of the plans."
+      unavailable: "Paid access is not available right now."
+      failed: "Stripe could not start that checkout, so nothing was charged. Please try again."
+    billing_portal:
+      unavailable: "There is no paid subscription on this account to manage."
+      failed: "Stripe could not open the billing page. Please try again."
+
+  songbook_saving:
+    seo:
+      title: "Save Songbooks to Reprint Later | PrintLyrics"
+      description: "Keep songbooks with an account and return to reprint them later. Compare the free allowance of five stored songbooks with proposed monthly and 24-hour plans."
+      description_available: "Keep songbooks with an account and return to reprint them later. Compare the free allowance of five stored songbooks with the monthly and 24-hour plans."
+    eyebrow: "Songbook access"
+    heading: "Save songbooks to reprint later"
+    intro: "PrintLyrics keeps lyric printing free. A free account adds a cross-device songbook library that holds up to five songbooks of ten songs each."
+    answer:
+      heading: "What changes with an account?"
+      body: "A free account keeps up to five songbooks of ten songs each, and finds them from another device. Free songbooks follow the existing 180-day retention window. The proposed paid access removes both limits, keeps account-owned songbooks for reprinting, and lets you create revocable, read-only share links while premium access is active. Songbooks are unlisted, not published or indexed."
+    options:
+      heading: "Proposed plans"
+      # The same plans as facts rather than proposals, for a host that can
+      # actually sell them. The proposal wording above is what an unconfigured
+      # host renders, unchanged.
+      heading_available: "Plans"
+      free: "Free: core lyric search, editing, and printing remain free; five stored songbooks of up to ten songs each, with a cross-device library."
+      monthly: "$3 per month: proposed premium access for unlimited songbooks and songs, saved reprints, and read-only share links."
+      monthly_available: "$3 per month: unlimited songbooks and songs, saved reprints, and read-only share links while your access is active."
+      annual: "$25 per year: the same proposed premium access, billed once for a year."
+      annual_available: "$25 per year: the same access as the monthly plan, billed once for a year."
+      day_pass: "$1 for 24 hours: proposed one-time premium access when you only need it once."
+      day_pass_available: "$1 for 24 hours: one-time premium access when you only need it once."
+    payment_status: "These prices are an experiment proposal, not an active checkout. No payment is taken and no paid access can currently be purchased."
+    checkout:
+      intro: "Stripe takes the payment on its own page, and your access starts when Stripe confirms it. You can cancel from your songbook library."
+      monthly: "Subscribe for $3 per month"
+      annual: "Subscribe for $25 per year"
+      day_pass: "Buy 24 hours for $1"
+    callout:
+      heading: "Try a free account"
+      body: "Create a free account to find your active songbooks across devices. Paid options are not available yet."
+      body_available: "Create a free account to find your active songbooks across devices, and your paid access appears there once Stripe confirms the payment."
+
+
   feedbacks:
     created: "Thanks — your note is saved, and I read every one."
     errors:
@@ -256,7 +372,7 @@ en:
         questions:
           count:
             heading: "How many songs can one songbook hold?"
-            body: "Up to 25 songs. A songbook becomes a set at its second song, so a songbook holding one song is still a draft sheet rather than a set."
+            body: "Up to ten songs on a free account, and as many as you like with premium access. A songbook becomes a set at its second song, so a songbook holding one song is still a draft sheet rather than a set."
           own_sheet:
             heading: "Does each song print on its own page?"
             body: "Yes. Every song opens a sheet of its own, so two titles never share a page, and a song that runs past one sheet continues onto a plain page."
@@ -277,6 +393,18 @@ en:
   songbooks:
     errors:
       expired: "That songbook expired or wasn't found"
+      # Two different promises, so two different sentences: a guest's allowance is
+      # per day and per browser, an account's is what it can keep.
+      guest_limit: "You can make one songbook per day without an account. A free account keeps five, and premium access removes the limit."
+      storage_limit: "A free account keeps up to %{limit} songbooks, and all of them are in use. The paid options are not available yet."
+      storage_limit_available: "A free account keeps up to %{limit} songbooks, and all of them are in use. Unlimited songbooks come with premium access."
+      song_limit: "A free songbook holds up to %{limit} songs. The paid options are not available yet."
+      song_limit_available: "A free songbook holds up to %{limit} songs. Unlimited songs come with premium access."
+      premium_sharing: "Premium access is required to create a songbook share link."
+    # Said once, on the page a set lands on, when the visitor picked more songs than
+    # a free book holds and got the first ones they picked.
+    notices:
+      song_limit: "A free songbook holds up to %{limit} songs, so this one holds the first %{limit}."
     show:
       seo:
         title: "Songbook | PrintLyrics"
@@ -292,6 +420,14 @@ en:
       page_count:
         one: "Letter · 0.75 in margins · 1 page"
         other: "Letter · 0.75 in margins · %{count} pages"
+      sharing:
+        heading: "Share this songbook"
+        intro: "Anyone with this link can view and print the songbook, but cannot change it. The link works while premium access is active and can be revoked here."
+        create: "Create read-only share link"
+        revoke: "Revoke share link"
+        inactive: "This link is inactive because premium access is not active."
+        premium_required: "Read-only share links are a premium feature."
+        plans: "See songbook options"
 
   songs:
     errors:
@@ -323,6 +459,7 @@ en:
       tool: "Print song lyrics"
       guide: "One-page printing guide"
       songbook_guide: "Songbook printing guide"
+      songbook_saving: "Save songbooks to reprint"
       feedback: "Send feedback"
 
   pwa:

@@ -20,6 +20,8 @@ registry:
 env:
   secret:
     - RAILS_MASTER_KEY
+    - STRIPE_SECRET_KEY
+    - STRIPE_WEBHOOK_SECRET
   clear:
     RAILS_SERVE_STATIC_FILES: true
     # Public by design — it is in the page source. Umami generates it when the
@@ -34,6 +36,15 @@ env:
     # frontend hosts the form accepts tokens for; never localhost or 127.0.0.1.
     TURNSTILE_SITE_KEY: "0x4AAAAAAFDv6dP-s2owpzIe"
     TURNSTILE_HOSTNAMES: "printlyrics.app"
+    # Public by design — a Stripe price ID is an identifier, not a credential,
+    # and all three are filled in once the prices exist in the Stripe account
+    # ($3/month, $25/year, $1/24 hours). The secret key and the webhook signing
+    # secret beside them are credentials. Stripe Checkout is off until all five
+    # are set, so a blank value here sells nothing rather than selling wrongly;
+    # see README.md, "Selling plans".
+    STRIPE_PRICE_MONTHLY: ""
+    STRIPE_PRICE_ANNUAL: ""
+    STRIPE_PRICE_DAY_PASS: ""
 
 volumes:
   - "printlyrics_storage:/rails/storage"

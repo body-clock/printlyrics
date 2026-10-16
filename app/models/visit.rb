@@ -25,6 +25,12 @@ class Visit
   WINDOW_SECONDS = 30 * 60
   SHEETS_BEFORE_OFFER = 2
 
+  # How many sheets one visit remembers. The list travels in the session cookie,
+  # so it is bounded by what a cookie holds rather than by what a songbook may: a
+  # set gathered out of a visit is at most this long, and it grows past it one song
+  # at a time.
+  SHEET_LIMIT = 25
+
   # A lambda so tests can move the clock instead of waiting.
   def initialize(session, clock: -> { Time.current })
     @session = session
@@ -84,7 +90,7 @@ class Visit
 
   def write(sheets, answered:)
     @session[SESSION_KEY] = {
-      "sheets" => sheets.last(Songbook::MAX_SONGS),
+      "sheets" => sheets.last(SHEET_LIMIT),
       "at" => @clock.call.to_i,
       "offer_answered" => answered
     }

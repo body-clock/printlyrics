@@ -53,21 +53,42 @@
   lyric and promoting its song must succeed together. Preserve the transaction,
   uniqueness handling, and concurrency protection in `LyricPageCreation` when
   changing this workflow.
-- Saved pages use opaque tokens, remain `noindex, nofollow`, and never appear
-  in the sitemap. Tokens are shareable URLs, not an authentication system.
-- Active page visits renew the 180-day retention window. Expired or unknown
-  tokens return to the form. Keep cleanup in the explicit purge operation/task;
-  do not revive expired pages during lookup.
+- Saved lyric pages and guest songbooks use opaque tokens and remain
+  `noindex, nofollow`; neither appears in the sitemap. A guest token is a
+  shareable URL, not an authentication system. Account-owned songbooks require
+  the owning account even when their URL is known; premium share links are a
+  separate read-only view, active only while premium access is active, and can be
+  revoked by the owner.
+- Active temporary pages renew the 180-day retention window. Premium songbooks
+  and their member lyrics have no expiry. Expired or unknown temporary tokens
+  return to the form; cleanup stays in the explicit purge operation/task.
 - Public pages, structured data, and seeds contain metadata rather than lyric
-  text. The homepage and the printing guides are the only crawlable surfaces; the
-  public song catalog was removed, so do not reintroduce song URLs, browse
-  pagination, or `Song` publication state without a new decision.
+  text. The homepage, two printing guides, and the songbook-saving page are the
+  crawlable surfaces; login, registration, account libraries, lyrics, and saved
+  songbooks are not.
 - A new crawlable surface needs a materially distinct printing intent, original
   practical value, and a direct path into the tool; keyword-variant and doorway
   pages are prohibited. Give it a title, description, canonical URL, and crawl
-  directive, and link it from the shared resource navigation.
+  directive, link it from resource navigation, and include it in the sitemap.
 - Songs record sourced demand only. Keep `Song` free of publication state and
-  keep the sitemap limited to the homepage and guides.
+  keep the sitemap limited to the homepage, guides, and approved practical pages.
+- Keep password authentication on the generated Rails session foundation, and
+  keep a floor on password length: the account guards a saved library and a paid
+  entitlement. A third-party sign-in adds one `identities` row per provider
+  rather than columns on `users`, links only on an address the provider verified,
+  and finds a returning visitor by the provider's own subject rather than by an
+  address either side could have changed. Public lyric flows remain
+  optional-account; authorize
+  account-owned resources against the current user. A book no premium account owns
+  holds ten songs and a free account keeps five of them, both read from one
+  predicate and two constants rather than a flag; premium access lifts both
+  ceilings. Premium access uses an explicit expiry, and no payment is implied
+  without a configured checkout provider. Where one is configured, `StripeGateway`
+  is the only thing that talks to Stripe and the webhook is the only thing that
+  grants access: a redirect back from the payment page proves nothing, the ledger's
+  provider reference is the idempotency key, and the entitlement only ever moves
+  forward. A printed sheet carries the `SheetMark` code unless the account it
+  belongs to has active premium access.
 
 ## External input and integrations
 

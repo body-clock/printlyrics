@@ -15,8 +15,8 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All ten exact event names exist, automatic goals off in settings and disabled in the snippet | |
-| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the ten shared events plus every property arrive beside Plausible's, and the four names that are Umami's alone (`Feedback Submitted`, `Feedback Prompt Shown`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
+| Plausible goals | Site owner | All eleven exact event names exist, automatic goals off in settings and disabled in the snippet. The eleventh, `Premium Checkout Started`, is created with the paid-access work and before the release that emits it; `Premium Activated` completes that flow in Umami alone and needs no goal here | |
+| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, eleven shared events arrive beside Plausible's, and eleven Umami-only events arrive: `Feedback Submitted`, `Feedback Prompt Shown`, `Songbook Offer Shown`, `Songbook Offer Dismissed`, `Account Created`, `Account Library Opened`, `Premium Songbook Printed`, `Premium Activated`, `Songbook Share Link Created`, `Songbook Share Link Revoked`, and `Shared Songbook Opened` | |
 | Organic Search segment | Site owner | Plausible's saved site segment can be reopened, and the same split is saved in Umami as one referrer segment per search engine — the channels Umami reports are not filterable, so there is no single organic segment to save | |
 | Umami readings saved | Site owner | The four funnels and the saved segments named in "Read the events in Umami" exist and reopen, and the five goals the Events row names are saved | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
@@ -40,8 +40,9 @@ require DNS verification and cover protocols and subdomains.
    submits a URL; it does not receive an uploaded file. Record the submission
    time and wait for status `Success`.
 7. In **Page indexing**, filter by the submitted sitemap. Record indexed and
-   non-indexed counts. Inspect the homepage and both printing guides with URL
-   Inspection.
+   non-indexed counts. Inspect the homepage, both printing guides, and the
+   songbook-saving page with URL Inspection. Treat the new page as a hypothesis
+   about "save songbooks to reprint later", not proof of query demand.
 
 Recovery:
 
@@ -77,6 +78,15 @@ custom-event goal for each exact, case-sensitive name:
 8. `Songbook Created`
 9. `Songbook Created From Offer`
 10. `Songbook Printed`
+11. `Premium Checkout Started`
+
+The eleventh goal is the paid-access attempt, which the browser sends to both
+destinations like the ten above it. Its completion, `Premium Activated`, is the
+one event of the pair that Plausible never receives: it is sent by the server
+when the webhook grants access, so it is Umami's alone and gets no goal here.
+Creating the eleventh goal is a site owner's step in the dashboard, exactly as
+the other ten are — nothing in this repository configures a destination, and this
+document does not claim the goal exists until the checklist above records it.
 
 A goal has to exist before the release that emits its event, because Plausible
 does not backfill what arrived earlier: its counter starts at the first event
@@ -97,6 +107,7 @@ addition costs dashboard legibility and has to earn its place:
 | `Songbook Created` | Did a set of sheets come into being? |
 | `Songbook Created From Offer` | Did the suggestion produce that set? |
 | `Songbook Printed` | Did a set reach the printer as one job? |
+| `Premium Checkout Started` | Did a visit try to buy paid access? |
 
 [The measurement contract](measurement-contract.md) holds the rule behind this
 list: the naming, the slots every tool fills, and what must never travel.
@@ -197,7 +208,9 @@ page, so the value survives in the reported location and the native attribution
 above reads this channel the way it reads any other campaign. The events the
 visit fires also carry the allowlisted `campaign_source` property, which is how
 the same arrivals are read in Umami. A scan that fires no event is still
-invisible, so none of these counts is a count of scans.
+invisible, so none of these counts is a count of scans — and the code is what
+paid access removes, so a sheet printed from an account with premium access
+carries no mark and this channel reads the free and guest sheets only.
 
 The application additionally keeps an allowlisted copy of those values in
 session storage and sends them as `campaign_source` and `campaign_name`
@@ -533,10 +546,10 @@ it, and it never reads the database.
   the closing record in section 4 is its summary.
 - **No single goals grid.** The Events report gives both counts per event, so
   every goal on the Plausible side is a row here, or one of the saved goals, and
-  never one table. `Feedback Submitted`, `Feedback Prompt Shown`, and the offer's
-  two events are the exceptions on both sides: they are Umami's alone, and the
-  submission that carries a visitor's own words is read from **Event data**
-  rather than from a goal.
+  never one table. `Feedback Submitted`, `Feedback Prompt Shown`, both offer
+  events, and the six account and sharing events are Umami-only. The submission
+  that carries a visitor's own words is read from **Event data** rather than
+  from a goal.
 - **No automatic events to filter out.** That is the point, and it is also what
   has to be rechecked after an upgrade: the tag's `data-auto-track="false"` and a
   `/api/send` that stores only what it was sent are the two claims the production
@@ -635,36 +648,48 @@ the log across navigation.
    `Print Dialog Opened` and one `Songbook Printed`, and that the print preview
    shows one sheet per song. Adding a third song must not report the creation
    again.
+
+Before certifying the account events, use a controlled staging account: register
+for free, open its library, grant the test account premium access through the
+README's console method, create and print an account-owned set, then create a
+read-only link, open it while signed out, revoke it, and confirm the old URL no
+longer resolves. Confirm all six account and sharing events arrive in Umami,
+with no account identifier or token in any payload.
 8. Confirm no other event arrives, custom or automatic. The application emits
-   exactly thirteen names — ten the browser sends to both destinations, two the
-   browser sends to Umami alone (`Songbook Offer Shown`, `Songbook Offer
-   Dismissed`), and one the server sends (`Feedback Submitted`) — so an
-   unexpected custom event means stale instrumentation; an automatic
+   exactly twenty-two names — eleven the browser sends to both destinations, nine
+   the browser sends to Umami alone (`Songbook Offer Shown`, `Songbook Offer
+   Dismissed`, `Feedback Prompt Shown`, `Account Created`, `Account Library
+   Opened`, `Premium Songbook Printed`, `Songbook Share Link Created`,
+   `Songbook Share Link Revoked`, and `Shared Songbook Opened`), and two the
+   server sends (`Feedback Submitted` and `Premium Activated`) — so an unexpected
+   custom event means
+   stale instrumentation; an automatic
    `Form: Submission`, `File Download`, or
    `Outbound Link: Click` means the `plausible.init` flags did not take
    effect, and on a saved page it reports the real token. Submit a `button_to`
    form on a saved page — **Make a songbook**, **Add another song**, or a
    set's **Remove** — and confirm the only request to `plausible.io` is the
-   pageview, whose `u` reads `/lyrics/:token` or `/songbooks/:token`.
-9. Inspect every event payload. A saved page must report the synthetic location
-   `/lyrics/:token`, never the real token, and a songbook must report
-   `/songbooks/:token`; that holds for the trailing-slash form Rails serves as
-   the same page, `/lyrics/<token>/`. The entry form in songbook context reports its
-   `songbook` parameter as `:token`, never the real value. No tracker payload may
-   contain lyrics, song title, artist, album, or source ID. The one payload that
-   carries a visitor's own words is the server-sent `Feedback Submitted` event,
-   which exists to carry the song they typed and the note they wrote: it must
-   reach `analytics.printlyrics.app` and must never reach `plausible.io`, and it
-   must never carry the reply address from the same form.
+   pageview, whose `u` is a synthetic token path.
+9. Inspect every event payload. Saved-page locations must use only
+   `/lyrics/:token`, `/songbooks/:token`, or `/songbook-shares/:token`; trailing
+   slashes must also redact, and entry-form songbook context reports its
+   `songbook` parameter as `:token`. No payload may contain lyrics, artists,
+   albums, source IDs, account identifiers, email addresses, or real tokens.
+   `Feedback Submitted` is the documented exception for the visitor's query
+   and note: it must reach `analytics.printlyrics.app`, never `plausible.io`,
+   and must not carry the reply address. `Premium Activated` carries no
+   properties at all, and neither paid-access event may carry a price, customer,
+   session, subscription, or payment reference.
 10. In Plausible's realtime view, confirm the events appear. Reopen the **Organic
     Search** segment after a genuine organic visit and confirm its attribution.
 11. Confirm the same flow reaches Umami. The tracker loads from
     `analytics.printlyrics.app/script.js` and posts every payload to `/api/send`
     on that same host, so filter the Network tab for the host and check that
     every step above arrived under the same name, with `url` and `title` reading
-    `/lyrics/:token` or `/songbooks/:token` on saved surfaces. Read them back in
-    the dashboard's **Events** report and their properties under **Event data**;
-    the realtime view confirms delivery within seconds. A song title, an artist,
+    `/lyrics/:token`, `/songbooks/:token`, or `/songbook-shares/:token` on saved
+    surfaces. Read them back in the dashboard's **Events** report and their
+    properties under **Event data**; the realtime view confirms delivery within
+    seconds. A song title, an artist,
     or a real token in any browser-sent payload is the privacy incident below;
     the server-sent `Feedback Submitted` event carries the song the visitor
     typed by design, and reaching Plausible with it is the incident there.
@@ -761,20 +786,21 @@ the snippet disables it at initialization rather than relying on site settings.
 
 Run Umami and Plausible together for two weeks, then compare
 `Print Page Generated` and `Print Dialog Opened` over the same window in each
-dashboard, beside the four properties only Umami can read. What matters is that
-every one of the ten events Plausible receives is present in both and that the
-two series move together — the three names that are Umami's alone
-(`Feedback Submitted`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) are
-absent from Plausible by design rather than a gap. The counts
-will not match exactly, because the two products define a
-visit and a visitor differently and because Plausible filters non-human traffic
-in layers Umami does not have, so a lower Umami figure is not by itself a
-failure — but an event missing from either is an instrumentation problem, and
-the instrumentation is fixed before any number is compared. Compare the events,
-their counts, and their properties, and read both the same way for the
-population that generated a print page; the raw visitor and pageview totals are
-the one figure that is not comparable, and Plausible's export is their record
-for the days before the cutover.
+dashboard. What matters is that every one of the eleven events Plausible receives
+is present in both and that their counts and shared properties move together.
+All eleven Umami-only names (`Feedback Submitted`, `Feedback Prompt Shown`,
+`Songbook Offer Shown`, `Songbook Offer Dismissed`, `Account Created`,
+`Account Library Opened`, `Premium Songbook Printed`, `Premium Activated`,
+`Songbook Share Link Created`, `Songbook Share Link Revoked`, and
+`Shared Songbook Opened`) are absent from Plausible by design rather than a gap.
+
+Counts will not match exactly, because the two products define a visit and a
+visitor differently and because Plausible filters non-human traffic in layers
+Umami does not have. A lower Umami figure is not by itself a failure, but an
+event missing from either is an instrumentation problem; fix instrumentation
+before comparing. Read both destinations for the same population that generated
+a print page. Raw visitor and pageview totals are not comparable; Plausible's
+export is the record for the days before the cutover.
 
 To finish the cutover:
 
@@ -917,6 +943,10 @@ Google Search Console, whole period: 1,347 impressions, 64 clicks, 4.4% CTR.
 `/print-a-songbook` was added after this export and has no baseline row: its first
 30 days are its baseline. Record it the same way as the other two.
 
+`/save-songbooks` was added after that export. Record its first 30 days as a
+separate baseline; its "save for later reprinting" intent is still a hypothesis
+until Search Console reports its query mix.
+
 Head queries, and the positions to beat:
 
 | Query | Impressions | Clicks | CTR | Average position |
@@ -1028,10 +1058,13 @@ not publish lyric text in public HTML, structured data, or analytics.
 
 ## 6. Roll back public discovery safely
 
-Three pages are offered to crawlers: the homepage and the two printing guides,
-`/print-lyrics-on-one-page` and `/print-a-songbook`. Each guide answers one
-printing intent and links into the tool; neither is a keyword variant of the
-other.
+Four pages are offered to crawlers: the homepage, the printing guides
+`/print-lyrics-on-one-page` and `/print-a-songbook`, and `/save-songbooks`.
+The new songbook-saving page targets the practical intent of retaining a set
+for later reprinting. That intent is a product hypothesis until Search Console
+queries establish demand; the page does not imply that paid checkout is live.
+Login, registration, account libraries, and saved token-addressed content are
+not crawlable and never enter the sitemap.
 
 If a guide must be withdrawn:
 

@@ -9,8 +9,18 @@
     <% unless current_section == :songbook_guide %>
       <%= link_to t(".songbook_guide"), print_a_songbook_path %>
     <% end %>
+    <% unless current_section == :songbook_saving %>
+      <%= link_to t(".songbook_saving"), save_songbooks_path %>
+    <% end %>
     <% unless current_section == :feedback %>
       <%= link_to t(".feedback"), feedback_path %>
+    <% if current_user %>
+      <%= link_to t("accounts.library.heading"), account_songbooks_path unless current_section == :account_library %>
+      <%= button_to t("accounts.logout"), session_path, method: :delete, class: "resource-link" %>
+    <% else %>
+      <%= link_to t("accounts.login_link_short"), new_session_path %>
+      <%= link_to t("accounts.register_link"), new_registration_path %>
+    <% end %>
     <% end %>
   </nav>
 </footer>

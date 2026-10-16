@@ -19,12 +19,18 @@
 <div class="preview-shell"
      data-controller="preview"
      data-songbook-size="<%= @songbook.entries.size %>"
+     data-premium-songbook="<%= @premium_songbook ? "true" : "false" %>"
      data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
+  <%# A set page is where a gathered book lands, so the one notice a limited book
+      produces is said here. The stylesheet hides flashes in print. %>
+  <%= render "shared/flash" %>
   <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
-      <%= link_to root_path(songbook: @songbook.token), class: "back-link" do %>
-        <span aria-hidden="true">+</span>
-        <span><%= t(".controls.add_song") %></span>
+      <% if @can_edit_songbook %>
+        <%= link_to root_path(songbook: @songbook.token), class: "back-link" do %>
+          <span aria-hidden="true">+</span>
+          <span><%= t(".controls.add_song") %></span>
+        <% end %>
       <% end %>
 
       <div class="control-groups">
@@ -44,7 +50,27 @@
      data-many-pages-label="<%= t(".page_count.other") %>"
      aria-live="polite"></p>
 
-  <%= render "shared/sheet_mark" %>
+  <% if @can_manage_sharing %>
+    <section class="songbook-sharing no-print" aria-labelledby="songbook-sharing-heading">
+      <h2 id="songbook-sharing-heading"><%= t(".sharing.heading") %></h2>
+      <% if @share_url.present? %>
+        <% if current_user.premium? %>
+          <p><%= link_to @share_url, @share_url %></p>
+        <% else %>
+          <p><%= t(".sharing.inactive") %></p>
+        <% end %>
+        <%= button_to t(".sharing.revoke"), revoke_songbook_share_path(@songbook), method: :delete, class: "button button-secondary" %>
+      <% elsif @can_enable_sharing %>
+        <p><%= t(".sharing.intro") %></p>
+        <%= button_to t(".sharing.create"), share_songbook_path(@songbook), method: :post, class: "button button-secondary" %>
+      <% else %>
+        <p><%= t(".sharing.premium_required") %></p>
+        <%= link_to t(".sharing.plans"), save_songbooks_path %>
+      <% end %>
+    </section>
+  <% end %>
+
+  <%= render "shared/sheet_mark" if shows_sheet_mark?(@songbook.user) %>
 
   <section class="songbook-tracks no-print" aria-label="<%= t(".tracks.label") %>">
     <ol>
@@ -58,11 +84,13 @@
               <span class="songbook-track-artist"><%= entry.lyric.artist %></span>
             <% end %>
           </span>
-          <%= button_to t(".tracks.remove"),
-                songbook_song_path(@songbook, entry.lyric.token),
-                method: :delete,
-                class: "songbook-track-remove",
-                aria: { label: t(".tracks.remove_label", title: song_title) } %>
+          <% if @can_edit_songbook %>
+            <%= button_to t(".tracks.remove"),
+                  songbook_song_path(@songbook, entry.lyric.token),
+                  method: :delete,
+                  class: "songbook-track-remove",
+                  aria: { label: t(".tracks.remove_label", title: song_title) } %>
+          <% end %>
         </li>
       <% end %>
     </ol>

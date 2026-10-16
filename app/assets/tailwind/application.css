@@ -800,6 +800,68 @@ textarea:focus-visible {
   color: var(--ink-muted);
 }
 
+/* The account pages read as one column: the same field box the entry form uses —
+   `.field`, three rem tall, with its own label — a steady gap between fields, and
+   the button set apart from the last field rather than sitting on it. */
+.account-form {
+  display: grid;
+  gap: 1.05rem;
+  max-width: 32rem;
+  margin-top: 1.5rem;
+}
+
+.account-form input[type="submit"] {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* The links that follow the form, on the same column width. */
+.account-links {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 32rem;
+  margin-top: 1.25rem;
+}
+
+/* The Google control follows the password form on both pages an account is signed
+   in or created on, in the same column, at the width a second sign-in route needs
+   to read as a choice rather than a footnote. */
+.google-sign-in {
+  max-width: 32rem;
+  margin-top: 1.25rem;
+}
+
+.google-sign-in form,
+.google-sign-in .button {
+  width: 100%;
+}
+
+/* The two paid plans read as one offer: they are the same choice in two
+   lengths, and the controls appear only where the host can sell them. */
+.premium-plans {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.resource-navigation form {
+  display: inline;
+}
+
+.resource-navigation .resource-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
 .guide-faq {
   margin-top: 2.5rem;
 }
@@ -976,6 +1038,27 @@ html:has(body.preview-body) {
 
 .button-add-song {
   min-height: 2.55rem;
+}
+
+.songbook-sharing {
+  width: 8.5in;
+  margin: 0 auto 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.75rem;
+  background: var(--surface);
+}
+
+.songbook-sharing h2 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.songbook-sharing p {
+  margin: 0.35rem 0 0.6rem;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
 }
 
 .songbook-tracks {
@@ -1400,6 +1483,7 @@ html:has(body.preview-body) {
     flex: 1 1 100%;
   }
 
+  .songbook-sharing,
   .songbook-tracks {
     width: calc(100% - 1rem);
   }

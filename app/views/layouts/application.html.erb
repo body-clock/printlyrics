@@ -90,6 +90,11 @@
         <% if content_for?(:created_songbook_token) %>data-created-songbook-token="<%= yield :created_songbook_token %>"<% end %>>
     <main>
       <%= yield %>
+      <% @analytics_page_responses&.each do |event_name, response_key| %>
+        <span class="sr-only"
+              data-analytics-page-response="<%= event_name %>"
+              data-analytics-response-key="<%= response_key %>"></span>
+      <% end %>
     </main>
   </body>
 </html>

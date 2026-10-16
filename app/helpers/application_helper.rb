@@ -37,6 +37,28 @@ module ApplicationHelper
     Feedback::REASONS.map { |reason| [ t("feedbacks.reasons.#{reason}"), reason ] }
   end
 
+  # The rule the register and reset forms state, read from the model so the copy
+  # and the validation cannot drift.
+  def password_hint
+    t("accounts.password_hint", count: User::PASSWORD_MINIMUM_LENGTH)
+  end
+
+  # Whether this host can complete a Google sign-in. The control renders only
+  # where it can, so nothing offers a sign-in that cannot happen.
+  def google_sign_in_available?
+    GoogleSignIn.configured?
+  end
+
+  # What an account's access is right now, in the words the library shows it. The
+  # expiry is what the visitor paid for, so the state is stated rather than left to
+  # be inferred from which controls happen to appear, and a free account is told how
+  # much of its allowance is in use.
+  def account_access_status(user, stored:)
+    return t("accounts.library.access.premium", date: l(user.premium_until.to_date, format: :long)) if user.premium?
+
+    t("accounts.library.access.free", count: stored, limit: User::FREE_SONGBOOK_LIMIT)
+  end
+
   def page_title
     content_for?(:title) ? content_for(:title) : t("application.meta.default_title")
   end
@@ -51,6 +73,16 @@ module ApplicationHelper
 
   def canonical_url
     content_for?(:canonical_url) ? content_for(:canonical_url) : request.base_url + request.path
+  end
+
+  # Whether a printed sheet carries the mark: every sheet a guest or free page
+  # prints does, because the code is the paper channel's only return path, and
+  # the paid tier is what removes it. The sheet's own owner decides, so a
+  # read-only link to a premium account's set prints without one however the
+  # visitor holding it is signed in. Premium prints are still counted server-
+  # side by `Premium Songbook Printed`; only the scan is gone.
+  def shows_sheet_mark?(owner)
+    !owner&.premium?
   end
 
   # The mark a printed sheet carries sends a scan to the site rather than to the

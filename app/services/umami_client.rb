@@ -1,4 +1,6 @@
-# Records a stored feedback submission in this site's own analytics service.
+# Records the two things only the server can know in this site's own analytics
+# service: a stored feedback submission, and a premium access grant the ledger has
+# just written.
 #
 # Umami's /api/send takes events from a server as well as from the tracker, and
 # it derives the visitor's session from the address and user agent the payload
@@ -28,6 +30,9 @@ class UmamiClient
 
   SEND_PATH = "/api/send"
   EVENT_NAME = "Feedback Submitted"
+  # The moment access is granted, which is the webhook's to know rather than a
+  # browser's: the visitor may never return to the site at all.
+  ACTIVATION_NAME = "Premium Activated"
 
   # The page a submission reports, in the synthetic form the tracker uses. A
   # submission never reports the page it was written from, because on a saved
@@ -38,6 +43,11 @@ class UmamiClient
     "sheet" => "/lyrics/:token",
     "feedback_page" => "/feedback"
   }.freeze
+
+  # Where an activation is reported: the library the returning visitor lands on.
+  # The event names no account, no email, and no Stripe reference, so it counts
+  # activations rather than describing who bought one.
+  ACTIVATION_PATH = "/account/songbooks"
 
   def initialize(connection: nil, origin: nil, website_id: nil)
     @origin = origin || Rails.configuration.x.umami_origin
@@ -60,6 +70,37 @@ class UmamiClient
   end
 
   def record_feedback(feedback, ip: nil, user_agent: nil, hostname: nil)
+    send_event(
+      name: EVENT_NAME,
+      url: SURFACE_PATHS.fetch(feedback.surface, "/feedback"),
+      data: data_for(feedback),
+      ip: ip,
+      user_agent: user_agent,
+      hostname: hostname
+    )
+  end
+
+  # An access grant this application has just recorded in its ledger, reported
+  # after the row exists rather than as part of writing it: analytics never
+  # blocks a grant, and a Stripe retry finds the row and reports nothing.
+  #
+  # A webhook has no visitor's address or agent to send, so the event is not
+  # filed under a session the visitor's pageviews opened. It is a count.
+  def record_premium_activation(hostname: nil)
+    send_event(
+      name: ACTIVATION_NAME,
+      url: ACTIVATION_PATH,
+      data: nil,
+      hostname: hostname
+    )
+  end
+
+  private
+
+  # The one shape every server-sent event has. `data` is nil for an event with no
+  # properties at all: Umami is asked for no custom data rather than for empty
+  # data, which would travel as a property a dashboard could read.
+  def send_event(name:, url:, data:, ip: nil, user_agent: nil, hostname: nil)
     raise ServiceError, "Umami is not configured" unless configured?
 
     response = @connection.post("#{@origin}#{SEND_PATH}") do |request|
@@ -67,7 +108,9 @@ class UmamiClient
       # Umami registers nothing without a user agent, and this one is how the
       # event joins the visitor's own session rather than this container's.
       request.headers["User-Agent"] = user_agent if user_agent.present?
-      request.body = JSON.generate(payload_for(feedback, ip: ip, hostname: hostname))
+      request.body = JSON.generate(
+        payload_for(name: name, url: url, data: data, ip: ip, hostname: hostname)
+      )
     end
 
     return if response.success?
@@ -77,17 +120,15 @@ class UmamiClient
     raise ServiceError, error.message
   end
 
-  private
-
-  def payload_for(feedback, ip:, hostname:)
+  def payload_for(name:, url:, data:, ip:, hostname:)
     {
       type: "event",
       payload: {
         website: @website_id,
         hostname: hostname.presence,
-        url: SURFACE_PATHS.fetch(feedback.surface, "/feedback"),
-        name: EVENT_NAME,
-        data: data_for(feedback),
+        url: url,
+        name: name,
+        data: data,
         # Umami falls back to the request's own address, which is this
         # container's, so the visitor's is named rather than left out.
         ip: ip.presence

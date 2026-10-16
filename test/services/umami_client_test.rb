@@ -97,6 +97,25 @@ class UmamiClientTest < ActiveSupport::TestCase
     assert_empty missing, "a new surface would be reported as the feedback page without a path here"
   end
 
+  test "reports an activation as a name with no properties and no account in the payload" do
+    sent = nil
+    client = client_with do |stubs|
+      stubs.post(SEND_URL) do |env|
+        sent = JSON.parse(env.body)
+        [ 200, json_headers, "{}" ]
+      end
+    end
+
+    client.record_premium_activation(hostname: "printlyrics.app")
+
+    assert_equal UmamiClient::ACTIVATION_NAME, sent.dig("payload", "name")
+    assert_equal UmamiClient::ACTIVATION_PATH, sent.dig("payload", "url")
+    assert_equal "printlyrics.app", sent.dig("payload", "hostname")
+    # Nothing else travels: an activation is counted, and no account identifier,
+    # email, or Stripe reference describes who bought it.
+    assert_equal %w[website hostname url name], sent.fetch("payload").keys
+  end
+
   test "raises when the service answers with an error status" do
     client = client_with do |stubs|
       stubs.post(SEND_URL) { [ 503, json_headers, "" ] }

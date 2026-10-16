@@ -12,6 +12,10 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
     assert_includes policy, "object-src 'none'"
     assert_includes policy, "script-src 'self' #{Rails.configuration.x.umami_origin} https://plausible.io https://challenges.cloudflare.com 'nonce-"
     assert_includes policy, "frame-src https://challenges.cloudflare.com"
+    # The sign-in form redirects to Google's authorize endpoint, which a form
+    # submission's redirect is checked against: without this the browser blocks the
+    # sign-in before anything is sent.
+    assert_includes policy, "form-action 'self' https://accounts.google.com"
     assert_includes policy, "style-src-attr 'unsafe-inline'"
     assert_includes policy, "frame-ancestors 'none'"
     assert_no_match(/unsafe-eval/, policy)

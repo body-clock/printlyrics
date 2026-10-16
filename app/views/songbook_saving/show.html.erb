@@ -1,0 +1,71 @@
+<%
+  # A host that can sell renders the plans as controls and states them as
+  # facts, description included. One that cannot keeps today's proposal wording
+  # throughout and renders no purchase control at all, so nothing here implies a
+  # payment that cannot happen.
+  plans = @premium_checkout_available ? "_available" : ""
+  description = t("songbook_saving.seo.description#{plans}")
+%>
+<% content_for :title, t("songbook_saving.seo.title") %>
+<% content_for :description, description %>
+<% content_for :canonical_url, save_songbooks_url %>
+<% content_for :robots, "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" %>
+
+<div class="guide-shell">
+  <article class="guide">
+    <%= render "shared/flash" %>
+
+    <header>
+      <p class="eyebrow"><%= t("songbook_saving.eyebrow") %></p>
+      <h1><%= t("songbook_saving.heading") %></h1>
+      <p><%= t("songbook_saving.intro") %></p>
+    </header>
+
+    <section class="guide-answer" aria-labelledby="save-answer">
+      <h2 id="save-answer"><%= t("songbook_saving.answer.heading") %></h2>
+      <p><%= t("songbook_saving.answer.body") %></p>
+    </section>
+
+    <section class="guide-faq" aria-labelledby="save-options">
+      <h2 id="save-options"><%= t("songbook_saving.options.heading#{plans}") %></h2>
+      <ul>
+        <li><%= t("songbook_saving.options.free") %></li>
+        <li><%= t("songbook_saving.options.monthly#{plans}") %></li>
+        <li><%= t("songbook_saving.options.annual#{plans}") %></li>
+        <li><%= t("songbook_saving.options.day_pass#{plans}") %></li>
+      </ul>
+      <% if @premium_checkout_available %>
+        <p><%= t("songbook_saving.checkout.intro") %></p>
+        <%# The marker rides the form, which is what the submit listener reads,
+            and the plan is a parameter of the same request. %>
+        <div class="premium-plans">
+          <%= button_to t("songbook_saving.checkout.monthly"),
+                premium_checkout_path,
+                params: { plan: "monthly" },
+                class: "button button-primary",
+                form: { data: { analytics_submit: "Premium Checkout Started" } } %>
+          <%= button_to t("songbook_saving.checkout.annual"),
+                premium_checkout_path,
+                params: { plan: "annual" },
+                class: "button button-secondary",
+                form: { data: { analytics_submit: "Premium Checkout Started" } } %>
+          <%= button_to t("songbook_saving.checkout.day_pass"),
+                premium_checkout_path,
+                params: { plan: "day_pass" },
+                class: "button button-secondary",
+                form: { data: { analytics_submit: "Premium Checkout Started" } } %>
+        </div>
+      <% else %>
+        <p><%= t("songbook_saving.payment_status") %></p>
+      <% end %>
+    </section>
+
+    <section class="guide-callout" aria-labelledby="saving-callout">
+      <h2 id="saving-callout"><%= t("songbook_saving.callout.heading") %></h2>
+      <p><%= t("songbook_saving.callout.body#{@premium_checkout_available ? "_available" : ""}") %></p>
+      <%= link_to t("accounts.register.submit"), new_registration_path, class: "button button-primary" %>
+    </section>
+
+    <%= render "shared/resource_navigation", current_section: :songbook_saving %>
+  </article>
+</div>
