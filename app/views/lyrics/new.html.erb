@@ -132,6 +132,30 @@
                   data-action="lyric-search#close">&times;</button>
               </div>
 
+              <%# The lyrics lookup failed after the search already answered, so
+                  the selected song can be asked for again without asking the
+                  visitor to reproduce the search they just ran. %>
+              <% if @retry_result_id.present? %>
+                <div class="search-miss">
+                  <%= form_with url: select_lyrics_path,
+                    method: :post,
+                    data: {
+                      turbo_frame: "lyric_entry",
+                      analytics_submit: "Song Result Selected",
+                      action: "turbo:submit-start->lyric-search#selecting turbo:submit-end->lyric-search#selected"
+                    },
+                    html: { aria: { busy: "false" } },
+                    class: "search-miss-actions" do |form| %>
+                    <%= hidden_field_tag :songbook, @songbook.token if @songbook %>
+                    <%= hidden_field_tag :result_id, @retry_result_id %>
+                    <%= hidden_field_tag :query, @query %>
+                    <%= form.button t(".search.retry"),
+                      class: "button button-secondary",
+                      data: { lyric_search_target: "resultButton" } %>
+                  <% end %>
+                </div>
+              <% end %>
+
               <% if @results.present? %>
                 <div class="search-results" role="list" aria-label="<%= t(".search.matches_label") %>">
                   <% @results.each do |result| %>

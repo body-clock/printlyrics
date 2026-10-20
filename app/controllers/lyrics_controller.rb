@@ -56,7 +56,8 @@ class LyricsController < ApplicationController
       @search_error = search.errors.first&.message
       render :new, status: :unprocessable_content
     end
-  rescue LrcLibClient::ServiceError
+  rescue LrcLibClient::ServiceError => error
+    report_source_failure(error)
     @search_error = t("songs.errors.service")
     render :new, status: :service_unavailable
   end
@@ -75,8 +76,12 @@ class LyricsController < ApplicationController
     render :new, status: :ok
   rescue LrcLibClient::NotFoundError
     render_select_error(t("songs.errors.unavailable"), :unprocessable_content)
-  rescue LrcLibClient::ServiceError
-    render_select_error(t("songs.errors.service"), :service_unavailable)
+  rescue LrcLibClient::ServiceError => error
+    # The search itself answered; only the lyrics lookup failed. Saying the
+    # search is down here is both wrong and what hides a recovered search behind
+    # a message the visitor reads as an outage.
+    report_source_failure(error)
+    render_select_error(t("songs.errors.load_service"), :service_unavailable, retry_result_id: params[:result_id])
   end
 
   def show
@@ -127,11 +132,29 @@ class LyricsController < ApplicationController
     redirect_to root_path, alert: t("lyrics.errors.expired")
   end
 
-  def render_select_error(message, status)
-    @lyric = Lyric.new
+  def render_select_error(message, status, retry_result_id: nil)
+    @lyric = Lyric.new(title: @query)
     @catalog_token = nil
     @search_error = message
+    @retry_result_id = retry_result_id
 
     render :new, status: status
+  end
+
+  # A source failure is handled copy for the visitor, but it is still a fault
+  # worth seeing. Honeybadger receives the endpoint, status, and the source's own
+  # explanation; the visitor's query never leaves this method.
+  def report_source_failure(error)
+    Rails.logger.warn("LRCLIB unavailable during lyrics##{action_name}: #{error.message}")
+    Honeybadger.notify(
+      error,
+      context: {
+        action: action_name,
+        endpoint: error.endpoint,
+        status: error.status,
+        attempts: error.attempts,
+        detail: error.detail
+      }.compact
+    )
   end
 end

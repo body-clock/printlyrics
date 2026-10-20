@@ -103,7 +103,8 @@ export default class extends Controller {
     form.querySelectorAll('[data-lyric-search-target~="resultIdle"]').forEach((element) => {
       element.hidden = loading
     })
-    form.querySelector('[data-lyric-search-target~="resultBusy"]').hidden = !loading
+    const busy = form.querySelector('[data-lyric-search-target~="resultBusy"]')
+    if (busy) busy.hidden = !loading
   }
 
   resetResultState(form) {

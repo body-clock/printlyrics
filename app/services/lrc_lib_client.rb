@@ -1,19 +1,42 @@
 class LrcLibClient
   class Error < StandardError; end
   class NotFoundError < Error; end
-  class ServiceError < Error; end
+
+  # Carries what the operator needs to tell a source outage from a bug in this
+  # app. The message never includes the visitor's query: `/api/search` keeps it
+  # in params, and the endpoint is the only part of the request recorded here.
+  class ServiceError < Error
+    attr_reader :endpoint, :status, :detail, :attempts
+
+    def initialize(message = nil, endpoint: nil, status: nil, detail: nil, attempts: nil)
+      @endpoint = endpoint
+      @status = status
+      @detail = detail
+      @attempts = attempts
+      super(message || "LRCLIB request failed")
+    end
+  end
 
   SEARCH_LIMIT = 5
 
   # LRCLIB asks clients to honor Retry-After: the edge answers 429 when a client
-  # overruns the rate limit and 503 while the server is busy. One retry keeps a
-  # momentarily busy source from costing the visitor their search.
-  RETRYABLE_STATUSES = [ 429, 500, 503 ].freeze
+  # overruns the rate limit and 5xx (including the edge's 502 and 504) while the
+  # source is busy. Its overload response is `ServerOverloaded`, which its own
+  # body asks the client to retry after a moment. Two retries keep a source that
+  # is momentarily busy from costing the visitor their search or their selection.
+  RETRYABLE_STATUSES = [ 429, 500, 502, 503, 504 ].freeze
+  MAX_ATTEMPTS = 3
   DEFAULT_RETRY_WAIT = 1.0
   MAX_RETRY_WAIT = 2.0
+  # A hung source is not worth stacking three full timeouts for: after this long
+  # the visitor gets the fallback instead of a spinner.
+  RETRY_BUDGET_SECONDS = 8.0
 
-  def initialize(connection: nil, sleeper: nil)
+  DEFAULT_CLOCK = -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) }
+
+  def initialize(connection: nil, sleeper: nil, clock: nil)
     @sleeper = sleeper || ->(seconds) { sleep(seconds) }
+    @clock = clock || DEFAULT_CLOCK
     @connection = connection || Faraday.new(
       url: "https://lrclib.net",
       headers: {
@@ -50,7 +73,9 @@ class LrcLibClient
   private
 
   def build_results(rows)
-    raise ServiceError unless rows.is_a?(Array)
+    unless rows.is_a?(Array)
+      raise ServiceError.new("LRCLIB search answered with #{rows.class} instead of a list", endpoint: "/api/search")
+    end
 
     rows
       .filter_map { |row| build_result(row) }
@@ -60,24 +85,31 @@ class LrcLibClient
   end
 
   def request_json(path, params = {}, not_found: false)
-    retried = false
+    attempts = 0
+    started_at = @clock.call
 
     loop do
+      attempts += 1
       response = @connection.get(path, params)
       raise NotFoundError if not_found && response.status == 404
 
-      if !retried && RETRYABLE_STATUSES.include?(response.status)
-        retried = true
+      if retryable?(response.status, attempts, started_at)
         @sleeper.call(retry_wait(response))
         next
       end
 
-      raise ServiceError unless response.success?
+      raise service_error(path, attempts, started_at, response: response) unless response.success?
 
       return JSON.parse(response.body)
     end
-  rescue JSON::ParserError, Faraday::Error, SocketError, SystemCallError
-    raise ServiceError
+  rescue JSON::ParserError, Faraday::Error, SocketError, SystemCallError => error
+    raise service_error(path, attempts, started_at, error: error)
+  end
+
+  def retryable?(status, attempts, started_at)
+    attempts < MAX_ATTEMPTS &&
+      RETRYABLE_STATUSES.include?(status) &&
+      @clock.call - started_at < RETRY_BUDGET_SECONDS
   end
 
   # The header is the source's own instruction; without one, wait long enough
@@ -87,6 +119,32 @@ class LrcLibClient
     return DEFAULT_RETRY_WAIT unless seconds.positive?
 
     [ seconds, MAX_RETRY_WAIT ].min
+  end
+
+  def service_error(path, attempts, started_at, response: nil, error: nil)
+    status = response&.status
+    detail = response && failure_detail(response.body)
+    elapsed = (@clock.call - started_at).round(2)
+    summary =
+      if error
+        "LRCLIB request to #{path} failed with #{error.class} after #{attempts} #{"attempt".pluralize(attempts)} in #{elapsed}s"
+      else
+        "LRCLIB answered #{status} for #{path} after #{attempts} #{"attempt".pluralize(attempts)} in #{elapsed}s"
+      end
+    summary += " (#{detail})" if detail.present?
+
+    ServiceError.new(summary, endpoint: path, status: status, detail: detail, attempts: attempts)
+  end
+
+  # LRCLIB explains its own overload in the body; keep that phrase for the
+  # operator and discard everything else it sent.
+  def failure_detail(body)
+    parsed = JSON.parse(body.to_s)
+    return unless parsed.is_a?(Hash)
+
+    [ parsed["name"], parsed["message"] ].compact_blank.join(": ").presence
+  rescue JSON::ParserError
+    nil
   end
 
   def build_result(row)

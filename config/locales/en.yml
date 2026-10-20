@@ -86,6 +86,7 @@ en:
         submit: "Search"
         busy: "Searching..."
         loading: "Loading lyrics…"
+        retry: "Try loading that song again"
         results_label: "Song search results"
         close: "Close search results"
         matches_label: "Song matches"
@@ -297,6 +298,7 @@ en:
     errors:
       unavailable: "That song is no longer available"
       service: "Song search is temporarily unavailable. You can still paste lyrics below."
+      load_service: "Those lyrics didn't load just now. Try again, or paste them below."
 
   shared:
     sheet_mark:

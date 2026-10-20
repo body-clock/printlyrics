@@ -87,20 +87,73 @@ class LrcLibClientTest < ActiveSupport::TestCase
       LrcLibClient.new(connection: connection, sleeper: ->(seconds) { waits << seconds }).search("the kiss")
     end
 
-    assert_equal [ LrcLibClient::MAX_RETRY_WAIT ], waits
+    assert_equal [ LrcLibClient::MAX_RETRY_WAIT, LrcLibClient::MAX_RETRY_WAIT ], waits
   end
 
-  test "raises a service error when LRCLIB stays unavailable" do
+  test "retries twice when the source is busy and answers on the third try" do
+    rows = [ result(id: 1, title: "The Kiss") ]
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        if calls < 3
+          [ 503, json_headers.merge("Retry-After" => "1"), "{}" ]
+        else
+          [ 200, json_headers, JSON.generate(rows) ]
+        end
+      end
+    end
+    waits = []
+
+    results = LrcLibClient.new(connection: connection, sleeper: ->(seconds) { waits << seconds }).search("the kiss")
+
+    assert_equal [ 1 ], results.map(&:id)
+    assert_equal [ 1.0, 1.0 ], waits
+  end
+
+  test "reports the source's status and explanation when LRCLIB stays unavailable" do
+    body = JSON.generate(
+      name: "ServerOverloaded",
+      message: "The server is busy, please retry in a moment",
+      statusCode: 503
+    )
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 503, json_headers, body ] }
+    end
+    waits = []
+
+    error = assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(connection: connection, sleeper: ->(seconds) { waits << seconds }).search("the kiss")
+    end
+
+    assert_equal 2, waits.size
+    assert_equal "/api/search", error.endpoint
+    assert_equal 503, error.status
+    assert_equal 3, error.attempts
+    assert_equal "ServerOverloaded: The server is busy, please retry in a moment", error.detail
+    assert_match(/answered 503/, error.message)
+    assert_match(/3 attempts/, error.message)
+    refute_includes error.message, "the kiss"
+  end
+
+  test "stops retrying once the retry budget is spent" do
     connection = connection_with do |stub|
       stub.get("/api/search") { [ 503, json_headers, "{}" ] }
     end
     waits = []
+    times = [ 0.0, 0.1, LrcLibClient::RETRY_BUDGET_SECONDS ]
+    clock = -> { times.shift || LrcLibClient::RETRY_BUDGET_SECONDS }
 
-    assert_raises(LrcLibClient::ServiceError) do
-      LrcLibClient.new(connection: connection, sleeper: ->(seconds) { waits << seconds }).search("the kiss")
+    error = assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(
+        connection: connection,
+        sleeper: ->(seconds) { waits << seconds },
+        clock: clock
+      ).search("the kiss")
     end
 
-    assert_equal 1, waits.size
+    assert_equal [ LrcLibClient::DEFAULT_RETRY_WAIT ], waits
+    assert_equal 2, error.attempts
   end
 
   test "search by fields asks the title and artist separately" do
