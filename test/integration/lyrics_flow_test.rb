@@ -289,6 +289,24 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "#song-search-results [role='alert']", /That song is no longer available/
   end
 
+  test "a failed lyrics lookup does not report the search itself as down" do
+    client = Object.new
+    client.define_singleton_method(:find) do |_|
+      raise LrcLibClient::ServiceError.new("LRCLIB answered 503 for /api/get/42")
+    end
+
+    with_lrc_lib_client(client) do
+      post select_lyrics_path, params: { result_id: "42", query: "Lumiere" }
+    end
+
+    assert_response :service_unavailable
+    assert_select "#song-search-results [role='alert']", /Those lyrics didn't load just now/
+    assert_no_match(/Song search is temporarily unavailable/, response.body)
+    assert_select "form[action='#{select_lyrics_path}'] input[name='result_id'][value='42']"
+    assert_select "form[action='#{select_lyrics_path}'] input[name='query'][value='Lumiere']"
+    assert_select "input[name='lyric[title]'][value='Lumiere']"
+  end
+
   test "empty search and unavailable results render useful errors" do
     post search_lyrics_path, params: { query: " " }
 
