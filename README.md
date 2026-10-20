@@ -133,6 +133,14 @@ shows that version in its footer.
 
 ## Operations
 
+Errors reach Honeybadger through the `honeybadger` gem. `config/honeybadger.yml`
+reads `honeybadger_api_key` from Rails credentials, enables Insights, and keeps
+development and test out of the stream, so deploying needs nothing beyond
+`RAILS_MASTER_KEY`. Source failures that become visitor copy — a search or
+lyrics lookup that stays unavailable after its retries — are reported as
+handled errors with the endpoint, HTTP status, attempt count, and LRCLIB's own
+explanation. The visitor's query is never included.
+
 Use the [organic search operations runbook](docs/organic-search-operations.md)
 to configure Search Console, boot the self-hosted Umami analytics service and its
 MCP endpoint, run the two-week parallel measurement beside Plausible, record
