@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/body-clock/printlyrics/compare/v1.17.0...v1.17.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* **search:** keep LRCLIB overloads from reading as search outages ([#121](https://github.com/body-clock/printlyrics/issues/121)) ([4a403c7](https://github.com/body-clock/printlyrics/commit/4a403c79a20e0196ff8b80f3ca824faf41a0fe5a))
+
 ## [1.17.0](https://github.com/body-clock/printlyrics/compare/v1.16.0...v1.17.0) (2026-10-13)
 
 
