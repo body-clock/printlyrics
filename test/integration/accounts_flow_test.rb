@@ -239,6 +239,20 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert_select ".account-prompt", count: 0
   end
 
+  test "the second sheet leaves the ask to the songbook offer" do
+    generate_sheet(title: "First Song")
+    generate_sheet(title: "Second Song")
+
+    assert_select ".songbook-prompt", count: 1
+    assert_select ".account-prompt", count: 0
+
+    delete songbook_offer_path
+    follow_redirect!
+    generate_sheet(title: "Third Song")
+
+    assert_select ".account-prompt", count: 1
+  end
+
   test "a sheet this visit did not make does not prompt" do
     lyric = Lyric.create!(lyrics: "Someone else's line", title: "Shared Sheet")
 
