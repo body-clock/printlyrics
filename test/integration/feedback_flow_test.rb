@@ -83,8 +83,8 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     get feedback_path
 
     assert_select "header.site-header a[href='#{root_path}']", text: /print song lyrics/i
-    assert_select "header.site-header a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
-    assert_select "header.site-header a[href='#{feedback_path}']", count: 0
+    assert_select "footer.site-footer a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
+    assert_select "footer.site-footer a[href='#{feedback_path}']", count: 0
   end
 
   test "no widget renders while no site key is configured" do

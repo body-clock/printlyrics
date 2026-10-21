@@ -37,7 +37,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", /UtilitiesApplication/
     assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
     assert_select ".intro p", /no copying from another lyrics site/i
-    assert_select ".landing-footer .app-version[aria-label='PrintLyrics version #{app_version}']", "v#{app_version}"
+    assert_select ".site-footer .app-version[aria-label='PrintLyrics version #{app_version}']", "v#{app_version}"
     assert_select "main", /No account/
     assert_select "script", /autoCapturePageviews:\s*false/
     assert_select "form[action='#{search_lyrics_path}'][data-action*='lyric-search#start']", count: 1

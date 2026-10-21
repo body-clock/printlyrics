@@ -25,7 +25,7 @@
 <% content_for :og_type, "music.song" %>
 <% content_for :robots, "noindex, nofollow" %>
 <% content_for :body_class, "preview-body" %>
-<% content_for :hide_site_header, true %>
+<% content_for :hide_site_chrome, true %>
 <% content_for :generated_page_key, @generated_page_key if @generated_page_key %>
 <% content_for :head do %>
   <%= render "shared/structured_data", structured_data: structured_data %>

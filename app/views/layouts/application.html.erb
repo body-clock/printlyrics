@@ -90,13 +90,17 @@
         <% if content_for?(:created_songbook_token) %>data-created-songbook-token="<%= yield :created_songbook_token %>"<% end %>>
     <a class="skip-link" href="#main"><%= t("shared.site_header.skip") %></a>
 
-    <% unless content_for?(:hide_site_header) %>
+    <% unless content_for?(:hide_site_chrome) %>
       <%= render "shared/site_header" %>
     <% end %>
 
     <main id="main">
       <%= yield %>
     </main>
+
+    <% unless content_for?(:hide_site_chrome) %>
+      <%= render "shared/site_footer" %>
+    <% end %>
 
     <%# Outcomes the server knows and only the page after them can report. Each
         names the response that carried it so a Turbo snapshot cannot report the

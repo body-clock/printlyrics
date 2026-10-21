@@ -232,10 +232,6 @@ en:
           privacy:
             heading: "Do I need an account?"
             body: "No account is required. Generated sheets use an unlisted share link and remain available for 180 days after their last visit."
-      footer:
-        retention: "Share links remain available for 180 days after their last visit."
-        version: "PrintLyrics version %{version}"
-        version_display: "v%{version}"
     show:
       untitled: "Untitled lyrics"
       seo:
@@ -386,13 +382,18 @@ en:
       navigation_label: "Main"
       account_label: "Account"
       tool: "Print song lyrics"
-      one_page: "One-page printing guide"
-      songbook: "Songbook printing guide"
-      feedback: "Send feedback"
       sign_in: "Sign in"
       register: "Create account"
       library: "Your library"
       sign_out: "Sign out"
+    site_footer:
+      navigation_label: "Guides and feedback"
+      one_page: "One-page printing guide"
+      songbook: "Songbook printing guide"
+      feedback: "Send feedback"
+      retention: "Share links remain available for 180 days after their last visit."
+      version: "PrintLyrics version %{version}"
+      version_display: "v%{version}"
     account_prompt:
       sheet:
         title: "Save this sheet for later?"

@@ -5,17 +5,11 @@
   <div class="site-header-inner">
     <%= link_to t("application.name"), root_path, class: "site-brand" %>
 
-    <nav class="site-nav" aria-label="<%= t("shared.site_header.navigation_label") %>">
-      <% [
-        [ t("shared.site_header.tool"), root_path ],
-        [ t("shared.site_header.one_page"), print_lyrics_on_one_page_path ],
-        [ t("shared.site_header.songbook"), print_a_songbook_path ],
-        [ t("shared.site_header.feedback"), feedback_path ]
-      ].each do |label, path| %>
-        <% next if current_page?(path) %>
-        <%= link_to label, path %>
-      <% end %>
-    </nav>
+    <% unless current_page?(root_path) %>
+      <nav class="site-nav" aria-label="<%= t("shared.site_header.navigation_label") %>">
+        <%= link_to t("shared.site_header.tool"), root_path %>
+      </nav>
+    <% end %>
 
     <nav class="site-account" aria-label="<%= t("shared.site_header.account_label") %>">
       <% if authenticated? %>
