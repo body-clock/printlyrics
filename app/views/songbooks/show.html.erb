@@ -20,6 +20,8 @@
      data-controller="preview"
      data-songbook-size="<%= @songbook.entries.size %>"
      data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
+  <%= render "shared/flash" %>
+
   <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
       <%= link_to root_path(songbook: @songbook.token), class: "back-link" do %>
@@ -88,4 +90,6 @@
       <% end %>
     </div>
   </div>
+
+  <%= render "shared/library_prompt", item: @songbook %>
 </div>

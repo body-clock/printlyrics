@@ -1,4 +1,6 @@
 class ApplicationController < ActionController::Base
+  include Authentication
+
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and :has.
   allow_browser versions: :modern
 
@@ -16,6 +18,13 @@ class ApplicationController < ActionController::Base
   helper_method :visit
 
   private
+
+  # An outcome the server knows and the next page reports. The response names
+  # itself so a snapshot Turbo replays cannot report the same outcome twice.
+  def remember_page_response(name)
+    responses = session[:analytics_page_responses] ||= {}
+    responses[name] = SecureRandom.hex(8)
+  end
 
   # A sheet this visit just made joins the visit, wherever the generation landed:
   # its own page, or the set it was added to. It is the same event from the

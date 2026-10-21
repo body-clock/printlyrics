@@ -808,6 +808,239 @@ textarea:focus-visible {
   margin: 0;
 }
 
+/* Accounts are optional, so their chrome stays out of the tool's way: a thin
+   account line at the top of the entry page and the same links in the shared
+   resource navigation. The one place an account becomes the page is its own
+   surfaces, which use the guide column. */
+.account-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.5rem 0.9rem;
+  margin: 0 0 1.25rem;
+  color: var(--ink-muted);
+  font-size: 0.74rem;
+}
+
+.account-bar a,
+.account-bar-signout {
+  color: var(--ink);
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
+.account-bar a:hover,
+.account-bar-signout:hover {
+  color: var(--accent-hover);
+}
+
+.account-bar-email {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-bar-form {
+  display: inline;
+  margin: 0;
+}
+
+.account-bar-signout {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.account-panel {
+  max-width: 32rem;
+  margin-top: 1.5rem;
+}
+
+.account-form {
+  display: grid;
+  max-width: 32rem;
+  gap: 1.05rem;
+  margin-top: 1.25rem;
+}
+
+.account-form input[type="submit"] {
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+.account-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  max-width: 32rem;
+  margin: 1.25rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-divider::before,
+.account-divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+  content: "";
+}
+
+.google-sign-in,
+.google-sign-in form {
+  max-width: 32rem;
+  margin: 0;
+}
+
+/* The loudest sign-in route: full width, first, and the only filled button on
+   the page in a host that can offer it. */
+.button-google {
+  width: 100%;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.google-mark {
+  display: grid;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.account-links {
+  display: grid;
+  max-width: 32rem;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  font-size: 0.82rem;
+}
+
+.account-links a {
+  color: var(--accent);
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
+.form-errors {
+  max-width: 32rem;
+  margin-top: 1.25rem;
+  border: 1px solid color-mix(in oklch, var(--error), transparent 55%);
+  border-radius: 4px;
+  padding: 0.7rem 0.85rem;
+  background: var(--error-bg);
+  color: var(--error);
+  font-size: 0.82rem;
+}
+
+.library-count {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.library-list {
+  margin: 1.5rem 0 0;
+  border-top: 1px solid var(--line);
+  padding: 0;
+  list-style: none;
+}
+
+.library-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding: 1rem 0;
+}
+
+.library-item-copy {
+  min-width: 0;
+}
+
+.library-kind {
+  margin: 0 0 0.25rem;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.library-item h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.library-item h2 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.library-item h2 a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.library-remove {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.45rem 0.65rem;
+  background: var(--surface);
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.library-remove:hover {
+  border-color: color-mix(in oklch, var(--error), var(--line) 45%);
+  color: var(--error);
+}
+
+/* The page's own line under the paper, like the feedback prompt: secondary to
+   the lyrics, and hidden from the printed result. */
+.library-prompt {
+  display: flex;
+  width: 8.5in;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin: 0.85rem auto 0;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+}
+
+.library-prompt p {
+  margin: 0;
+}
+
+.library-prompt form {
+  margin: 0;
+}
+
+.library-prompt .button {
+  min-height: 2.35rem;
+}
+
 .flash {
   position: fixed;
   z-index: 50;
@@ -1386,8 +1619,17 @@ html:has(body.preview-body) {
     width: calc(100% - 1rem);
   }
 
-  .feedback-prompt {
+  .feedback-prompt,
+  .library-prompt {
     width: calc(100% - 1rem);
+  }
+
+  .account-bar {
+    justify-content: flex-start;
+  }
+
+  .library-item {
+    align-items: flex-start;
   }
 
   .songbook-prompt {

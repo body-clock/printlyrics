@@ -12,6 +12,21 @@ People who need clean, legible song lyrics on paper: musicians rehearsing, teach
 
 PrintLyrics turns pasted or extracted song lyrics into a durable, shareable, print-optimized page. Success means the preview is trustworthy, the printed result is readable, and users can adjust type size and columns without learning a layout tool. A page can also be extended into a songbook: an ordered set of pages that prints as one job, which is what a rehearsal, a class period, or a service needs. Both flows are documented on a short public guide: the homepage and those two guides are the only crawlable surfaces, and saved sheets and songbooks stay unlisted behind their tokens.
 
+## Accounts
+
+Accounts are an optional shelf, not a gate. The homepage, search, manual
+entry, editing, preview, printing, and token-addressed pages all work signed
+out. Signing in lets a visitor keep up to ten lyric sheets or songbooks to print
+and edit later, across devices. Google is the first and loudest sign-in control;
+email and password are the fallback. This release has no paid tier, no billing,
+and no feature withheld from an account: create an account, keep something, and
+come back to it.
+
+A saved page is still an unlisted token URL rather than an authorization system.
+The account controls what appears in the library; it does not make a shared link
+private. Saved pages stop expiring while they are in a library, and removing one
+returns it to the anonymous retention window.
+
 ## Brand Personality
 
 Quiet, literate, and dependable. The product should feel considered without becoming precious, decorative, or self-conscious.

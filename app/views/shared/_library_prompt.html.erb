@@ -1,0 +1,23 @@
+<%#
+  The way a page becomes part of an account's shelf. It sits with the page, not
+  in the control bar, so the lyrics and the print result stay first. A visitor
+  who is not signed in can still save: the click starts sign-in, and the page is
+  put on the shelf when the account is ready.
+%>
+<% if authenticated? && current_user.saved?(item) %>
+  <p class="library-prompt no-print">
+    <%= t("shared.library_prompt.saved_html", library_link: link_to(t("shared.library_prompt.library_link"), library_path)) %>
+  </p>
+<% elsif authenticated? && current_user.library_full? %>
+  <p class="library-prompt no-print">
+    <%= t("shared.library_prompt.full_html", limit: SavedItem::LIMIT, library_link: link_to(t("shared.library_prompt.library_link"), library_path)) %>
+  </p>
+<% else %>
+  <div class="library-prompt no-print">
+    <p><%= authenticated? ? t("shared.library_prompt.signed_in") : t("shared.library_prompt.signed_out") %></p>
+    <%= button_to t("shared.library_prompt.save"),
+          saved_items_path,
+          params: { item_type: item.class.name, token: item.token },
+          class: "button button-secondary" %>
+  </div>
+<% end %>

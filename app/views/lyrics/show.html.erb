@@ -33,6 +33,8 @@
 <div class="preview-shell"
      data-controller="preview"
      data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
+  <%= render "shared/flash" %>
+
   <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
       <div class="control-start">
@@ -90,6 +92,11 @@
       </article>
     </div>
   </div>
+
+  <%# The page's own way onto an account's shelf, then the complaint line:
+      keeping a good sheet and reporting a bad one are both secondary to the
+      lyrics above. %>
+  <%= render "shared/library_prompt", item: @lyric %>
 
   <%# Under the paper rather than over it: the lyrics come first, and the visitor
       who has just read a bad page is the one with something to say. %>

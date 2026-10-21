@@ -1,4 +1,18 @@
 Rails.application.routes.draw do
+  resource :session, only: %i[new create destroy]
+  resources :registrations, only: %i[new create], path: "account"
+  # OmniAuth answers the request phase at /auth/google_oauth2 itself, so only
+  # the two ends it hands back are routed here.
+  get "/auth/google_oauth2/callback", to: "omniauth_callbacks#create"
+  get "/auth/failure", to: "omniauth_callbacks#failure"
+  resources :passwords, only: %i[new create edit update], param: :token
+
+  # An account's shelf. GET lists it, POST puts one page on it, DELETE takes one
+  # off and returns that page to the anonymous retention clock.
+  get "library", to: "saved_items#index", as: :library
+  post "library", to: "saved_items#create", as: :saved_items
+  delete "library/:id", to: "saved_items#destroy", as: :saved_item
+
   root "lyrics#new"
   get "print-lyrics-on-one-page", to: "printing_guides#one_page", as: :print_lyrics_on_one_page
   get "print-a-songbook", to: "printing_guides#songbook", as: :print_a_songbook

@@ -15,8 +15,8 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All ten exact event names exist, automatic goals off in settings and disabled in the snippet | |
-| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the ten shared events plus every property arrive beside Plausible's, and the four names that are Umami's alone (`Feedback Submitted`, `Feedback Prompt Shown`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
+| Plausible goals | Site owner | All thirteen exact event names exist, automatic goals off in settings and disabled in the snippet | |
+| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the thirteen shared events plus every property arrive beside Plausible's, and the four names that are Umami's alone (`Feedback Submitted`, `Feedback Prompt Shown`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
 | Organic Search segment | Site owner | Plausible's saved site segment can be reopened, and the same split is saved in Umami as one referrer segment per search engine — the channels Umami reports are not filterable, so there is no single organic segment to save | |
 | Umami readings saved | Site owner | The four funnels and the saved segments named in "Read the events in Umami" exist and reopen, and the five goals the Events row names are saved | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
@@ -77,6 +77,9 @@ custom-event goal for each exact, case-sensitive name:
 8. `Songbook Created`
 9. `Songbook Created From Offer`
 10. `Songbook Printed`
+11. `Account Created`
+12. `Library Item Saved`
+13. `Account Library Opened`
 
 A goal has to exist before the release that emits its event, because Plausible
 does not backfill what arrived earlier: its counter starts at the first event
@@ -97,6 +100,9 @@ addition costs dashboard legibility and has to earn its place:
 | `Songbook Created` | Did a set of sheets come into being? |
 | `Songbook Created From Offer` | Did the suggestion produce that set? |
 | `Songbook Printed` | Did a set reach the printer as one job? |
+| `Account Created` | Did a visitor finish making an optional account? |
+| `Library Item Saved` | Did an account keep a sheet or songbook? |
+| `Account Library Opened` | Did a signed-in visitor return to the library? |
 
 [The measurement contract](measurement-contract.md) holds the rule behind this
 list: the naming, the slots every tool fills, and what must never travel.
@@ -636,9 +642,10 @@ the log across navigation.
    shows one sheet per song. Adding a third song must not report the creation
    again.
 8. Confirm no other event arrives, custom or automatic. The application emits
-   exactly thirteen names — ten the browser sends to both destinations, two the
-   browser sends to Umami alone (`Songbook Offer Shown`, `Songbook Offer
-   Dismissed`), and one the server sends (`Feedback Submitted`) — so an
+   exactly seventeen names — thirteen the browser sends to both destinations,
+   three the browser sends to Umami alone (`Feedback Prompt Shown`,
+   `Songbook Offer Shown`, `Songbook Offer Dismissed`), and one the server
+   sends (`Feedback Submitted`) — so an
    unexpected custom event means stale instrumentation; an automatic
    `Form: Submission`, `File Download`, or
    `Outbound Link: Click` means the `plausible.init` flags did not take
@@ -762,10 +769,10 @@ the snippet disables it at initialization rather than relying on site settings.
 Run Umami and Plausible together for two weeks, then compare
 `Print Page Generated` and `Print Dialog Opened` over the same window in each
 dashboard, beside the four properties only Umami can read. What matters is that
-every one of the ten events Plausible receives is present in both and that the
-two series move together — the three names that are Umami's alone
-(`Feedback Submitted`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) are
-absent from Plausible by design rather than a gap. The counts
+every one of the thirteen events Plausible receives is present in both and that the
+two series move together — the four names that are Umami's alone
+(`Feedback Submitted`, `Feedback Prompt Shown`, `Songbook Offer Shown`,
+`Songbook Offer Dismissed`) are absent from Plausible by design rather than a gap. The counts
 will not match exactly, because the two products define a
 visit and a visitor differently and because Plausible filters non-human traffic
 in layers Umami does not have, so a lower Umami figure is not by itself a

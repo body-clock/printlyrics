@@ -1,0 +1,18 @@
+<nav class="account-bar" aria-label="<%= t("shared.account_bar.label") %>">
+  <% if authenticated? %>
+    <span class="account-bar-email"><%= current_user.email_address %></span>
+    <%= link_to t("shared.account_bar.library"), library_path %>
+    <%= button_to t("shared.account_bar.sign_out"),
+          session_path,
+          method: :delete,
+          class: "account-bar-signout",
+          form: { class: "account-bar-form" } %>
+  <% else %>
+    <% unless current_page?(new_session_path) %>
+      <%= link_to t("shared.account_bar.sign_in"), new_session_path %>
+    <% end %>
+    <% unless current_page?(new_registration_path) %>
+      <%= link_to t("shared.account_bar.register"), new_registration_path %>
+    <% end %>
+  <% end %>
+</nav>

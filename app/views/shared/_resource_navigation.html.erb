@@ -12,5 +12,12 @@
     <% unless current_section == :feedback %>
       <%= link_to t(".feedback"), feedback_path %>
     <% end %>
+    <% unless current_section == :account %>
+      <% if authenticated? %>
+        <%= link_to t(".library"), library_path %>
+      <% else %>
+        <%= link_to t(".sign_in"), new_session_path %>
+      <% end %>
+    <% end %>
   </nav>
 </footer>

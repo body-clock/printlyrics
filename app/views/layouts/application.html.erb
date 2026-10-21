@@ -91,5 +91,14 @@
     <main>
       <%= yield %>
     </main>
+
+    <%# Outcomes the server knows and only the page after them can report. Each
+        names the response that carried it so a Turbo snapshot cannot report the
+        same account creation or save twice. %>
+    <% take_page_responses.each do |name, key| %>
+      <div hidden
+           data-analytics-page-response="<%= name %>"
+           data-analytics-response-key="<%= key %>"></div>
+    <% end %>
   </body>
 </html>

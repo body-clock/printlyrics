@@ -41,7 +41,7 @@ other three cannot: `Search to printer` reads the same attempt through
 the search's loss is read as two — a search that found nothing to pick, and a
 result that was picked and never made.
 
-The fourteen names in use, grouped by the flow that fires them:
+The seventeen names in use, grouped by the flow that fires them:
 
 - Print flow: `Print Page Generated`, `Second Print Page Generated`, `Print
   Dialog Opened`, `Songbook Created`, `Songbook Created From Offer`, `Songbook
@@ -49,6 +49,11 @@ The fourteen names in use, grouped by the flow that fires them:
 - Entry flow: `Song Search Submitted`, `Song Search Missed`, `Song Result
   Selected`, `Manual Entry Submitted`, `Feedback Submitted`, `Feedback Prompt
   Shown`.
+- Account flow: `Account Created`, `Library Item Saved`, `Account Library
+  Opened`. These answer whether optional accounts are used at all, which is the
+  decision a paid tier waits on: `Account Created` counts completed
+  registrations, `Library Item Saved` counts a page actually kept, and
+  `Account Library Opened` counts a signed-in return to the shelf.
 
 ## The three slots every tool fills
 
@@ -113,6 +118,14 @@ nothing can attribute. Only the offer has that split; the prompt renders in one
 place, under the sheet the visit just generated, and its key is that sheet. The
 entry panel's offer arrives with a frame render as well as with a page, so both
 ends of a response are read.
+
+Account outcomes use the same page-response marker, because the server is the
+only side that knows a registration or a save finished. `Account Created` and
+`Library Item Saved` ride one-shot session keys rendered by the layout on the
+page that follows, so a reload or a Turbo snapshot cannot report them twice.
+`Account Library Opened` is rendered by the library page itself with a fresh key
+per response. These three carry `page_count_in_session` like every other
+page-response event, which is context rather than a claim about the account.
 
 Page-level markers ride `<body>` data attributes and are reported on
 `turbo:load`: `trackPageview`, `trackGeneratedPage`, and `trackCreatedSongbook`,
