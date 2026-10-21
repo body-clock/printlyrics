@@ -89,12 +89,11 @@
   endpoints, escape output, and filter sensitive input from logs. Pass any
   subprocess arguments separately rather than interpolating external input.
 - Never send lyric text, real saved-page tokens, or song metadata to analytics.
-  Use the existing analytics helper, token-path redaction, allowlisted campaign
-  values, and documented event names. Avoid duplicate events on Turbo visits.
-  Opening the print dialog does not prove a physical page was printed. Campaign
-  values are defined by `AnalyticsCampaigns` and rendered to the client; update
-  that object and the operations document together rather than duplicating a
-  list in JavaScript.
+  Use the existing analytics helper, token-path redaction, and documented event
+  names. Avoid duplicate events on Turbo visits. Opening the print dialog does
+  not prove a physical page was printed. Umami reads campaign values natively
+  from the landing URL; the printed sheet's `utm_source=paper` is the one value
+  the application defines (`SheetMark::SOURCE`).
 
 ## Hotwire, styling, and printing
 

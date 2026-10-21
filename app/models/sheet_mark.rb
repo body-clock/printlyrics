@@ -2,16 +2,20 @@
 
 # The mark a printed sheet carries: a QR code that opens the sheet it was
 # printed from, so a page passed around a rehearsal room has a way back. The
-# address it encodes carries the campaign value `AnalyticsCampaigns` holds,
-# because a scan arrives with no referrer and a saved page reports its location
-# with the query string dropped, so that value is the only thing that can say
-# the visitor came off paper.
+# address it encodes carries the campaign value below, because a scan arrives
+# with no referrer, so that query value is the only thing that can say the
+# visitor came off paper. Umami attributes it natively from the landing URL.
 #
 # The code is drawn as one path over the modules the encoder produced, in module
 # units, and scaled by CSS, so the same markup prints at any size. Nothing the
 # visitor typed reaches this markup: the address is carried in the modules
 # rather than written into the SVG.
 class SheetMark
+  # The campaign value the printed address carries. It is the only campaign
+  # value the application still names; every other source and campaign is read
+  # by Umami from the landing URL as it is.
+  SOURCE = "paper"
+
   # A scanner needs four clear modules around the code. Without the quiet zone a
   # code this small sits inside a page of text and will not lock on, so the
   # offset and the viewBox below both count it.

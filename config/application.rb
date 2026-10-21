@@ -32,8 +32,7 @@ module Printlyrics
     # collects on it, and config/initializers/content_security_policy.rb allows
     # the same origin, so the two cannot drift; moving the service means editing
     # this line, `proxy.host` in config/deploy.yml, and DNS together.
-    # docs/organic-search-operations.md owns the setup and the two-week parallel
-    # run beside Plausible.
+    # docs/organic-search-operations.md owns the setup and operation.
     config.x.umami_origin = "https://analytics.printlyrics.app"
 
     # Public by design — it is in the page source — and it belongs under

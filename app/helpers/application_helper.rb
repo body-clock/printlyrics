@@ -3,10 +3,6 @@ module ApplicationHelper
     Rails.configuration.x.app_version
   end
 
-  def analytics_campaign_data
-    AnalyticsCampaigns.to_json
-  end
-
   # The tracker is served from the origin the content security policy allows,
   # and the layout renders it only once the deployment supplies a website ID.
   def umami_script_url
@@ -59,7 +55,7 @@ module ApplicationHelper
   # partial so the address and the code travel together, and so the markup holds
   # no address of its own: only the modules do.
   def sheet_mark_svg
-    mark = SheetMark.new(root_url(utm_source: AnalyticsCampaigns::SHEET_SOURCE))
+    mark = SheetMark.new(root_url(utm_source: SheetMark::SOURCE))
 
     content_tag(
       :svg,
