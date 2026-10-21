@@ -1,25 +1,9 @@
 require "test_helper"
 
-# The layout renders two trackers while the parallel run lasts. Each one has a
-# flag that keeps its own automatic capture from reporting a saved page's
-# location, and every flag is asserted here so a snippet edit cannot drop one
-# silently.
+# Umami is the only analytics destination. The tracker is configured so every
+# payload carries the redacted location the application builds, and so the
+# dashboard's performance report has data to read.
 class AnalyticsTest < ActionDispatch::IntegrationTest
-  test "the Plausible snippet disables every automatic capture" do
-    get root_path
-
-    assert_response :success
-    assert_includes response.body, "https://plausible.io/js/pa-"
-    # Plausible's own capture sends the live location, which bypasses the token
-    # redaction in lib/analytics.js, so a Form: Submission, File Download, or
-    # Outbound Link event on a saved page carries a real share token. The site
-    # settings cannot be relied on to keep them off.
-    assert_includes response.body, "autoCapturePageviews: false"
-    assert_includes response.body, "formSubmissions: false"
-    assert_includes response.body, "fileDownloads: false"
-    assert_includes response.body, "outboundLinks: false"
-  end
-
   test "the Umami tracker renders from the origin the policy allows" do
     get root_path
 
@@ -34,13 +18,16 @@ class AnalyticsTest < ActionDispatch::IntegrationTest
     # the song title. lib/analytics.js replaces all three on every event.
     assert_includes response.body, %(data-auto-track="false")
     assert_includes policy, "script-src 'self' #{origin} "
-    assert_includes policy, "connect-src 'self' #{origin} "
+    assert_includes policy, "connect-src 'self' #{origin}"
   end
 
-  test "no Google tag or collection host survives the migration" do
+  test "no retired analytics tag or campaign allowlist remains" do
     get root_path
 
     assert_response :success
+    refute_match(/plausible/i, response.body)
+    refute_match(/plausible/i, response.headers["Content-Security-Policy"])
+    refute_includes response.body, "data-analytics-campaigns"
     refute_match(/googletagmanager|google-analytics|gtag/, response.body)
     refute_match(/googletagmanager|google-analytics/, response.headers["Content-Security-Policy"])
   end
@@ -53,7 +40,7 @@ class AnalyticsTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     refute_includes response.body, "data-website-id"
-    assert_includes response.body, "https://plausible.io/js/pa-"
+    refute_includes response.body, "analytics.printlyrics.app/script.js"
   ensure
     Rails.configuration.x.umami_website_id = previous
   end

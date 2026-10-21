@@ -76,7 +76,7 @@ submissions are read.
 A stored submission is also reported to the site's own analytics service as
 `Feedback Submitted`, carrying the song query, the note, the surface it came
 from, and the answer, so the demand can be read beside the counts around it.
-That report is Umami's alone — never Plausible's — and the reply address is not
+That report stays on the site's own Umami service, and the reply address is not
 part of it. The [measurement contract](docs/measurement-contract.md) owns the
 rule and the event's properties.
 
@@ -142,8 +142,8 @@ handled errors with the endpoint, HTTP status, attempt count, and LRCLIB's own
 explanation. The visitor's query is never included.
 
 Use the [organic search operations runbook](docs/organic-search-operations.md)
-to configure Search Console, boot the self-hosted Umami analytics service and its
-MCP endpoint, run the two-week parallel measurement beside Plausible, record
-launch baselines, and run the 30- and 90-day reviews. The
+to configure Search Console, boot and operate the self-hosted Umami analytics
+service and its MCP endpoint, record launch baselines, and run the 30- and
+90-day reviews. The
 [measurement contract](docs/measurement-contract.md) holds the event vocabulary,
 how a surface reports an event, and what must never reach analytics.

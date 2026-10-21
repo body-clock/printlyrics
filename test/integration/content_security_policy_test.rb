@@ -10,7 +10,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
 
     assert_includes policy, "default-src 'self'"
     assert_includes policy, "object-src 'none'"
-    assert_includes policy, "script-src 'self' #{Rails.configuration.x.umami_origin} https://plausible.io https://challenges.cloudflare.com 'nonce-"
+    assert_includes policy, "script-src 'self' #{Rails.configuration.x.umami_origin} https://challenges.cloudflare.com 'nonce-"
     assert_includes policy, "frame-src https://challenges.cloudflare.com"
     assert_includes policy, "style-src-attr 'unsafe-inline'"
     assert_includes policy, "frame-ancestors 'none'"
@@ -18,10 +18,10 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
     assert_no_match(/script-src[^;]*'unsafe-inline'/, policy)
   end
 
-  test "inline analytics and importmap scripts carry the request nonce" do
+  test "importmap and module scripts carry the request nonce" do
     get root_path
 
-    nonce = response.body[/<script nonce="([^"]+)"/, 1]
+    nonce = response.body[/<script[^>]*\bnonce="([^"]+)"/, 1]
     assert nonce.present?, "expected an inline script to carry a nonce"
     assert_includes response.headers["Content-Security-Policy"], "'nonce-#{nonce}'"
     assert_match(/<script type="importmap"[^>]*nonce="#{Regexp.escape(nonce)}"/, response.body)
@@ -41,7 +41,7 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
   test "every executable inline script carries the nonce and external scripts are allowlisted" do
     get root_path
 
-    nonce = response.body[/<script nonce="([^"]+)"/, 1]
+    nonce = response.body[/<script[^>]*\bnonce="([^"]+)"/, 1]
     # Data blocks (importmap, JSON-LD) are not subject to script-src; executable
     # inline scripts (module or classic) must carry the nonce.
     executable = response.body.scan(/<script[^>]*>/).reject do |tag|
@@ -53,16 +53,16 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
     end
 
     response.body.scan(/<script[^>]*\bsrc="([^"]+)"/).flatten.each do |src|
-      assert_match(%r{\A(?:#{Regexp.escape(Rails.configuration.x.umami_origin)}|https://plausible\.io|https://challenges\.cloudflare\.com|/)}, src, "external script not allowlisted: #{src}")
+      assert_match(%r{\A(?:#{Regexp.escape(Rails.configuration.x.umami_origin)}|https://challenges\.cloudflare\.com|/)}, src, "external script not allowlisted: #{src}")
     end
   end
 
   test "the nonce is per response" do
     get root_path
-    first = response.body[/<script nonce="([^"]+)"/, 1]
+    first = response.body[/<script[^>]*\bnonce="([^"]+)"/, 1]
 
     get root_path
-    second = response.body[/<script nonce="([^"]+)"/, 1]
+    second = response.body[/<script[^>]*\bnonce="([^"]+)"/, 1]
 
     assert first.present? && second.present?
     assert_not_equal first, second

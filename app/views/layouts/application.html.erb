@@ -43,33 +43,18 @@
               nonce="<%= content_security_policy_nonce %>"></script>
     <% end %>
 
-    <!-- Privacy-friendly analytics by Plausible -->
-    <script async src="https://plausible.io/js/pa-f0moCFg03qwW-u-pSexGt.js"></script>
-    <script nonce="<%= content_security_policy_nonce %>">
-      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-      // Plausible's own capture sends `location.href` with the event, so a
-      // Form: Submission, File Download, or Outbound Link event bypasses the
-      // redaction in lib/analytics.js and leaks a saved page's share token. The
-      // site settings cannot be relied on to keep them off, so the snippet
-      // disables them here; docs/organic-search-operations.md owns the contract.
-      plausible.init({
-        autoCapturePageviews: false,
-        formSubmissions: false,
-        fileDownloads: false,
-        outboundLinks: false
-      })
-    </script>
-
     <% if umami_website_id.present? %>
-      <!-- Umami is the site's own analytics service, measuring beside Plausible
-           until the cutover in docs/organic-search-operations.md. Automatic
-           tracking is off for the same reason Plausible's is: the tracker fills
-           url, title, and referrer from the document on every payload, custom
-           events included, and on a saved page those carry the share token and
-           the song title. lib/analytics.js replaces all three on every event.
-           It is deferred rather than async so it executes before the importmap
-           modules below and no event fires without a tracker to reach. -->
-      <script defer src="<%= umami_script_url %>" data-website-id="<%= umami_website_id %>" data-auto-track="false" nonce="<%= content_security_policy_nonce %>"></script>
+      <!-- Umami is the site's own analytics service. Automatic tracking is off
+           because the tracker fills url, title, and referrer from the document
+           on every payload, custom events included, and on a saved page those
+           carry the share token and the song title. lib/analytics.js replaces
+           all three and sends every pageview and event itself. It is deferred
+           rather than async so it executes before the importmap modules below
+           and no event fires without a tracker to reach. -->
+      <script defer src="<%= umami_script_url %>"
+              data-website-id="<%= umami_website_id %>"
+              data-auto-track="false"
+              nonce="<%= content_security_policy_nonce %>"></script>
     <% end %>
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">
@@ -83,7 +68,6 @@
 
   <body class="<%= content_for?(:body_class) ? content_for(:body_class) : nil %>"
         data-visit-sheet-count="<%= visit.sheet_count %>"
-        data-analytics-campaigns="<%= analytics_campaign_data %>"
         <% if content_for?(:generated_page_key) %>data-generated-page-key="<%= yield :generated_page_key %>"<% end %>
         <% if content_for?(:created_songbook_size) %>data-created-songbook-size="<%= yield :created_songbook_size %>"<% end %>
         <% if content_for?(:created_songbook_origin) %>data-created-songbook-origin="<%= yield :created_songbook_origin %>"<% end %>
