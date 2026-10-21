@@ -8,9 +8,9 @@
 # ever inserted (createSession is an `on conflict do nothing`), so nothing this
 # call sends can overwrite what the tracker recorded.
 #
-# Only Umami receives this. Plausible is a third party, and the dispatcher in
-# lib/analytics.js reports to both destinations, so the payload below never
-# travels through it.
+# This is the one payload sent from the server rather than the browser. It
+# carries the visitor's own words by design, so it stays on this site's own
+# service and never travels through a third-party destination.
 #
 # docs/measurement-contract.md owns the vocabulary and what may travel.
 class UmamiClient

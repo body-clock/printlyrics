@@ -45,8 +45,7 @@ volumes:
 # upgrade Umami by bumping the image tag and running `bin/kamal accessory reboot
 # umami`. Only Umami is published, behind the proxy on its own host, which keeps
 # the dashboard, its login, and the MCP endpoint off printlyrics.app.
-# docs/organic-search-operations.md owns the setup, the secrets, and the
-# two-week parallel run beside Plausible.
+# docs/organic-search-operations.md owns the setup and the secrets.
 accessories:
   umami-db:
     image: postgres:17-alpine

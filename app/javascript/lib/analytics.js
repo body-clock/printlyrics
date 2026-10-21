@@ -1,21 +1,14 @@
-import { sessionStore } from "lib/settings_store"
 import { rememberCreatedSongbook, rememberReportedResponse, rememberReportedSheet } from "lib/reported_events"
 
 // The trailing slash is optional because Rails serves `/lyrics/<token>/` as the
 // same page, and a shared link that gained one would otherwise report the real
-// token to every destination.
+// token.
 const TOKEN_PATHS = /^\/(lyrics|songbooks)\/[^/]+\/?$/
-const CAMPAIGN_KEY = "printlyrics:campaign"
-
-// Campaign values are allowlisted by the server (AnalyticsCampaigns) and read
-// from a data attribute, so there is one definition instead of a parallel list
-// in this file that can drift from the documented operator contract.
-let campaignAllowlist
 
 // A share token is the only way to reach someone's saved page, so no reported
 // location may carry a real one. Paths become the synthetic `:token` form, and
 // the songbook context on the entry form keeps its parameter without its value.
-// Every analytics destination reports locations through here.
+// Every payload reports its location through here.
 export function analyticsUrl(href = window.location.href) {
   const url = new URL(href)
   const tokenPath = TOKEN_PATHS.exec(url.pathname)
@@ -49,12 +42,11 @@ export function analyticsReferrer() {
 }
 
 export function trackPageview() {
-  captureCampaign()
-  dispatch("pageview")
+  sendToUmami("pageview")
 }
 
 export function trackEvent(name, props = {}) {
-  dispatch(name, props)
+  sendToUmami(name, props)
 }
 
 // A form that names the event it reports, declared in the view beside the
@@ -63,12 +55,6 @@ export function trackEvent(name, props = {}) {
 export function trackSubmittedEvent(form) {
   const name = form.dataset?.analyticsSubmit
   if (name) trackEvent(name)
-
-  // A second name a form may carry when only this site's own service is to
-  // receive it — the offer's dismissal. It is declared in the same place and
-  // read here rather than at the control, so a form has one place to look.
-  const umamiOnly = form.dataset?.analyticsUmamiSubmit
-  if (umamiOnly) trackUmamiEvent(umamiOnly)
 }
 
 // An outcome the server rendered into a whole page rather than into a frame: the
@@ -88,7 +74,7 @@ export function trackPageResponses(root) {
     if (responseKey && !rememberReportedResponse(responseKey)) return
 
     const surface = marker.dataset.analyticsOfferSurface
-    trackUmamiEvent(marker.dataset.analyticsPageResponse, {
+    trackEvent(marker.dataset.analyticsPageResponse, {
       ...sessionPageCountProperties(),
       ...responseProperties(marker),
       ...(surface && { songbook_offer_surface: surface })
@@ -106,14 +92,6 @@ function responseProperties(marker) {
   } catch {
     return {}
   }
-}
-
-// An event this site's own service is the only destination for. Umami reads the
-// properties these exist for and Plausible's plan cannot, so they would be a
-// goal whose answer is invisible there; the goal list stays short on purpose.
-// None of these payloads carries a visitor's own words.
-export function trackUmamiEvent(name, props = {}) {
-  sendToUmami(name, props)
 }
 
 // An outcome the server knows and the client cannot: the marker is rendered
@@ -150,12 +128,10 @@ export function trackGeneratedPage() {
 // event reports a set coming into being rather than every later visit to it. The
 // origin says which route started it: the offer, or a song added to a set.
 //
-// The route is also its own event, because Plausible's plan has no custom
-// properties: `songbook_origin` cannot be read from its dashboard, so the offer
-// only stays visible there as a goal. Umami reads the parameter directly. While
-// both run, `Songbook Created` is the total and `Songbook Created From Offer` is
-// the subset the nudge produced, so the offer's conversion rate is one over the
-// other in either one.
+// The route is also its own event: `Songbook Created` is the total and
+// `Songbook Created From Offer` is the subset the nudge produced, so the offer's
+// conversion is one count over the other. Umami also carries `songbook_origin`
+// on the total, which is the same split read as a property.
 export function trackCreatedSongbook() {
   const { createdSongbookSize, createdSongbookOrigin, createdSongbookToken } = document.body.dataset
   if (!createdSongbookSize) return
@@ -200,30 +176,6 @@ function pageCountBucket(count) {
   return "6+"
 }
 
-// Both destinations run side by side until the cutover, and a browser that
-// blocks one still reports the other. Telemetry never interrupts a product
-// action: unavailable storage or a throwing third-party stub must not stop the
-// print dialog from opening.
-function dispatch(name, props = {}) {
-  const location = analyticsUrl()
-  const eventProps = { ...campaignProps(), ...props }
-
-  sendToPlausible(name, location, eventProps)
-  sendToUmami(name, eventProps)
-}
-
-function sendToPlausible(name, location, props) {
-  if (typeof window.plausible !== "function") return
-
-  try {
-    const options = { url: location }
-    if (Object.keys(props).length > 0) options.props = props
-    window.plausible(name, options)
-  } catch {
-    // Ignore analytics failures.
-  }
-}
-
 // Umami fills url, title, and referrer from the document on every payload,
 // custom events included, so a saved page would report its token and its song
 // title unless each payload supplies its own. The tracker's function form is the
@@ -232,8 +184,9 @@ function sendToPlausible(name, location, props) {
 // spaces and all, so the names below are the names the dashboard lists.
 //
 // A pageview carries no data of its own; campaign attribution comes from the
-// landing URL's UTM parameters, which Umami attributes natively, the same way
-// Plausible does.
+// landing URL's UTM parameters, which Umami attributes natively. Telemetry never
+// interrupts a product action: unavailable storage or a throwing tracker stub
+// must not stop the print dialog from opening.
 function sendToUmami(name, props) {
   if (typeof window.umami?.track !== "function") return
 
@@ -248,48 +201,4 @@ function sendToUmami(name, props) {
   } catch {
     // Ignore analytics failures.
   }
-}
-
-export function captureCampaign() {
-  const params = new URLSearchParams(window.location.search)
-  const { sources, campaigns } = campaignValues()
-  const source = allowedValue(params.get("utm_source"), sources)
-  const campaign = allowedValue(params.get("utm_campaign"), campaigns)
-  if (!source && !campaign) return
-
-  sessionStore().set(CAMPAIGN_KEY, JSON.stringify({
-    ...(source && { campaign_source: source }),
-    ...(campaign && { campaign_name: campaign })
-  }))
-}
-
-function campaignValues() {
-  if (campaignAllowlist) return campaignAllowlist
-
-  const empty = { sources: new Set(), campaigns: new Set() }
-  try {
-    const parsed = JSON.parse(document.body.dataset.analyticsCampaigns || "")
-    campaignAllowlist = {
-      sources: new Set(parsed.sources || []),
-      campaigns: new Set(parsed.campaigns || [])
-    }
-  } catch {
-    campaignAllowlist = empty
-  }
-  return campaignAllowlist
-}
-
-function campaignProps() {
-  const store = sessionStore()
-  try {
-    return JSON.parse(store.get(CAMPAIGN_KEY)) || {}
-  } catch {
-    store.remove(CAMPAIGN_KEY)
-    return {}
-  }
-}
-
-function allowedValue(value, allowlist) {
-  const normalized = value?.trim().toLowerCase()
-  return allowlist.has(normalized) ? normalized : null
 }
