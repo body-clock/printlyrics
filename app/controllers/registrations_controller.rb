@@ -13,7 +13,7 @@ class RegistrationsController < ApplicationController
 
     if @user.save
       start_new_session_for(@user)
-      remember_page_response("Account Created")
+      remember_page_response("Account Created", account_method: "password")
       redirect_to after_authentication_url,
         notice: flash[:notice].presence || t("accounts.created")
     else

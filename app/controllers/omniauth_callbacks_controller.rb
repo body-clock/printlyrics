@@ -10,7 +10,11 @@ class OmniauthCallbacksController < ApplicationController
     user = sign_in.call
 
     start_new_session_for(user)
-    remember_page_response("Account Created") if sign_in.created?
+    if sign_in.created?
+      remember_page_response("Account Created", account_method: "google")
+    else
+      remember_page_response("Account Signed In", account_method: "google")
+    end
     redirect_to after_authentication_url,
       notice: flash[:notice].presence ||
         (sign_in.created? ? t("accounts.created") : t("accounts.login.welcome_back"))

@@ -45,8 +45,8 @@ contract — unlisted link, no account, and excluded from indexing.
 Accounts are optional, and the tool stays usable signed out. Google is the first
 and primary sign-in control on both account pages; email and password are the
 fallback. A free account keeps up to ten saved pages in `/library`, counting
-lyric sheets and songbooks together. Saved pages stop expiring while they are on
-the shelf; removing one returns it to the anonymous 180-day clock.
+lyric sheets and songbooks together. Saved pages stop expiring while they are in
+the library; removing one returns it to the anonymous 180-day clock.
 
 Google creates an account when its verified address is not already in use. It
 does not claim an existing email account: without an email-verification step,

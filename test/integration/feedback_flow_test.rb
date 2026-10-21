@@ -79,12 +79,12 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     assert_select "select[name='feedback[reason]'] option[value='praise'][selected]", count: 0
   end
 
-  test "the page is reachable from the shared resource navigation, without linking to itself" do
+  test "the page is reachable from the site navigation, without linking to itself" do
     get feedback_path
 
-    assert_select "footer[data-resource-navigation] a[href='#{root_path}']", text: /print song lyrics/i
-    assert_select "footer[data-resource-navigation] a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
-    assert_select "footer[data-resource-navigation] a[href='#{feedback_path}']", count: 0
+    assert_select "header.site-header a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "header.site-header a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
+    assert_select "header.site-header a[href='#{feedback_path}']", count: 0
   end
 
   test "no widget renders while no site key is configured" do

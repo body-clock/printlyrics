@@ -79,33 +79,127 @@ textarea:focus-visible {
   border: 0;
 }
 
-.landing-shell {
-  width: min(100% - 2rem, 43rem);
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.75rem;
+  left: 0.75rem;
+  transform: translateY(-200%);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+/* One navigation surface for the whole site. It sits above the content rather
+   than repeating a set of links in every page's footer. */
+.site-header {
+  position: sticky;
+  z-index: 35;
+  top: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--canvas);
+}
+
+.site-header-inner {
+  display: flex;
+  width: min(100% - 2rem, 62rem);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1.5rem;
   margin: 0 auto;
-  padding: 4.5rem 0 2rem;
+  padding: 0.9rem 0;
 }
 
-.resource-navigation {
-  margin-top: 3rem;
-  border-top: 1px solid var(--line);
-  padding-top: 1.15rem;
+.site-brand {
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.12rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-decoration: none;
 }
 
-.resource-navigation nav {
+.site-brand:hover {
+  color: var(--accent-hover);
+}
+
+.site-nav,
+.site-account {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
-  font-size: 0.72rem;
+  align-items: center;
+  gap: 0.35rem 1.05rem;
+  font-size: 0.74rem;
 }
 
-.resource-navigation a {
+.site-nav a,
+.site-account a,
+.site-account-link {
   color: var(--ink-muted);
   font-weight: 700;
   text-underline-offset: 0.2em;
 }
 
-.resource-navigation a:hover {
+.site-nav a:hover,
+.site-account a:hover,
+.site-account-link:hover {
   color: var(--accent-hover);
+}
+
+.site-account {
+  justify-content: flex-end;
+}
+
+.site-account-email {
+  max-width: 12rem;
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-account a.site-account-register {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.42rem 0.65rem;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.site-account a.site-account-register:hover {
+  border-color: var(--ink-muted);
+  background: var(--surface-muted);
+  color: var(--ink);
+}
+
+.site-account-form {
+  display: inline;
+  margin: 0;
+}
+
+.site-account-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.landing-shell {
+  width: min(100% - 2rem, 43rem);
+  margin: 0 auto;
+  padding: 2.75rem 0 2rem;
 }
 
 .landing-frame {
@@ -712,7 +806,7 @@ textarea:focus-visible {
 .guide-shell {
   width: min(100% - 2rem, 46rem);
   margin: 0 auto;
-  padding: 3rem 0;
+  padding: 2.5rem 0 4rem;
 }
 
 .guide header {
@@ -808,57 +902,51 @@ textarea:focus-visible {
   margin: 0;
 }
 
-/* Accounts are optional, so their chrome stays out of the tool's way: a thin
-   account line at the top of the entry page and the same links in the shared
-   resource navigation. The one place an account becomes the page is its own
-   surfaces, which use the guide column. */
-.account-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: 0.5rem 0.9rem;
-  margin: 0 0 1.25rem;
-  color: var(--ink-muted);
-  font-size: 0.74rem;
+/* Account surfaces are a narrower column than the guides, with the form in a
+   single quiet panel. The library uses the wider shell because it is a grid of
+   saved things rather than a page to read. */
+.account-shell {
+  width: min(100% - 2rem, 46rem);
+  margin: 0 auto;
+  padding: 2.75rem 0 4rem;
 }
 
-.account-bar a,
-.account-bar-signout {
-  color: var(--ink);
-  font-weight: 700;
-  text-underline-offset: 0.2em;
+.library-shell {
+  width: min(100% - 2rem, 60rem);
 }
 
-.account-bar a:hover,
-.account-bar-signout:hover {
-  color: var(--accent-hover);
+.account-heading {
+  max-width: 37rem;
 }
 
-.account-bar-email {
-  max-width: 16rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.account-bar-form {
-  display: inline;
+.account-heading h1,
+.library-heading h1 {
   margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 500;
+  line-height: 1.08;
 }
 
-.account-bar-signout {
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: pointer;
-  font-size: inherit;
-  text-decoration: underline;
+.account-heading > p:last-child,
+.library-intro {
+  max-width: 37rem;
+  margin: 0.75rem 0 0;
+  color: var(--ink-muted);
 }
 
 .account-panel {
   max-width: 32rem;
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1.5rem;
+  background: var(--surface);
+}
+
+.account-panel > .account-form:first-child,
+.account-panel > .form-errors:first-child + .account-form {
+  margin-top: 0;
 }
 
 .account-form {
@@ -877,7 +965,6 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  max-width: 32rem;
   margin: 1.25rem 0 0;
   color: var(--ink-muted);
   font-size: 0.68rem;
@@ -896,16 +983,14 @@ textarea:focus-visible {
 
 .google-sign-in,
 .google-sign-in form {
-  max-width: 32rem;
   margin: 0;
 }
 
-/* The loudest sign-in route: full width, first, and the only filled button on
-   the page in a host that can offer it. */
+/* The loudest sign-in route: full width, first, and the only filled button in
+   the panel in a host that can offer it. */
 .button-google {
   width: 100%;
   justify-content: center;
-  margin-top: 1.25rem;
 }
 
 .google-mark {
@@ -945,33 +1030,73 @@ textarea:focus-visible {
   font-size: 0.82rem;
 }
 
+.account-panel .form-errors {
+  max-width: none;
+  margin: 0 0 1rem;
+}
+
+.library-capacity {
+  margin-top: 1.5rem;
+}
+
 .library-count {
+  margin: 0 0 0.55rem;
   color: var(--ink);
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
-.library-list {
-  margin: 1.5rem 0 0;
-  border-top: 1px solid var(--line);
+/* Ten places, not a progress rule: the library's size is part of the product,
+   and the spots read at a glance without drawing another line. */
+.library-meter {
+  display: flex;
+  gap: 0.28rem;
+}
+
+.library-meter span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--surface-muted);
+}
+
+.library-meter span.is-filled {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 2rem 0 0;
   padding: 0;
   list-style: none;
 }
 
-.library-item {
+/* Cards separate saved things without drawing a rule between every one of
+   them. The page's only horizontal line is the site header's. */
+.library-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid var(--line);
-  padding: 1rem 0;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1.25rem;
+  background: var(--surface);
 }
 
-.library-item-copy {
-  min-width: 0;
+.library-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .library-kind {
-  margin: 0 0 0.25rem;
+  margin: 0;
   color: var(--accent);
   font-size: 0.68rem;
   font-weight: 800;
@@ -979,54 +1104,161 @@ textarea:focus-visible {
   text-transform: uppercase;
 }
 
-.library-item h2 {
+.library-saved {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.library-card h2 {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 500;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
-.library-item h2 a {
+.library-card h2 a {
   color: var(--ink);
   text-decoration: none;
 }
 
-.library-item h2 a:hover {
+.library-card h2 a:hover {
   color: var(--accent-hover);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 
+.library-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+}
+
+.library-open {
+  color: var(--ink);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.library-open::after {
+  content: " →";
+}
+
+.library-open:hover {
+  color: var(--accent-hover);
+}
+
+.library-remove-form {
+  margin: 0;
+}
+
 .library-remove {
-  flex: 0 0 auto;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 0.45rem 0.65rem;
-  background: var(--surface);
+  border: 0;
+  padding: 0;
+  background: transparent;
   color: var(--ink-muted);
   cursor: pointer;
   font-size: 0.72rem;
   font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .library-remove:hover {
-  border-color: color-mix(in oklch, var(--error), var(--line) 45%);
   color: var(--error);
 }
 
-/* The page's own line under the paper, like the feedback prompt: secondary to
-   the lyrics, and hidden from the printed result. */
+.library-empty {
+  max-width: 37rem;
+  margin-top: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1.75rem;
+  background: var(--surface);
+}
+
+.library-empty h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.library-empty p:not(.eyebrow) {
+  margin: 0.65rem 0 1.25rem;
+  color: var(--ink-muted);
+}
+
+/* The page's own offer under the paper, like the feedback prompt: secondary to
+   the lyrics, and hidden from the printed result. It is a quiet surface rather
+   than another rule across the page. */
+.account-prompt,
 .library-prompt {
   display: flex;
   width: 8.5in;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.65rem 1rem;
+  gap: 0.75rem 1.25rem;
   margin: 0.85rem auto 0;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
   color: var(--ink-muted);
   font-size: 0.75rem;
+}
+
+.account-prompt-copy {
+  min-width: 0;
+  flex: 1 1 22rem;
+}
+
+.account-prompt-title {
+  margin: 0 0 0.2rem;
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+.account-prompt-copy p:last-child {
+  margin: 0;
+}
+
+.account-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.account-prompt-dismiss-form {
+  margin: 0;
+}
+
+.account-prompt-dismiss {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.account-prompt-dismiss:hover {
+  color: var(--ink);
+}
+
+.library-prompt {
+  padding-block: 0.7rem;
 }
 
 .library-prompt p {
@@ -1037,6 +1269,7 @@ textarea:focus-visible {
   margin: 0;
 }
 
+.account-prompt .button,
 .library-prompt .button {
   min-height: 2.35rem;
 }
@@ -1044,7 +1277,7 @@ textarea:focus-visible {
 .flash {
   position: fixed;
   z-index: 50;
-  top: 1rem;
+  top: 5.25rem;
   left: 50%;
   display: flex;
   width: min(calc(100% - 2rem), 34rem);
@@ -1084,6 +1317,12 @@ textarea:focus-visible {
 
 .preview-body {
   background: oklch(0.91 0.008 85);
+}
+
+/* The preview's own control bar owns the top of the page, and the site header
+   is not rendered there, so its notices sit just below that bar. */
+.preview-body .flash {
+  top: 5.5rem;
 }
 
 /* The sheet is taller than a phone, and the scrollbar that appears partway
@@ -1620,16 +1859,63 @@ html:has(body.preview-body) {
   }
 
   .feedback-prompt,
+  .account-prompt,
   .library-prompt {
     width: calc(100% - 1rem);
   }
 
-  .account-bar {
-    justify-content: flex-start;
+  .site-header-inner {
+    gap: 0.5rem 1rem;
+    padding: 0.75rem 0;
   }
 
-  .library-item {
-    align-items: flex-start;
+  .site-nav {
+    order: 3;
+    width: 100%;
+    gap: 0.35rem 0.85rem;
+  }
+
+  .site-account-email {
+    display: none;
+  }
+
+  .flash {
+    top: 6rem;
+  }
+
+  .preview-body .flash {
+    top: 7.5rem;
+  }
+
+  .account-shell {
+    padding: 2rem 0 3rem;
+  }
+
+  .account-panel {
+    padding: 1.15rem;
+  }
+
+  .account-heading h1,
+  .library-heading h1 {
+    font-size: 2rem;
+  }
+
+  .library-grid {
+    grid-template-columns: 1fr;
+    margin-top: 1.5rem;
+  }
+
+  .library-card {
+    padding: 1.1rem;
+  }
+
+  .library-card-head {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .library-saved {
+    text-align: left;
   }
 
   .songbook-prompt {

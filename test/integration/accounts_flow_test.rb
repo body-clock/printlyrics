@@ -6,8 +6,8 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Find, format, and print song lyrics"
-    assert_select ".account-bar a[href='#{new_session_path}']"
-    assert_select ".account-bar a[href='#{new_registration_path}']"
+    assert_select ".site-header a[href='#{new_session_path}']"
+    assert_select ".site-header a[href='#{new_registration_path}']"
   end
 
   test "registration creates an account, starts a session, and opens the library" do
@@ -28,12 +28,16 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_select "[role=status]", /Account created/
     assert_select "[data-analytics-page-response='Account Created']", 1
+    created = css_select("[data-analytics-page-response='Account Created']").first
+    assert_equal "password", JSON.parse(created["data-analytics-props"])["account_method"]
 
     get library_path
     assert_response :success
     assert_select "h1", "Your library"
     assert_select ".library-count", "0 of 10 saved"
-    assert_select ".account-bar-email", user.email_address
+    assert_select ".library-meter span", count: 10
+    assert_select ".library-meter span.is-filled", count: 0
+    assert_select ".site-account-email", user.email_address
     assert_select "[data-analytics-page-response='Account Library Opened']", 1
   end
 
@@ -58,6 +62,10 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
 
     post session_path, params: { email_address: " WRITER@EXAMPLE.TEST ", password: "long-password" }
     assert_redirected_to root_url
+    follow_redirect!
+    assert_select "[data-analytics-page-response='Account Signed In']", 1
+    signed_in = css_select("[data-analytics-page-response='Account Signed In']").first
+    assert_equal "password", JSON.parse(signed_in["data-analytics-props"])["account_method"]
 
     get library_path
     assert_response :success
@@ -71,7 +79,7 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     post session_path, params: { email_address: user.email_address, password: "wrong-password" }
     assert_redirected_to new_session_path
     follow_redirect!
-    assert_select "[role=alert]", /did not match/
+    assert_select "[role=alert]", /didn't match/
   end
 
   test "a reset link sets a new password and invalidates the old sessions" do
@@ -111,12 +119,16 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert user.saved?(lyric)
     follow_redirect!
     assert_select "[data-analytics-page-response='Library Item Saved']", 1
+    saved = css_select("[data-analytics-page-response='Library Item Saved']").first
+    assert_equal "lyric", JSON.parse(saved["data-analytics-props"])["saved_item_type"]
+    assert_equal "library", JSON.parse(saved["data-analytics-props"])["save_source"]
 
     get library_path
     assert_response :success
     assert_select ".library-count", "1 of 10 saved"
-    assert_select ".library-item .library-kind", "Lyric sheet"
-    assert_select ".library-item h2 a[href='#{lyric_path(lyric)}']", /Saved Song/
+    assert_select ".library-meter span.is-filled", count: 1
+    assert_select ".library-card .library-kind", "Lyric sheet"
+    assert_select ".library-card h2 a[href='#{lyric_path(lyric)}']", /Saved Song/
 
     saved_item = user.saved_items.sole
     delete saved_item_path(saved_item)
@@ -141,8 +153,8 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert_nil second.reload.expires_at
 
     get library_path
-    assert_select ".library-item .library-kind", "Songbook"
-    assert_select ".library-item h2 a[href='#{songbook_path(songbook)}']", /First Song · 2 songs/
+    assert_select ".library-card .library-kind", "Songbook"
+    assert_select ".library-card h2 a[href='#{songbook_path(songbook)}']", /First Song · 2 songs/
   end
 
   test "the library holds ten items across lyric sheets and songbooks" do
@@ -165,7 +177,7 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert_equal SavedItem::LIMIT, user.saved_items.count
     assert_not_nil eleventh.reload.expires_at
     follow_redirect!
-    assert_select "[role=alert]", /holds 10 items/
+    assert_select "[role=alert]", /used all 10 spots/
   end
 
   test "saving while signed out finishes after registration and returns to the page" do
@@ -189,7 +201,7 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert User.find_by!(email_address: "saver@example.test").saved?(lyric)
     assert_nil lyric.reload.expires_at
     follow_redirect!
-    assert_select "[role=status]", /Saved to your library/
+    assert_select "[role=status]", /Saved\. You can open it here any time/
     assert_select ".library-prompt", /Saved in/
   end
 
@@ -201,11 +213,75 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     post saved_items_path, params: { item_type: "Lyric", token: lyric.token }
     assert_redirected_to root_path
     follow_redirect!
-    assert_select "[role=alert]", /expired or wasn't found/
+    assert_select "[role=alert]", /expired or can't be found/
 
     post saved_items_path, params: { item_type: "User", token: user.id }
     assert_redirected_to root_path
     assert_equal 0, user.saved_items.count
+  end
+
+  test "a generated sheet prompts once and not now settles it for the visit" do
+    lyric = generate_sheet(title: "Prompt Sheet")
+
+    assert_select ".account-prompt .account-prompt-title", /Save this sheet for later/
+    shown = css_select("[data-analytics-page-response='Account Prompt Shown']").first
+    assert_equal "sheet", JSON.parse(shown["data-analytics-props"])["account_prompt_surface"]
+
+    delete account_prompt_path, params: { surface: "sheet" }
+
+    assert_redirected_to root_path
+    follow_redirect!
+    assert_select "[data-analytics-page-response='Account Prompt Dismissed']", 1
+    dismissed = css_select("[data-analytics-page-response='Account Prompt Dismissed']").first
+    assert_equal "sheet", JSON.parse(dismissed["data-analytics-props"])["account_prompt_surface"]
+
+    get lyric_path(lyric)
+    assert_select ".account-prompt", count: 0
+  end
+
+  test "a sheet this visit did not make does not prompt" do
+    lyric = Lyric.create!(lyrics: "Someone else's line", title: "Shared Sheet")
+
+    get lyric_path(lyric)
+
+    assert_response :success
+    assert_select ".account-prompt", count: 0
+    assert_select "[data-analytics-page-response='Account Prompt Shown']", count: 0
+  end
+
+  test "a signed-in visitor sees the library action instead of the account prompt" do
+    user = create_user
+    sign_in(user)
+
+    generate_sheet(title: "Member Sheet")
+
+    assert_select ".account-prompt", count: 0
+    assert_select ".library-prompt", text: /Save to your library/
+  end
+
+  test "a songbook made by the visit prompts with its own surface" do
+    first = generate_sheet(title: "First Song")
+    second = generate_sheet(title: "Second Song")
+
+    post songbooks_path, params: { lyric_tokens: [ first.token, second.token ] }
+
+    assert_redirected_to songbook_path(Songbook.last)
+    follow_redirect!
+    assert_select ".account-prompt .account-prompt-title", /Save this songbook/
+    shown = css_select("[data-analytics-page-response='Account Prompt Shown']").first
+    assert_equal "songbook", JSON.parse(shown["data-analytics-props"])["account_prompt_surface"]
+  end
+
+  test "a shared songbook does not prompt" do
+    songbook = Songbook.start_with(
+      Lyric.create!(lyrics: "First line"),
+      Lyric.create!(lyrics: "Second line")
+    )
+
+    get songbook_path(songbook)
+
+    assert_response :success
+    assert_select ".account-prompt", count: 0
   end
 
   test "the library requires an account" do

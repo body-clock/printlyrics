@@ -7,6 +7,7 @@
 <% content_for :canonical_url, root_url %>
 <% content_for :robots, "noindex, nofollow" %>
 <% content_for :body_class, "preview-body" %>
+<% content_for :hide_site_header, true %>
 <% content_for :generated_page_key, @generated_page_key if @generated_page_key %>
 <% if @created_songbook %>
   <% content_for :created_songbook_size, @created_songbook[:size] %>
@@ -91,5 +92,9 @@
     </div>
   </div>
 
-  <%= render "shared/library_prompt", item: @songbook %>
+  <% if authenticated? %>
+    <%= render "shared/library_prompt", item: @songbook %>
+  <% elsif @account_prompt %>
+    <%= render "shared/account_prompt", item: @songbook, surface: "songbook" %>
+  <% end %>
 </div>

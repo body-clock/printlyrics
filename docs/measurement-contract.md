@@ -41,7 +41,7 @@ other three cannot: `Search to printer` reads the same attempt through
 the search's loss is read as two — a search that found nothing to pick, and a
 result that was picked and never made.
 
-The seventeen names in use, grouped by the flow that fires them:
+The twenty names in use, grouped by the flow that fires them:
 
 - Print flow: `Print Page Generated`, `Second Print Page Generated`, `Print
   Dialog Opened`, `Songbook Created`, `Songbook Created From Offer`, `Songbook
@@ -49,11 +49,14 @@ The seventeen names in use, grouped by the flow that fires them:
 - Entry flow: `Song Search Submitted`, `Song Search Missed`, `Song Result
   Selected`, `Manual Entry Submitted`, `Feedback Submitted`, `Feedback Prompt
   Shown`.
-- Account flow: `Account Created`, `Library Item Saved`, `Account Library
-  Opened`. These answer whether optional accounts are used at all, which is the
-  decision a paid tier waits on: `Account Created` counts completed
-  registrations, `Library Item Saved` counts a page actually kept, and
-  `Account Library Opened` counts a signed-in return to the shelf.
+- Account flow: `Account Created`, `Account Signed In`, `Account Prompt Shown`,
+  `Account Prompt Dismissed`, `Library Item Saved`, `Account Library Opened`.
+  These answer whether optional accounts are used at all, which is the decision
+  a paid tier waits on. `Account Created` and `Account Signed In` split the
+  method with `account_method`; the prompt pair carries
+  `account_prompt_surface`; `Library Item Saved` carries `saved_item_type` and
+  `save_source`; `Account Library Opened` counts a signed-in return to the
+  library.
 
 ## The three slots every tool fills
 
@@ -120,12 +123,19 @@ entry panel's offer arrives with a frame render as well as with a page, so both
 ends of a response are read.
 
 Account outcomes use the same page-response marker, because the server is the
-only side that knows a registration or a save finished. `Account Created` and
-`Library Item Saved` ride one-shot session keys rendered by the layout on the
-page that follows, so a reload or a Turbo snapshot cannot report them twice.
-`Account Library Opened` is rendered by the library page itself with a fresh key
-per response. These three carry `page_count_in_session` like every other
-page-response event, which is context rather than a claim about the account.
+only side that knows a registration, a sign-in, a prompt answer, or a save
+finished. `Account Created`, `Account Signed In`, `Library Item Saved`, and
+`Account Prompt Dismissed` ride one-shot session keys rendered by the layout on
+the page that follows, so a reload or a Turbo snapshot cannot report them twice.
+`Account Library Opened` is rendered by the library page itself, and
+`Account Prompt Shown` by the prompt, each with a fresh key per response. All
+six carry `page_count_in_session`, and their properties travel in
+`data-analytics-props`: `account_method`, `account_prompt_surface`,
+`saved_item_type`, or `save_source` as applicable.
+
+The page-response path reports to the site's own service alone. Account events
+are therefore Umami readings; Plausible's goal list remains the ten shared
+events.
 
 Page-level markers ride `<body>` data attributes and are reported on
 `turbo:load`: `trackPageview`, `trackGeneratedPage`, and `trackCreatedSongbook`,
@@ -184,7 +194,10 @@ the operator's replies.
 
 Counts and sizes travel as buckets, not raw values: `page_count_in_session` and
 `songbook_size` through `songbookSizeProperties` and
-`sessionPageCountProperties` in that file. The visit's total is the server's
+`sessionPageCountProperties` in that file. The account properties are fixed
+vocabularies too — `account_method`, `account_prompt_surface`,
+`saved_item_type`, and `save_source` — and never carry an address, a token, or
+a page title. The visit's total is the server's
 (`app/models/visit.rb`): one list of the sheets a browser session made, in every
 tab, and the same window Umami expires a visit on. The offer's two events carry
 that same bucket and nothing else. Campaign values are allowlisted by the

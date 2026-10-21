@@ -55,7 +55,7 @@
   changing this workflow.
 - Saved pages use opaque tokens, remain `noindex, nofollow`, and never appear
   in the sitemap. Tokens are shareable URLs, not an authentication system.
-- Accounts are optional. `SavedItem` is the account's shelf and owns the
+- Accounts are optional. `SavedItem` is the account's library and owns the
   ten-place cap across lyric sheets and songbooks; saving sets the page's
   `expires_at` to nil and removing it restores the anonymous window. Keep public
   flows working without a session, and make account-only controllers opt into

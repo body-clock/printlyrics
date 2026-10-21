@@ -2,15 +2,16 @@
 <% content_for :description, t("accounts.password_reset.description") %>
 <% content_for :robots, "noindex, nofollow" %>
 
-<div class="guide-shell">
-  <article class="guide account-page">
-    <header>
-      <h1><%= t("accounts.password_reset.edit_heading") %></h1>
-    </header>
+<div class="account-shell">
+  <header class="account-heading">
+    <p class="eyebrow"><%= t("accounts.eyebrow") %></p>
+    <h1><%= t("accounts.password_reset.edit_heading") %></h1>
+  </header>
 
-    <%= render "shared/flash" %>
+  <%= render "shared/flash" %>
+
+  <div class="account-panel">
     <%= render "shared/form_errors", errors: @user.errors %>
-
     <%= form_with url: password_path(params[:token]), method: :put, class: "account-form" do |form| %>
       <div class="field">
         <div class="field-label-row">
@@ -25,9 +26,9 @@
       </div>
       <%= form.submit t("accounts.password_reset.save_submit"), class: "button button-secondary" %>
     <% end %>
+  </div>
 
-    <div class="account-links">
-      <p><%= link_to t("accounts.login_link_short"), new_session_path %></p>
-    </div>
-  </article>
+  <div class="account-links">
+    <p><%= link_to t("accounts.login_link_short"), new_session_path %></p>
+  </div>
 </div>

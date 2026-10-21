@@ -14,18 +14,18 @@ PrintLyrics turns pasted or extracted song lyrics into a durable, shareable, pri
 
 ## Accounts
 
-Accounts are an optional shelf, not a gate. The homepage, search, manual
-entry, editing, preview, printing, and token-addressed pages all work signed
-out. Signing in lets a visitor keep up to ten lyric sheets or songbooks to print
-and edit later, across devices. Google is the first and loudest sign-in control;
+Accounts are optional, not a gate. The homepage, search, manual entry, editing,
+preview, printing, and token-addressed pages all work signed out. Signing in
+lets a visitor keep up to ten lyric sheets or songbooks to print and edit later,
+across devices. Google is the first and loudest sign-in control;
 email and password are the fallback. This release has no paid tier, no billing,
 and no feature withheld from an account: create an account, keep something, and
 come back to it.
 
 A saved page is still an unlisted token URL rather than an authorization system.
 The account controls what appears in the library; it does not make a shared link
-private. Saved pages stop expiring while they are in a library, and removing one
-returns it to the anonymous retention window.
+private. Saved pages stop expiring while they are kept, and removing one returns
+it to the anonymous retention window.
 
 ## Brand Personality
 

@@ -15,8 +15,8 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Plausible goals | Site owner | All thirteen exact event names exist, automatic goals off in settings and disabled in the snippet | |
-| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the thirteen shared events plus every property arrive beside Plausible's, and the four names that are Umami's alone (`Feedback Submitted`, `Feedback Prompt Shown`, `Songbook Offer Shown`, `Songbook Offer Dismissed`) arrive there | |
+| Plausible goals | Site owner | All ten exact event names exist, automatic goals off in settings and disabled in the snippet | |
+| Umami parallel run | Site owner | The Umami site exists, the tracker renders on production, the ten shared events plus every property arrive beside Plausible's, and the Umami-only account, songbook-offer, and feedback events arrive there | |
 | Organic Search segment | Site owner | Plausible's saved site segment can be reopened, and the same split is saved in Umami as one referrer segment per search engine — the channels Umami reports are not filterable, so there is no single organic segment to save | |
 | Umami readings saved | Site owner | The four funnels and the saved segments named in "Read the events in Umami" exist and reopen, and the five goals the Events row names are saved | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
@@ -77,9 +77,6 @@ custom-event goal for each exact, case-sensitive name:
 8. `Songbook Created`
 9. `Songbook Created From Offer`
 10. `Songbook Printed`
-11. `Account Created`
-12. `Library Item Saved`
-13. `Account Library Opened`
 
 A goal has to exist before the release that emits its event, because Plausible
 does not backfill what arrived earlier: its counter starts at the first event
@@ -100,9 +97,6 @@ addition costs dashboard legibility and has to earn its place:
 | `Songbook Created` | Did a set of sheets come into being? |
 | `Songbook Created From Offer` | Did the suggestion produce that set? |
 | `Songbook Printed` | Did a set reach the printer as one job? |
-| `Account Created` | Did a visitor finish making an optional account? |
-| `Library Item Saved` | Did an account keep a sheet or songbook? |
-| `Account Library Opened` | Did a signed-in visitor return to the library? |
 
 [The measurement contract](measurement-contract.md) holds the rule behind this
 list: the naming, the slots every tool fills, and what must never travel.
@@ -114,10 +108,11 @@ name is the only dimension the dashboard can read. Every split that would
 otherwise be a property is its own goal instead.
 
 The application still sends `entry_method`, `songbook_size`, `songbook_origin`,
-`campaign_source`, `campaign_name`, `page_count_in_session`, and
-`songbook_offer_surface` with events.
+`campaign_source`, `campaign_name`, `page_count_in_session`,
+`songbook_offer_surface`, `account_method`, `account_prompt_surface`,
+`saved_item_type`, and `save_source` with events.
 **Plausible cannot read any of them on this plan, and no reading below depends on
-them here.** Umami records all seven as event properties, which is why it runs
+them here.** Umami records all of them as event properties, which is why it runs
 beside Plausible for the two weeks in "Umami beside Plausible" below: it is the
 first destination this site has had that can report them next to the counts.
 
@@ -251,9 +246,10 @@ Umami is this site's own analytics service. It runs on the same host as the web
 container, as the two accessories in `config/deploy.yml`, and it measures beside
 Plausible until the cutover below. It is the only reason the `entry_method`,
 `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`,
-`page_count_in_session`, and `songbook_offer_surface` parameters the application
-sends with events can be read next to the counts: Umami reports them as event
-properties, on a plan that costs
+`page_count_in_session`, `songbook_offer_surface`, `account_method`,
+`account_prompt_surface`, `saved_item_type`, and `save_source` parameters the
+application sends with events can be read next to the counts: Umami reports them
+as event properties, on a plan that costs
 nothing at any traffic, where this Plausible plan drops them. It also exposes a
 read-only MCP endpoint, so the same figures can be asked for in sentences instead
 of clicked through.
@@ -374,18 +370,21 @@ name mapping to keep in step, and no per-event charge.
 | --- | --- | --- |
 | Goals grid | **Events** | The row's **Events** count is `Total`; **Visitors** is `Uniques`. |
 | Goals grid | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
-| Funnels | **Funnels** | Build three, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), and **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), the last set to open because a manual-entry visitor can enter at the first step. |
-| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`, `songbook_offer_surface`, and the feedback event's `feedback_surface`, `song_query`, `feedback_note`, and `feedback_reason`. |
+| Funnels | **Funnels** | Build four, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), the last set to open because a manual-entry visitor can enter at the first step, and **Account to saved item** (`Account Created` → `Library Item Saved`). |
+| Properties | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `campaign_source`, `campaign_name`, `page_count_in_session`, `songbook_offer_surface`, `account_method`, `account_prompt_surface`, `saved_item_type`, `save_source`, and the feedback event's `feedback_surface`, `song_query`, `feedback_note`, and `feedback_reason`. |
 | Explore | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
 
 Rules that make those surfaces read correctly:
 
 - **Properties are per event.** `entry_method` rides only on
   `Print Dialog Opened`, `songbook_origin` only on `Songbook Created`,
-  `songbook_offer_surface` only on `Songbook Offer Shown`, and the size and
-  page-count buckets only on the events that set them. Event data has no
-  `(not set)` bucket, so a property that never arrived is absent rather than
-  zero, and a breakdown needs the event that carries it.
+  `songbook_offer_surface` only on `Songbook Offer Shown`, `account_method` on
+  `Account Created` and `Account Signed In`, `account_prompt_surface` on the
+  two prompt events, and `saved_item_type` and `save_source` on
+  `Library Item Saved`; the size and page-count buckets ride only on the events
+  that set them. Event data has no `(not set)` bucket, so a property that never
+  arrived is absent rather than zero, and a breakdown needs the event that
+  carries it.
 - **A pageview is a payload with no name.** Umami files a payload without a name
   as a pageview and the rest as events, which is why `Print Page Generated` is an
   event row and not a pageview.
@@ -435,6 +434,30 @@ Rules that make those surfaces read correctly:
   is written as the change happens and cannot be reconstructed afterwards, which
   is why the release that added the offer's two events (`0eca1fd`, 2026-10-07) is
   the worked example of one nobody wrote.
+
+#### Read account adoption in Umami
+
+Accounts are optional, so the first question is whether anyone chooses one and
+the second is whether that choice produces anything. The account events are
+Umami-only because they arrive through the page-response path, and the readings
+are event rows rather than Plausible goals.
+
+- **Did anyone create an account?** `Account Created`, split by
+  `account_method` (`google` or `password`). The share is the first reading:
+  Google is the loudest control, so an even split is worth understanding rather
+  than assuming the button is wrong.
+- **Did the prompt work?** `Account Prompt Shown` against
+  `Account Prompt Dismissed`, and `Library Item Saved` filtered to
+  `save_source=account_prompt`. `account_prompt_surface` splits the sheet prompt
+  from the songbook prompt; the songbook is the stronger moment, so compare the
+  two before moving the prompt.
+- **What do people keep?** `Library Item Saved` split by `saved_item_type`.
+  Sheets and songbooks are different commitments, and the library cap treats
+  them the same.
+- **Do they come back?** `Account Signed In` and `Account Library Opened`.
+  A creation count with no later opens is a one-time detour, not a habit.
+- **Did a new account ever save anything?** The **Account to saved item** funnel
+  reads `Account Created` → `Library Item Saved` in a 60-minute window.
 
 Campaign performance needs no application support: Umami attributes a visit from
 the landing URL's own `utm_source`, `utm_medium`, and `utm_campaign`, and reports
@@ -642,11 +665,13 @@ the log across navigation.
    shows one sheet per song. Adding a third song must not report the creation
    again.
 8. Confirm no other event arrives, custom or automatic. The application emits
-   exactly seventeen names — thirteen the browser sends to both destinations,
-   three the browser sends to Umami alone (`Feedback Prompt Shown`,
-   `Songbook Offer Shown`, `Songbook Offer Dismissed`), and one the server
-   sends (`Feedback Submitted`) — so an
-   unexpected custom event means stale instrumentation; an automatic
+   exactly twenty names — ten the browser sends to both destinations, nine the
+   browser sends to Umami alone (`Feedback Prompt Shown`, `Songbook Offer
+   Shown`, `Songbook Offer Dismissed`, `Account Created`, `Account Signed In`,
+   `Account Prompt Shown`, `Account Prompt Dismissed`, `Library Item Saved`,
+   and `Account Library Opened`), and one the server sends (`Feedback
+   Submitted`) — so an unexpected custom event means stale instrumentation; an
+   automatic
    `Form: Submission`, `File Download`, or
    `Outbound Link: Click` means the `plausible.init` flags did not take
    effect, and on a saved page it reports the real token. Submit a `button_to`
@@ -768,11 +793,12 @@ the snippet disables it at initialization rather than relying on site settings.
 
 Run Umami and Plausible together for two weeks, then compare
 `Print Page Generated` and `Print Dialog Opened` over the same window in each
-dashboard, beside the four properties only Umami can read. What matters is that
-every one of the thirteen events Plausible receives is present in both and that the
-two series move together — the four names that are Umami's alone
-(`Feedback Submitted`, `Feedback Prompt Shown`, `Songbook Offer Shown`,
-`Songbook Offer Dismissed`) are absent from Plausible by design rather than a gap. The counts
+dashboard, beside the properties only Umami can read. What matters is that
+every one of the ten events Plausible receives is present in both and that the
+two series move together — the ten names that are Umami's alone, including the
+account events, `Feedback Submitted`, `Feedback Prompt Shown`,
+`Songbook Offer Shown`, and `Songbook Offer Dismissed`, are absent from
+Plausible by design rather than a gap. The counts
 will not match exactly, because the two products define a
 visit and a visitor differently and because Plausible filters non-human traffic
 in layers Umami does not have, so a lower Umami figure is not by itself a

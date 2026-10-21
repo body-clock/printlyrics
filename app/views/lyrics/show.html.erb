@@ -25,6 +25,7 @@
 <% content_for :og_type, "music.song" %>
 <% content_for :robots, "noindex, nofollow" %>
 <% content_for :body_class, "preview-body" %>
+<% content_for :hide_site_header, true %>
 <% content_for :generated_page_key, @generated_page_key if @generated_page_key %>
 <% content_for :head do %>
   <%= render "shared/structured_data", structured_data: structured_data %>
@@ -93,10 +94,13 @@
     </div>
   </div>
 
-  <%# The page's own way onto an account's shelf, then the complaint line:
-      keeping a good sheet and reporting a bad one are both secondary to the
-      lyrics above. %>
-  <%= render "shared/library_prompt", item: @lyric %>
+  <%# A signed-in visitor sees the shelf action; a signed-out one is asked only
+      when this visit made the sheet. A shared page gets neither. %>
+  <% if authenticated? %>
+    <%= render "shared/library_prompt", item: @lyric %>
+  <% elsif @account_prompt %>
+    <%= render "shared/account_prompt", item: @lyric, surface: "sheet" %>
+  <% end %>
 
   <%# Under the paper rather than over it: the lyrics come first, and the visitor
       who has just read a bad page is the one with something to say. %>

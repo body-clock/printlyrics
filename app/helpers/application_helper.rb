@@ -94,10 +94,15 @@ module ApplicationHelper
 
   # Outcomes the server recorded for the page that follows. Reading clears them
   # so a reload does not report the same account creation or save again; the
-  # response key covers a Turbo snapshot of this same page.
+  # response key covers a Turbo snapshot of this same page. A marker written by
+  # the previous deploy has no properties, so a bare key still renders.
   def take_page_responses
     responses = session.delete(:analytics_page_responses)
-    responses.is_a?(Hash) ? responses : {}
+    return {} unless responses.is_a?(Hash)
+
+    responses.transform_values do |value|
+      value.is_a?(Hash) ? value : { "key" => value, "props" => {} }
+    end
   end
 
   def google_sign_in_available?

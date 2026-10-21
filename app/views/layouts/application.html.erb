@@ -88,17 +88,26 @@
         <% if content_for?(:created_songbook_size) %>data-created-songbook-size="<%= yield :created_songbook_size %>"<% end %>
         <% if content_for?(:created_songbook_origin) %>data-created-songbook-origin="<%= yield :created_songbook_origin %>"<% end %>
         <% if content_for?(:created_songbook_token) %>data-created-songbook-token="<%= yield :created_songbook_token %>"<% end %>>
-    <main>
+    <a class="skip-link" href="#main"><%= t("shared.site_header.skip") %></a>
+
+    <% unless content_for?(:hide_site_header) %>
+      <%= render "shared/site_header" %>
+    <% end %>
+
+    <main id="main">
       <%= yield %>
     </main>
 
     <%# Outcomes the server knows and only the page after them can report. Each
         names the response that carried it so a Turbo snapshot cannot report the
-        same account creation or save twice. %>
-    <% take_page_responses.each do |name, key| %>
-      <div hidden
-           data-analytics-page-response="<%= name %>"
-           data-analytics-response-key="<%= key %>"></div>
+        same account creation or save twice. Properties ride with the marker. %>
+    <% take_page_responses.each do |name, response| %>
+      <%= tag.div hidden: true,
+            data: {
+              analytics_page_response: name,
+              analytics_response_key: response["key"],
+              analytics_props: response["props"].to_json
+            } %>
     <% end %>
   </body>
 </html>

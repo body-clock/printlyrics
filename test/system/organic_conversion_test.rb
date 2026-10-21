@@ -728,7 +728,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     # Umami keeps the product's names verbatim, spaces and all, so there is no
     # mapping table between the two, and a pageview is the payload with no name.
     assert_equal(
-      [ "Manual Entry Submitted", nil, "Print Page Generated", "Feedback Prompt Shown", "Print Dialog Opened" ],
+      [ "Manual Entry Submitted", nil, "Print Page Generated", "Account Prompt Shown", "Feedback Prompt Shown", "Print Dialog Opened" ],
       captured_umami_payloads.map { |payload| payload["name"] }
     )
   end

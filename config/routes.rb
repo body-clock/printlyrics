@@ -13,6 +13,10 @@ Rails.application.routes.draw do
   post "library", to: "saved_items#create", as: :saved_items
   delete "library/:id", to: "saved_items#destroy", as: :saved_item
 
+  # The account prompt is a visit-level offer, so "not now" settles it for the
+  # rest of that visit rather than leaving it to reappear on the next page.
+  delete "account-prompt", to: "account_prompts#destroy", as: :account_prompt
+
   root "lyrics#new"
   get "print-lyrics-on-one-page", to: "printing_guides#one_page", as: :print_lyrics_on_one_page
   get "print-a-songbook", to: "printing_guides#songbook", as: :print_a_songbook

@@ -11,6 +11,7 @@ class SessionsController < ApplicationController
 
     if user = User.authenticate_by(email_address: email, password: params[:password].to_s)
       start_new_session_for(user)
+      remember_page_response("Account Signed In", account_method: "password")
       redirect_to after_authentication_url,
         notice: flash[:notice].presence || t("accounts.login.welcome_back")
     else

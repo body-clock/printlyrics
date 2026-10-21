@@ -22,7 +22,9 @@ class SavedItemsController < ApplicationController
       redirect_to polymorphic_path(item), notice: t("accounts.library.already_saved")
     else
       SavedItem.add(user: current_user, item: item)
-      remember_page_response("Library Item Saved")
+      remember_page_response("Library Item Saved",
+        saved_item_type: item.class.name.underscore,
+        save_source: "library")
       redirect_to polymorphic_path(item), notice: t("accounts.library.saved")
     end
   rescue SavedItem::LimitReached

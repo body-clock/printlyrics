@@ -2,54 +2,72 @@
 <% content_for :description, t("accounts.library.description") %>
 <% content_for :robots, "noindex, nofollow" %>
 
-<div class="guide-shell">
-  <article class="guide account-page">
-    <%= render "shared/account_bar" %>
+<% capacity = @saved_items.size %>
 
-    <header>
-      <p class="eyebrow"><%= t("accounts.eyebrow") %></p>
-      <h1><%= t("accounts.library.heading") %></h1>
-      <p><%= t("accounts.library.intro", limit: SavedItem::LIMIT) %></p>
+<div class="account-shell library-shell">
+  <header class="library-heading">
+    <p class="eyebrow"><%= t("accounts.eyebrow") %></p>
+    <h1><%= t("accounts.library.heading") %></h1>
+    <p class="library-intro"><%= t("accounts.library.intro", limit: SavedItem::LIMIT) %></p>
+
+    <div class="library-capacity">
       <p class="library-count">
-        <%= t("accounts.library.count", count: @saved_items.size, limit: SavedItem::LIMIT) %>
+        <%= t("accounts.library.count", count: capacity, limit: SavedItem::LIMIT) %>
       </p>
-    </header>
+      <div class="library-meter"
+           role="progressbar"
+           aria-label="<%= t("accounts.library.capacity_label") %>"
+           aria-valuemin="0"
+           aria-valuemax="<%= SavedItem::LIMIT %>"
+           aria-valuenow="<%= capacity %>">
+        <% SavedItem::LIMIT.times do |index| %>
+          <span class="<%= "is-filled" if index < capacity %>" aria-hidden="true"></span>
+        <% end %>
+      </div>
+    </div>
+  </header>
 
-    <%= render "shared/flash" %>
+  <%= render "shared/flash" %>
 
-    <%# Opening the library is the signed-in habit worth reading. A fresh key per
-        render makes every genuine open count while a Turbo snapshot still does
-        not report twice. %>
-    <div hidden
-         data-analytics-page-response="Account Library Opened"
-         data-analytics-response-key="<%= SecureRandom.hex(8) %>"></div>
+  <%# Opening the library is the signed-in habit worth reading. A fresh key per
+      render makes every genuine open count while a Turbo snapshot still does
+      not report twice. %>
+  <div hidden
+       data-analytics-page-response="Account Library Opened"
+       data-analytics-response-key="<%= SecureRandom.hex(8) %>"></div>
 
-    <% if @saved_items.any? %>
-      <ul class="library-list">
-        <% @saved_items.each do |saved_item| %>
-          <li class="library-item">
-            <div class="library-item-copy">
-              <p class="library-kind"><%= saved_item_kind(saved_item) %></p>
-              <h2>
-                <%= link_to saved_item_title(saved_item), polymorphic_path(saved_item.item) %>
-              </h2>
-            </div>
+  <% if @saved_items.any? %>
+    <ul class="library-grid">
+      <% @saved_items.each do |saved_item| %>
+        <% item_path = polymorphic_path(saved_item.item) %>
+        <li class="library-card">
+          <div class="library-card-head">
+            <p class="library-kind"><%= saved_item_kind(saved_item) %></p>
+            <time class="library-saved" datetime="<%= saved_item.created_at.iso8601 %>">
+              <%= t("accounts.library.saved_at", date: l(saved_item.created_at.to_date, format: :long)) %>
+            </time>
+          </div>
+
+          <h2><%= link_to saved_item_title(saved_item), item_path %></h2>
+
+          <div class="library-card-actions">
+            <%= link_to t("accounts.library.open"), item_path, class: "library-open" %>
             <%= button_to t("accounts.library.remove"),
                   saved_item_path(saved_item),
                   method: :delete,
                   class: "library-remove",
+                  form: { class: "library-remove-form" },
                   aria: { label: t("accounts.library.remove_label", title: saved_item_title(saved_item)) } %>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <div class="guide-callout">
-        <h2><%= t("accounts.library.empty_heading") %></h2>
-        <p><%= t("accounts.library.empty") %></p>
-        <%= link_to t("accounts.library.make_one"), root_path, class: "button button-primary" %>
-      </div>
-    <% end %>
-
-    <%= render "shared/resource_navigation", current_section: :account %>
-  </article>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <section class="library-empty" aria-labelledby="library-empty-heading">
+      <p class="eyebrow"><%= t("accounts.library.empty_eyebrow") %></p>
+      <h2 id="library-empty-heading"><%= t("accounts.library.empty_heading") %></h2>
+      <p><%= t("accounts.library.empty") %></p>
+      <%= link_to t("accounts.library.make_one"), root_path, class: "button button-primary" %>
+    </section>
+  <% end %>
 </div>

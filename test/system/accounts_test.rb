@@ -13,7 +13,7 @@ class AccountsTest < ApplicationSystemTestCase
     assert_text "Account created"
     assert_text "browser@example.test"
 
-    within(".account-bar") { click_link "Your library" }
+    within(".site-header") { click_link "Your library" }
     assert_text "Your library"
     assert_text "0 of 10 saved"
 
@@ -24,7 +24,7 @@ class AccountsTest < ApplicationSystemTestCase
 
     assert_text "Saved Song"
     click_button "Save to your library"
-    assert_text "Saved to your library."
+    assert_text "Saved. You can open it here any time."
 
     within(".library-prompt") do
       assert_text "Saved in"
@@ -35,7 +35,7 @@ class AccountsTest < ApplicationSystemTestCase
 
     click_button "Remove"
     assert_text "0 of 10 saved"
-    assert_text "Nothing saved yet"
+    assert_text "Keep your first sheet"
   end
 
   test "Google is the first account control when the host can offer it" do

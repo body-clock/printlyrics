@@ -64,12 +64,16 @@ module Authentication
   # The click that sent a signed-out visitor through sign-in is finished here,
   # so the detour costs them a sign-in rather than a second click.
   def finish_pending_save_for(user)
-    case PendingSave.claim(session: session, user: user)
+    result = PendingSave.claim(session: session, user: user)
+
+    case result
     when :limit_reached
       flash[:alert] = t("accounts.library.full_after_sign_in", limit: SavedItem::LIMIT)
     when Lyric, Songbook
       flash[:notice] = t("accounts.library.saved")
-      remember_page_response("Library Item Saved")
+      remember_page_response("Library Item Saved",
+        saved_item_type: result.class.name.underscore,
+        save_source: "account_prompt")
     end
   end
 end

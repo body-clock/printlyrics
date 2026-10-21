@@ -44,8 +44,6 @@
 <% end %>
 
 <div class="landing-shell">
-  <%= render "shared/account_bar" %>
-
   <%= turbo_frame_tag "lyric_entry", class: "landing-frame" do %>
     <%= render "shared/flash" %>
     <% search_feedback = @search_status.present? || @search_error.present? %>
@@ -329,7 +327,6 @@
     <% end %>
   </section>
 
-  <%= render "shared/resource_navigation", current_section: :tool %>
 
   <footer class="landing-footer">
     <p><%= t(".footer.retention") %></p>

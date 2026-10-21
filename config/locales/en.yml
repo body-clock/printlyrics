@@ -10,7 +10,7 @@ en:
 
   accounts:
     eyebrow: "Your account"
-    created: "Account created. Your library is ready."
+    created: "Account created. You can keep sheets and songbooks here."
     email: "Email"
     password: "Password"
     password_hint: "At least %{count} characters"
@@ -23,35 +23,35 @@ en:
     logout_done: "Signed out."
     google:
       continue: "Continue with Google"
-      refused: "That Google sign-in could not be completed. Try again, or sign in with your email and password."
-      failed: "The Google sign-in did not finish. Try again, or sign in with your email and password."
+      refused: "That Google sign-in didn't finish. If you already have an account, sign in with your email and password."
+      failed: "That Google sign-in didn't finish. If you already have an account, sign in with your email and password."
     login:
       title: "Sign in | PrintLyrics"
-      description: "Sign in to open the lyric sheets and songbooks saved to your PrintLyrics account."
+      description: "Sign in to open your saved lyric sheets and songbooks."
       heading: "Sign in"
-      intro: "Open the lyric sheets and songbooks saved to your account, ready to print or edit from any device."
+      intro: "Open the sheets and songbooks you've saved, ready to print or edit on any device."
       submit: "Sign in with email"
-      failure: "Those sign-in details did not match."
+      failure: "That email and password didn't match."
       rate_limited: "Too many attempts. Please wait a few minutes and try again."
       welcome_back: "Signed in."
     register:
       title: "Create an account | PrintLyrics"
       description: "Create a free PrintLyrics account to keep up to ten lyric sheets or songbooks for printing and editing later."
       heading: "Create a free account"
-      intro: "Choose an email and password. A free account keeps up to %{limit} lyric sheets or songbooks to print and edit later."
-      intro_with_google: "Google creates the account in one step. With email, choose a password. A free account keeps up to %{limit} lyric sheets or songbooks to print and edit later."
+      intro: "Keep up to %{limit} lyric sheets or songbooks and come back to them later. Choose an email and password to start."
+      intro_with_google: "Keep up to %{limit} lyric sheets or songbooks and come back to them later. Google takes you in with one click."
       submit: "Create account"
       rate_limited: "Too many account attempts. Please wait a few minutes and try again."
     password_reset:
       title: "Reset your password | PrintLyrics"
       description: "Reset the password for your PrintLyrics account."
       new_heading: "Reset your password"
-      new_intro: "Enter the email on the account and a reset link will be sent if it exists."
+      new_intro: "Enter the email on the account. If it matches, we'll send a link to choose a new password."
       edit_heading: "Choose a new password"
-      email_submit: "Send reset instructions"
+      email_submit: "Send reset link"
       save_submit: "Save password"
       rate_limited: "Too many attempts. Please wait a few minutes and try again."
-      sent: "If an account uses that email, reset instructions were sent."
+      sent: "If an account uses that email, a reset link is on its way."
       updated: "Password updated. Sign in with your new password."
       invalid: "That password reset link is invalid or has expired."
       mail_subject: "Reset your PrintLyrics password"
@@ -61,12 +61,16 @@ en:
       title: "Your library | PrintLyrics"
       description: "Open the lyric sheets and songbooks saved to your PrintLyrics account."
       heading: "Your library"
-      intro: "Up to %{limit} lyric sheets or songbooks stay here until you remove them."
+      intro: "Sheets and songbooks you save are here, ready to print or edit on any device."
       count:
         one: "%{count} of %{limit} saved"
         other: "%{count} of %{limit} saved"
-      empty_heading: "Nothing saved yet"
-      empty: "Save a lyric sheet or a songbook and it will appear here, ready to print or edit from any device."
+      capacity_label: "Library space used"
+      saved_at: "Saved %{date}"
+      open: "Open"
+      empty_eyebrow: "Nothing saved yet"
+      empty_heading: "Keep your first sheet"
+      empty: "Generate a lyric sheet or build a songbook, then choose Save. It will be waiting here the next time you need it."
       make_one: "Make a lyric sheet"
       kinds:
         lyric: "Lyric sheet"
@@ -77,12 +81,12 @@ en:
       untitled_songbook: "Untitled songbook"
       remove: "Remove"
       remove_label: "Remove %{title} from your library"
-      saved: "Saved to your library."
+      saved: "Saved. You can open it here any time."
       already_saved: "This page is already in your library."
-      removed: "Removed from your library. The page keeps its share link for 180 days."
-      missing: "That page expired or wasn't found."
-      full: "Your library holds %{limit} items. Remove one before saving another."
-      full_after_sign_in: "Signed in. Your library holds %{limit} items, so this page was not saved. Remove one and save it again."
+      removed: "Removed. The page keeps its share link for 180 days."
+      missing: "That page expired or can't be found."
+      full: "You've used all %{limit} spots. Remove something before saving another."
+      full_after_sign_in: "Signed in. Your library is full, so this page wasn't saved. Remove something and try again."
 
   feedbacks:
     created: "Thanks — your note is saved, and I read every one."
@@ -377,18 +381,33 @@ en:
       load_service: "Those lyrics didn't load just now. Try again, or paste them below."
 
   shared:
-    account_bar:
-      label: "Account"
-      library: "Your library"
-      sign_out: "Sign out"
+    site_header:
+      skip: "Skip to content"
+      navigation_label: "Main"
+      account_label: "Account"
+      tool: "Print song lyrics"
+      one_page: "One-page printing guide"
+      songbook: "Songbook printing guide"
+      feedback: "Send feedback"
       sign_in: "Sign in"
       register: "Create account"
+      library: "Your library"
+      sign_out: "Sign out"
+    account_prompt:
+      sheet:
+        title: "Save this sheet for later?"
+        body: "Create a free account and it will be here the next time you want to print it."
+        save: "Save this sheet"
+      songbook:
+        title: "Save this songbook?"
+        body: "Keep the set together and open it again before the next rehearsal, class, or service."
+        save: "Save this songbook"
+      dismiss: "No thanks"
     library_prompt:
       saved_html: "Saved in %{library_link}."
-      full_html: "Your library holds %{limit} items. %{library_link} has room once you remove one."
+      full_html: "Your library is full. Remove something in %{library_link} to save this page."
       library_link: "your library"
-      signed_in: "Keep this page for later."
-      signed_out: "Save this page to a free account and print or edit it from any device."
+      signed_in: "Save this page with the rest of your library."
       save: "Save to your library"
     sheet_mark:
       # The domain beside the code on a printed sheet. It is the brand for a
@@ -409,15 +428,6 @@ en:
         l: "L"
         xl: "XL"
       columns: "Columns"
-    resource_navigation:
-      label: "More from PrintLyrics"
-      tool: "Print song lyrics"
-      guide: "One-page printing guide"
-      songbook_guide: "Songbook printing guide"
-      feedback: "Send feedback"
-      library: "Your library"
-      sign_in: "Sign in"
-
   pwa:
     manifest:
       description: "Search, format, and print lyrics for any song."

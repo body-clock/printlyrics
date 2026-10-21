@@ -67,6 +67,8 @@ class GoogleSignInFlowTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_select "[role=status]", /Account created/
     assert_select "[data-analytics-page-response='Account Created']", 1
+    created = css_select("[data-analytics-page-response='Account Created']").first
+    assert_equal "google", JSON.parse(created["data-analytics-props"])["account_method"]
 
     user = User.sole
     assert_equal "newcomer@example.test", user.email_address
@@ -75,7 +77,7 @@ class GoogleSignInFlowTest < ActionDispatch::IntegrationTest
 
     get library_path
     assert_response :success
-    assert_select ".account-bar-email", "newcomer@example.test"
+    assert_select ".site-account-email", "newcomer@example.test"
   end
 
   test "a returning Google account signs in without a second account" do
@@ -95,6 +97,9 @@ class GoogleSignInFlowTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_select "[role=status]", /Signed in/
     assert_select "[data-analytics-page-response='Account Created']", count: 0
+    assert_select "[data-analytics-page-response='Account Signed In']", 1
+    signed_in = css_select("[data-analytics-page-response='Account Signed In']").first
+    assert_equal "google", JSON.parse(signed_in["data-analytics-props"])["account_method"]
     assert_equal 1, User.count
     assert_equal 1, Identity.count
 
