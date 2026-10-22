@@ -366,7 +366,7 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
 
   test "an empty search offers the miss prompt with the query already in it" do
     client = Object.new
-    client.define_singleton_method(:search) { |_| [] }
+    client.define_singleton_method(:search) { |_, **| [] }
 
     with_lrc_lib_client(client) do
       post search_lyrics_path, params: { query: "not a song" }
@@ -387,7 +387,7 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
 
   test "an empty search carries the query into the manual form" do
     client = Object.new
-    client.define_singleton_method(:search) { |_| [] }
+    client.define_singleton_method(:search) { |_, **| [] }
 
     with_lrc_lib_client(client) do
       post search_lyrics_path, params: { query: "not a song" }
@@ -410,7 +410,7 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
       instrumental: false
     )
     client = Object.new
-    client.define_singleton_method(:search) { |_| [ result ] }
+    client.define_singleton_method(:search) { |_, **| [ result ] }
 
     with_lrc_lib_client(client) do
       post search_lyrics_path, params: { query: "judee sill the kiss" }
@@ -423,7 +423,7 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
 
   test "a search that fails does not offer the miss prompt" do
     client = Object.new
-    client.define_singleton_method(:search) { |_| raise LrcLibClient::ServiceError }
+    client.define_singleton_method(:search) { |_, **| raise LrcLibClient::ServiceError }
 
     with_lrc_lib_client(client) do
       post search_lyrics_path, params: { query: "judee sill" }

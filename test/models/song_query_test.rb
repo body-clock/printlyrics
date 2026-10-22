@@ -28,8 +28,13 @@ class SongQueryTest < ActiveSupport::TestCase
       [ :keywords, "battle belongs by phil wickham" ],
       [ :keywords, "battle belongs phil wickham" ],
       [ :fields, "battle belongs phil wickham" ],
+      [ :keywords, "belongs" ],
       [ :keywords, "battle belongs" ],
-      [ :keywords, "battle" ]
+      [ :keywords, "belongs phil" ],
+      [ :keywords, "phil wickham" ],
+      [ :keywords, "belongs phil wickham" ],
+      [ :keywords, "battle phil wickham" ],
+      [ :keywords, "battle belongs wickham" ]
     ], attempts.map { |attempt| [ attempt.kind, attempt.params[:q] || attempt.params.values.join(" ") ] }
   end
 
@@ -103,6 +108,52 @@ class SongQueryTest < ActiveSupport::TestCase
     assert_not SongQuery.new("the").accepts?([ result ])
     assert_not SongQuery.new("a").accepts?([ result ])
     assert_not SongQuery.new("T").accepts?([ result ])
+  end
+
+  test "asks a compound title the visitor split into two words" do
+    query = SongQuery.new("Margarita Ville")
+
+    assert_includes query.attempts.map { |attempt| attempt.params[:q] }, "margaritaville"
+    assert query.accepts?([ row(title: "Margaritaville", artist: "Jimmy Buffett") ])
+  end
+
+  test "does not accept a compound that only matches the artist" do
+    assert_not SongQuery.new("Back Street")
+      .accepts?([ row(title: "I Want It That Way", artist: "Backstreet Boys") ])
+  end
+
+  test "asks an adjacent pair beyond the first two words" do
+    attempts = SongQuery.new("seven lucas graham").attempts.map { |attempt| attempt.params[:q] }
+
+    assert_includes attempts, "lucas graham"
+    assert SongQuery.new("a living prayer allison kraus")
+      .accepts?([ row(title: "A Living Prayer", artist: "Alison Krauss") ])
+  end
+
+  test "asks the query without the word the source cannot match" do
+    attempts = SongQuery.new("ashley mcbride kitchen light on").attempts.map { |attempt| attempt.params[:q] }
+
+    assert_includes attempts, "ashley kitchen light"
+  end
+
+  test "drops a trailing qualifier before the leading words" do
+    attempts = SongQuery.new("Battle Belongs Phil Wickham Acoustic").attempts.map { |attempt| attempt.params[:q] }
+
+    assert_includes attempts, "battle belongs phil wickham"
+  end
+
+  test "asks each word alone, longest first" do
+    attempts = SongQuery.new("Joanne Osborne").attempts.map { |attempt| attempt.params[:q] }
+
+    assert_includes attempts, "osborne"
+    assert_includes attempts, "joanne"
+    assert_operator attempts.index("osborne"), :<, attempts.index("joanne")
+  end
+
+  test "bounds the ladder so a long query cannot ask without limit" do
+    query = SongQuery.new("battle belongs today by phil wickham")
+
+    assert_equal SongQuery::ATTEMPT_LIMIT, query.attempts.size
   end
 
   test "ranks the closest record first" do

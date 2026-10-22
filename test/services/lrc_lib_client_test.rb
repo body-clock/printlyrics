@@ -145,6 +145,26 @@ class LrcLibClientTest < ActiveSupport::TestCase
     refute_includes error.message, "the kiss"
   end
 
+  test "a one-shot search does not retry a busy source" do
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        [ 503, json_headers, "{}" ]
+      end
+    end
+    waits = []
+
+    error = assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(connection: connection, sleeper: ->(seconds) { waits << seconds })
+        .search("the kiss", retries: false)
+    end
+
+    assert_equal 1, calls
+    assert_empty waits
+    assert_equal 1, error.attempts
+  end
+
   test "stops retrying once the retry budget is spent" do
     connection = connection_with do |stub|
       stub.get("/api/search") { [ 503, json_headers, "{}" ] }

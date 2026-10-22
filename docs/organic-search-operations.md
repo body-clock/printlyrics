@@ -881,6 +881,59 @@ and pageview totals: `Song Search Submitted` 1,254 · `Print Page Generated` 723
 | The three the closing record lists as unverified | confirmed in Umami: `Songbook Created` 54, `Songbook Created From Offer` 8, `Songbook Printed` 78 |
 | The offer's two events | both arrive: `Songbook Offer Shown` 46 and `Songbook Offer Dismissed` 3 by 2026-10-08. This reading recorded no rows for them because it was taken before the first showing, at 2026-10-07T22:24:52Z — the release shipped that day, so the observation was unmade rather than the event missing, and it is made now |
 
+### Second Umami reading, 2026-10-22
+
+The site's whole Umami history, 2026-09-30 to 2026-10-22. It records the search
+step as two outcomes, the miss and the picked result, over a longer window than
+the first reading.
+
+| Signal | Value |
+| --- | --- |
+| `Song Search Submitted` | 4,130 events / 1,084 visitors |
+| `Song Search Missed` | 512 events / 324 visitors — 12.4% of events, 29.9% of search visitors |
+| `Song Result Selected` | 1,613 events / 421 visitors — 38.8% of search visitors |
+| `Feedback Submitted` | 40 visitors, all on `search_miss` — 12.3% of miss visitors |
+| `Feedback Prompt Shown` (sheet) | 607 showings, no submissions |
+| Search to sheet, 60 minutes | 1,084 → 457 — 57.8% lost |
+| Search to printer, 60 minutes | 1,084 → 418 → 310 → 225 — 79.2% lost |
+
+The event rate understates the problem: nearly a third of the visitors who
+searched hit at least one miss. The search-to-sheet loss is larger still, so the
+miss is not the whole leak; abandonment after a successful search is the larger
+one and the `Search to printer` funnel is where it should be read.
+
+The 40 submitted queries are the only miss queries that exist: the event carries
+no query by contract, so the miss form is their only source. All 40 came from
+the miss prompt on `/`; the sheet's prompt has 607 showings and no submissions.
+Of the 39 real queries, 9 are reachable by metadata search with the change
+prepared after this reading (five already matched, four newly: `Margarita Ville`,
+`One of us by Joanne Osborne`, `eraserhead pare ko`, `ashley mcbride kitchen
+light on`). The remaining 28 have no demonstrated metadata path: they are lyric
+first lines (`come and listen to a story bout a man named jed`), non-English or
+regional titles, or songs absent from LRCLIB (`Tamid ohev oti`, `keven
+mcguire`). A metadata resolver would recover at least three of those only by
+sending the query to another service (`TEXAS HOLD 'EM`, `7 Years`, `A Living
+Prayer`); a broader catalog or a lyrics-text source is the route to the rest.
+
+Two limits travel with these numbers. `Song Search Missed` fires only on a
+successful empty result, so 512 is a floor: LRCLIB answered `503 ServerOverloaded`
+while this reading was taken, including on single requests seconds apart, and
+those searches are not in the count. And the feedback table itself was not read
+for this window — `bin/kamal feedback` needs SSH to the deploy host and the host
+refused the operator's key. The 40 `Feedback Submitted` events are the analytics
+mirror, not the table; the reply addresses and each visit's sheet count are
+missing from this record.
+
+The search change that follows this reading is in the local request layer only:
+the ladder tries the joined compound, every adjacent pair, the longest word
+alone, the query minus one word, and each remaining word; scoring accepts a
+title the source stores as one word and the visitor typed as two; a server-busy
+attempt no longer aborts the ladder before a later attempt can answer; and a 429
+still stops it, because every further request would be refused. It adds no data
+source. Re-read this section after the deploy and compare the same
+signals over a full 30 days; the first reading's 14.8% event miss rate is the
+comparison, with the window difference stated.
+
 ## 5. Monitor and recover
 
 Review these symptoms weekly during the first 90 days:

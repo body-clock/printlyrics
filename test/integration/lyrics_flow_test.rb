@@ -112,7 +112,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
       instrumental: false
     )
     client = Object.new
-    client.define_singleton_method(:search) { |_| [ result ] }
+    client.define_singleton_method(:search) { |_, **| [ result ] }
 
     assert_no_difference([ "Lyric.count", "Song.count" ]) do
       with_lrc_lib_client(client) do
@@ -314,7 +314,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "#song-search-results [role='alert']", /Enter a song title or artist/
 
     client = Object.new
-    client.define_singleton_method(:search) { |_| raise LrcLibClient::ServiceError }
+    client.define_singleton_method(:search) { |_, **| raise LrcLibClient::ServiceError }
 
     with_lrc_lib_client(client) do
       post search_lyrics_path, params: { query: "the kiss" }
@@ -326,7 +326,7 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
 
   test "search with no matches reports the empty result set" do
     client = Object.new
-    client.define_singleton_method(:search) { |_| [] }
+    client.define_singleton_method(:search) { |_, **| [] }
 
     with_lrc_lib_client(client) do
       post search_lyrics_path, params: { query: "a song nobody wrote" }

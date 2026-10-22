@@ -50,14 +50,18 @@ class LrcLibClient
     end
   end
 
-  def search(query)
-    build_results(request_json("/api/search", { q: query }))
+  # `retries` is true for callers with no alternative to offer. The search
+  # ladder passes false for every attempt: its attempts are alternatives to one
+  # another, and a busy source is better answered by trying the next one than by
+  # spending the visitor's wait on the same query again.
+  def search(query, retries: true)
+    build_results(request_json("/api/search", { q: query }, retries: retries))
   end
 
   # LRCLIB matches a separated title and artist more precisely than one keyword
   # string, so a query the visitor already split is asked this way.
-  def search_by_fields(track_name:, artist_name:)
-    build_results(request_json("/api/search", { track_name: track_name, artist_name: artist_name }))
+  def search_by_fields(track_name:, artist_name:, retries: true)
+    build_results(request_json("/api/search", { track_name: track_name, artist_name: artist_name }, retries: retries))
   end
 
   def find(id)
@@ -84,16 +88,17 @@ class LrcLibClient
       .first(SEARCH_LIMIT)
   end
 
-  def request_json(path, params = {}, not_found: false)
+  def request_json(path, params = {}, not_found: false, retries: true)
     attempts = 0
     started_at = @clock.call
+    max_attempts = retries ? MAX_ATTEMPTS : 1
 
     loop do
       attempts += 1
       response = @connection.get(path, params)
       raise NotFoundError if not_found && response.status == 404
 
-      if retryable?(response.status, attempts, started_at)
+      if retryable?(response.status, attempts, started_at, max_attempts)
         @sleeper.call(retry_wait(response))
         next
       end
@@ -106,8 +111,8 @@ class LrcLibClient
     raise service_error(path, attempts, started_at, error: error)
   end
 
-  def retryable?(status, attempts, started_at)
-    attempts < MAX_ATTEMPTS &&
+  def retryable?(status, attempts, started_at, max_attempts)
+    attempts < max_attempts &&
       RETRYABLE_STATUSES.include?(status) &&
       @clock.call - started_at < RETRY_BUDGET_SECONDS
   end

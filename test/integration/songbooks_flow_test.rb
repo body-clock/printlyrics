@@ -286,7 +286,7 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
       instrumental: false
     )
     client = Object.new
-    client.define_singleton_method(:search) { |_| [ result ] }
+    client.define_singleton_method(:search) { |_, **| [ result ] }
     client.define_singleton_method(:find) { |_| result }
     songbook = Songbook.start_with(Lyric.create!(lyrics: "First line"))
 
