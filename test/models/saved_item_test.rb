@@ -87,6 +87,32 @@ class SavedItemTest < ActiveSupport::TestCase
     assert_nil lyric.reload.expires_at
   end
 
+  test "removing a song from a kept songbook returns it to the retention clock" do
+    user = create_user
+    first = Lyric.create!(lyrics: "First")
+    second = Lyric.create!(lyrics: "Second")
+    songbook = Songbook.start_with(first, second)
+    SavedItem.add(user: user, item: songbook)
+
+    songbook.remove!(first)
+
+    assert_in_delta Retained::RETENTION_PERIOD.from_now, first.reload.expires_at, 1.minute
+    assert_nil second.reload.expires_at
+  end
+
+  test "removing a song another kept songbook holds does not expire it" do
+    user = create_user
+    shared = Lyric.create!(lyrics: "Shared")
+    kept = Songbook.start_with(shared, Lyric.create!(lyrics: "Kept"))
+    removable = Songbook.start_with(shared, Lyric.create!(lyrics: "Removable"))
+    SavedItem.add(user: user, item: kept)
+    SavedItem.add(user: user, item: removable)
+
+    removable.remove!(shared)
+
+    assert_nil shared.reload.expires_at
+  end
+
   test "removing a songbook expires its songs" do
     user = create_user
     first = Lyric.create!(lyrics: "First")

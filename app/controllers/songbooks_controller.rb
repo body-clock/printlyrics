@@ -7,6 +7,10 @@ class SongbooksController < ApplicationController
 
     songbook = Songbook.start_with(*lyrics)
 
+    # Accepting the offer is an answer to it, the same as declining. The visit
+    # must not be offered the same set on the next page it renders.
+    visit.answer_offer! if params[:lyric_tokens].present?
+
     # This action gathers sheets the visitor already made, so a set that is
     # already complete here came from the offer. Continuing to add a song starts
     # a one-song draft instead, and only becomes a set later.
@@ -67,8 +71,11 @@ class SongbooksController < ApplicationController
   # The generation event belongs to the page that was just made, so it follows
   # the visitor here instead of disappearing with the single-page redirect.
   def generated_page_key
-    token = session.delete(:generated_lyric_token)
-    token if token && @songbook.lyrics.exists?(token: token)
+    token = session[:generated_lyric_token]
+    return unless token && @songbook.lyrics.exists?(token: token)
+
+    session.delete(:generated_lyric_token)
+    token
   end
 
   # The creation event reports a set that came into being, not a row that was
@@ -76,10 +83,13 @@ class SongbooksController < ApplicationController
   # one-shot session flag as a generation, so it fires on the visit that crossed
   # the threshold and never on a later one.
   def created_songbook
-    origin = session.delete(:created_songbook_origin)
-    return unless session.delete(:created_songbook_token) == @songbook.token
+    return unless session[:created_songbook_token] == @songbook.token
 
-    { size: @songbook.entries.size, origin: origin }
+    size = session.delete(:created_songbook_size) || @songbook.entries.size
+    origin = session.delete(:created_songbook_origin)
+    session.delete(:created_songbook_token)
+
+    { size: size, origin: origin }
   end
 
   def songbook_not_found
