@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.0](https://github.com/body-clock/printlyrics/compare/v1.17.1...v1.18.0) (2026-10-22)
+
+
+### Features
+
+* **accounts:** add optional Google-first accounts and a ten-item library ([#125](https://github.com/body-clock/printlyrics/issues/125)) ([332c716](https://github.com/body-clock/printlyrics/commit/332c716ad599293f32ec3e0a690813505eba3c95))
+
 ## [1.17.1](https://github.com/body-clock/printlyrics/compare/v1.17.0...v1.17.1) (2026-10-20)
 
 
