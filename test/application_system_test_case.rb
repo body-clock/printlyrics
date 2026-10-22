@@ -3,6 +3,29 @@ require "test_helper"
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   driven_by :selenium, using: :headless_chrome, screen_size: [ 1200, 900 ]
 
+  # Turbo and the preview controller legitimately replace the document shortly
+  # after a load. Chrome reports a node caught in that replacement as an
+  # unclassified UnknownError instead of StaleElementReferenceError, so
+  # Capybara does not retry the query. Map that one message onto the stale
+  # error Capybara already retries, so the assertion runs against the new DOM.
+  module RetryDetachedNodes
+    DETACHED_NODE = /Node with given id does not belong to the document/
+
+    def synchronize(seconds = nil, errors: nil, &block)
+      super(seconds, errors: errors) do
+        begin
+          block.call
+        rescue Selenium::WebDriver::Error::UnknownError => error
+          raise unless error.message.match?(DETACHED_NODE)
+
+          raise Selenium::WebDriver::Error::StaleElementReferenceError, error.message
+        end
+      end
+    end
+  end
+
+  Capybara::Node::Base.prepend(RetryDetachedNodes)
+
   # `Page.addScriptToEvaluateOnNewDocument` scripts outlive the tab that
   # installed them, so each test removes the ones it injected.
   teardown do

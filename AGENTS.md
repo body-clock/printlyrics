@@ -49,8 +49,8 @@ and configuration files as the source of truth for versions and tooling.
   how an entry surface reports an event, and what must never reach analytics.
   Read it before changing analytics or adding a tool that reports anything.
 - [Git conventions](docs/git_conventions.md): commit, branch, and pull request
-  formats, how a `development` → `main` promotion lands, and keeping mutating
-  git commands in the intended checkout.
+  formats, how a release lands, and keeping mutating git commands in the
+  intended checkout.
 - [README.md](README.md): retention, deployment, and release workflow.
 
 ## Working conventions
