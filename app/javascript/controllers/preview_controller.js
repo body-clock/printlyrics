@@ -55,10 +55,9 @@ export default class extends Controller {
       ...sessionPageCountProperties()
     })
 
-    // Printing a set is its own goal as well as part of every print, so the
-    // total stays continuous while the set prints stay countable. Plausible's
-    // plan has no custom properties, so `entry_method` alone would leave them
-    // invisible there; Umami reports the parameter.
+    // Printing a set is its own event as well as part of every print, so the
+    // total stays continuous while the set prints stay countable. The size and
+    // `entry_method` ride as properties on the dialog event for the same split.
     if (isSet) trackEvent("Songbook Printed", songbookSizeProperties(songbookSize))
 
     window.print()

@@ -2,7 +2,6 @@
 import "@hotwired/turbo-rails"
 import "controllers"
 import {
-  captureCampaign,
   trackCreatedSongbook,
   trackGeneratedPage,
   trackPageResponses,
@@ -10,8 +9,6 @@ import {
   trackResponseEvents,
   trackSubmittedEvent
 } from "lib/analytics"
-
-captureCampaign()
 
 document.addEventListener("turbo:load", () => {
   trackPageview()

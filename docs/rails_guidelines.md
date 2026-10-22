@@ -55,6 +55,16 @@
   changing this workflow.
 - Saved pages use opaque tokens, remain `noindex, nofollow`, and never appear
   in the sitemap. Tokens are shareable URLs, not an authentication system.
+- Accounts are optional. `SavedItem` is the account's library and owns the
+  ten-place cap across lyric sheets and songbooks; saving sets the page's
+  `expires_at` to nil and removing it restores the anonymous window. Keep public
+  flows working without a session, and make account-only controllers opt into
+  `require_authentication` rather than protecting every controller by default.
+- Google is the first sign-in control when `GOOGLE_CLIENT_ID` and
+  `GOOGLE_CLIENT_SECRET` (or their credential equivalents) are present. The
+  callback trusts only Google's verified address; a returning visitor is matched
+  by `Identity` provider and uid. Email/password remains the fallback, with the
+  password floor enforced in `User` and stated in the forms.
 - Active page visits renew the 180-day retention window. Expired or unknown
   tokens return to the form. Keep cleanup in the explicit purge operation/task;
   do not revive expired pages during lookup.
@@ -89,12 +99,11 @@
   endpoints, escape output, and filter sensitive input from logs. Pass any
   subprocess arguments separately rather than interpolating external input.
 - Never send lyric text, real saved-page tokens, or song metadata to analytics.
-  Use the existing analytics helper, token-path redaction, allowlisted campaign
-  values, and documented event names. Avoid duplicate events on Turbo visits.
-  Opening the print dialog does not prove a physical page was printed. Campaign
-  values are defined by `AnalyticsCampaigns` and rendered to the client; update
-  that object and the operations document together rather than duplicating a
-  list in JavaScript.
+  Use the existing analytics helper, token-path redaction, and documented event
+  names. Avoid duplicate events on Turbo visits. Opening the print dialog does
+  not prove a physical page was printed. Umami reads campaign values natively
+  from the landing URL; the printed sheet's `utm_source=paper` is the one value
+  the application defines (`SheetMark::SOURCE`).
 
 ## Hotwire, styling, and printing
 
@@ -148,6 +157,11 @@
   helper, which swaps the controller's client factory. Do not assume WebMock is
   installed or that the suite globally blocks network access, and do not redefine
   controller methods to inject a client.
+- Google tests use `with_google_configured` to supply a client and
+  `with_google_auth` to make OmniAuth answer with a payload; the callback and
+  middleware under test are the production ones. Every test starts with Google
+  unconfigured, so assertions about a host without a client do not depend on the
+  machine running the suite.
 - Cover relevant failure paths: malformed or unavailable source data, invalid
   catalog tokens, failed atomic saves, expiration boundaries, and transient
   source failures. Use Rails time helpers for deterministic time tests.

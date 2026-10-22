@@ -17,9 +17,8 @@ order-of-magnitude structure is legible: a step of the funnel losing most of its
 visitors, or a crawlable surface earning no pageviews.
 
 Read the event population rather than the visitor and pageview totals, which
-count traffic that never used the tool:
-`docs/organic-search-operations.md` carries the bot-filtering reason the two
-destinations disagree on those totals.
+count traffic that never used the tool and cannot be filtered after collection.
+`docs/organic-search-operations.md` carries the bot-filtering reason.
 
 ## The vocabulary
 
@@ -28,9 +27,10 @@ words, and the dashboards keep the name verbatim. There is no mapping table:
 the name the code sends is the name the dashboard lists.
 
 One event per distinct thing worth counting. When a total and its subset both
-matter, the subset is its own event, because this plan cannot read custom
-properties. `Songbook Created` and `Songbook Created From Offer` are the worked
-example: the subset over the total is the offer's conversion rate.
+matter, the subset is its own event: a count over a count stays readable in the
+dashboard and as a funnel step, and Umami carries the underlying split as a
+property as well. `Songbook Created` and `Songbook Created From Offer` are the
+worked example: the subset over the total is the offer's conversion rate.
 
 A saved funnel carries a name too, and it follows the same rule: the funnel that
 reads a tool's attempt to its output is named `<entry> to <outcome>` in the
@@ -41,7 +41,7 @@ other three cannot: `Search to printer` reads the same attempt through
 the search's loss is read as two — a search that found nothing to pick, and a
 result that was picked and never made.
 
-The fourteen names in use, grouped by the flow that fires them:
+The twenty names in use, grouped by the flow that fires them:
 
 - Print flow: `Print Page Generated`, `Second Print Page Generated`, `Print
   Dialog Opened`, `Songbook Created`, `Songbook Created From Offer`, `Songbook
@@ -49,6 +49,14 @@ The fourteen names in use, grouped by the flow that fires them:
 - Entry flow: `Song Search Submitted`, `Song Search Missed`, `Song Result
   Selected`, `Manual Entry Submitted`, `Feedback Submitted`, `Feedback Prompt
   Shown`.
+- Account flow: `Account Created`, `Account Signed In`, `Account Prompt Shown`,
+  `Account Prompt Dismissed`, `Library Item Saved`, `Account Library Opened`.
+  These answer whether optional accounts are used at all, which is the decision
+  a paid tier waits on. `Account Created` and `Account Signed In` split the
+  method with `account_method`; the prompt pair carries
+  `account_prompt_surface`; `Library Item Saved` carries `saved_item_type` and
+  `save_source`; `Account Library Opened` counts a signed-in return to the
+  library.
 
 ## The three slots every tool fills
 
@@ -74,23 +82,20 @@ a search fails to become a sheet — finding nothing, and finding something that
 was then abandoned — which `Song Search Submitted` alone could not tell apart.
 Attempt-to-output conversion is read with a funnel, so no property has to carry
 it: `run_funnel` over the Umami MCP endpoint, or the saved funnel in the Umami
-dashboard, which is where the ordered questions live because this Plausible plan
-has no funnel report.
+dashboard.
 
 ## How an entry surface reports its events
 
-The names reach a destination in five shapes. Two are declared in the view by
-the server, so the event a control reports is visible beside the control that
+The names reach Umami in five shapes. Two are declared in the view by the
+server, so the event a control reports is visible beside the control that
 fires it.
 
 A form that reports its own submit carries `data-analytics-submit` with the
 event name as its value. In `app/views/lyrics/new.html.erb` the search form, the
 manual pasted-lyrics form, and each result's select form report
-`Song Search Submitted`, `Manual Entry Submitted`, and `Song Result Selected`.
-A form whose event only this site's own service is to receive carries
-`data-analytics-umami-submit` instead, which the same listener reads: the
-offer's **Not now** reports `Songbook Offer Dismissed` that way and reaches no
-third party. That listener lives in `app/javascript/application.js`.
+`Song Search Submitted`, `Manual Entry Submitted`, and `Song Result Selected`;
+the offer's **Not now** reports `Songbook Offer Dismissed` the same way. That
+listener lives in `app/javascript/application.js`.
 
 An outcome the server knows and the client cannot carries
 `data-analytics-response` with the event name as its value, on the element the
@@ -114,14 +119,28 @@ place, under the sheet the visit just generated, and its key is that sheet. The
 entry panel's offer arrives with a frame render as well as with a page, so both
 ends of a response are read.
 
+Account outcomes use the same page-response marker, because the server is the
+only side that knows a registration, a sign-in, a prompt answer, or a save
+finished. `Account Created`, `Account Signed In`, `Library Item Saved`, and
+`Account Prompt Dismissed` ride one-shot session keys rendered by the layout on
+the page that follows, so a reload or a Turbo snapshot cannot report them twice.
+`Account Library Opened` is rendered by the library page itself, and
+`Account Prompt Shown` by the prompt, each with a fresh key per response. All
+six carry `page_count_in_session`, and their properties travel in
+`data-analytics-props`: `account_method`, `account_prompt_surface`,
+`saved_item_type`, or `save_source` as applicable.
+
+The page-response path reports to Umami alone, so account events are ordinary
+Umami readings.
+
 Page-level markers ride `<body>` data attributes and are reported on
 `turbo:load`: `trackPageview`, `trackGeneratedPage`, and `trackCreatedSongbook`,
 all in `app/javascript/application.js`. `data-visit-sheet-count`, which
 `sessionPageCountProperties` reads, is the visit's own total rather than a report
 of its own.
 
-The fifth reports from the server, to Umami alone: a feedback submission that
-passed the challenge and was saved is sent by `UmamiClient`
+The fifth reports from the server: a feedback submission that passed the
+challenge and was saved is sent by `UmamiClient`
 (`app/services/umami_client.rb`) after the row is written, as
 `Feedback Submitted`. Nothing refused, unjudged, or unsaved is reported, and no
 browser is involved, so this is the one name with no marker in a view. It is
@@ -145,10 +164,10 @@ than to the sheet it was printed from, tagged with the `paper` campaign value.
 The address on paper therefore holds no token: a sheet that is photographed,
 handed on, or lost cannot be used to open the page it was printed from, and the
 entry form is what a scan lands on. The visit a scan produces reports an ordinary
-pageview and then whatever the visitor does next, so the paper channel is read as
-the allowlisted `campaign_source` property on those events rather than as an
-event of its own: there is no name for a scan, and a scan that fires no event is
-not visible.
+pageview and then whatever the visitor does next, so the paper channel is read
+from Umami's native attribution of the landing URL's `utm_source=paper` rather
+than as an event of its own: there is no name for a scan, and a scan that fires
+no event is not visible.
 
 ## What must never travel
 
@@ -162,35 +181,36 @@ alone.
 One payload is the deliberate exception, and it is the only one sent from the
 server: a stored feedback submission. `Feedback Submitted` carries the song the
 visitor wanted, the note they wrote, the surface they wrote it on, and the answer
-they chose — which is the demand list the runbook's reviews are chosen from — and
-it travels to **Umami only**. Umami is this site's own service; Plausible is a third party
-that receives every event the browser dispatcher sends, so this payload is never
-routed through `dispatch` in `lib/analytics.js` and has no Plausible goal. The
-reply address a visitor opts into is not part of it: it stays in the table for
-the operator's replies.
+they chose — which is the demand list the runbook's reviews are chosen from. It
+is sent directly to Umami by `UmamiClient`, never through the browser
+dispatcher, so it does not depend on the tracker. The reply address a visitor
+opts into is not part of it: it stays in the table for the operator's replies.
 
 Counts and sizes travel as buckets, not raw values: `page_count_in_session` and
 `songbook_size` through `songbookSizeProperties` and
-`sessionPageCountProperties` in that file. The visit's total is the server's
+`sessionPageCountProperties` in that file. The account properties are fixed
+vocabularies too — `account_method`, `account_prompt_surface`,
+`saved_item_type`, and `save_source` — and never carry an address, a token, or
+a page title. The visit's total is the server's
 (`app/models/visit.rb`): one list of the sheets a browser session made, in every
 tab, and the same window Umami expires a visit on. The offer's two events carry
-that same bucket and nothing else. Campaign values are allowlisted by the
-server in `AnalyticsCampaigns` (`app/models/analytics_campaigns.rb`).
+that same bucket and nothing else. Campaign values are read by Umami from the
+landing URL; the application does not copy them into event properties.
 
 The miss panel's lookup link is the one place a query leaves the page, and it
 leaves by the visitor's own click rather than by a tracker: the link carries the
 query to a search engine in a new tab and bears no marker, so no payload gains
-the URL. Giving it one — an outbound-link goal, say — would put the query in
-every destination that reads the marker, which is what this section forbids.
+the URL. Giving it one — an outbound-link event, say — would put the query in
+the analytics payload, which is what this section forbids.
 
 ## Adding a tool
 
 1. Declare the attempt and output events before the tool ships, and put the
    markers beside the controls that fire them — or, when only the server can
    know the outcome, report it from the server and say so here.
-2. Create the goals in Plausible, and confirm them in Umami's Events report.
-   Umami needs no registration: a name it receives is a row it lists. An event
-   carrying a visitor's own words is Umami's alone and gets no Plausible goal.
+2. Confirm the event in Umami's Events report. Umami needs no registration: a
+   name it receives is a row it lists. An event carrying a visitor's own words
+   stays on Umami and is read from **Event data** rather than from a saved goal.
 3. Save a funnel from attempt to output in Umami, named `<entry> to <outcome>`,
    and, when the attempt has a step between the two that a drop could be hiding
    in, a second one that carries it to the completion — `Search to printer` is

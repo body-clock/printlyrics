@@ -31,6 +31,8 @@ class SongbooksController < ApplicationController
     # A song added to a set lands here rather than on its own page, and the
     # visit made that sheet like any other.
     remember_visit_sheet(@generated_page_key)
+
+    @account_prompt = account_prompt_for?(songbook_made_by_visit?)
   end
 
   def destroy_song
@@ -54,6 +56,12 @@ class SongbooksController < ApplicationController
     by_token = Lyric.active.where(token: tokens).index_by(&:token)
 
     tokens.filter_map { |token| by_token[token] }
+  end
+
+  # The creation marker is the strongest signal; otherwise the set is this
+  # visit's if one of its songs was generated in this visit.
+  def songbook_made_by_visit?
+    @created_songbook.present? || @songbook.lyrics.where(token: visit.sheets).exists?
   end
 
   # The generation event belongs to the page that was just made, so it follows

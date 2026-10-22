@@ -102,7 +102,8 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".tool-explainer", count: 1
     assert_select "[data-search-navigation]", count: 0
-    assert_select "footer[data-resource-navigation]" do
+    assert_select "header.site-header .site-nav", count: 0
+    assert_select "footer.site-footer .site-footer-nav" do
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i
       assert_select "a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
       assert_select "a[href='#{root_path}']", count: 0
@@ -112,18 +113,20 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-search-navigation]", count: 0
-    assert_select "footer[data-resource-navigation]" do
-      assert_select "a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "header.site-header .site-nav a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "footer.site-footer .site-footer-nav" do
       assert_select "a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
+      assert_select "a[href='#{feedback_path}']", text: /send feedback/i
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", count: 0
     end
 
     get print_a_songbook_path
 
     assert_response :success
-    assert_select "footer[data-resource-navigation]" do
-      assert_select "a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "header.site-header .site-nav a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "footer.site-footer .site-footer-nav" do
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i
+      assert_select "a[href='#{feedback_path}']", text: /send feedback/i
       assert_select "a[href='#{print_a_songbook_path}']", count: 0
     end
   end

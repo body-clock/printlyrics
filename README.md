@@ -40,12 +40,37 @@ A generated page can be extended into a songbook: an ordered, token-addressed se
 of lyric sheets that prints as one job. A songbook keeps the generated-page
 contract — unlisted link, no account, and excluded from indexing.
 
+## Accounts
+
+Accounts are optional, and the tool stays usable signed out. Google is the first
+and primary sign-in control on both account pages; email and password are the
+fallback. A free account keeps up to ten saved pages in `/library`, counting
+lyric sheets and songbooks together. Saved pages stop expiring while they are in
+the library; removing one returns it to the anonymous 180-day clock.
+
+Google creates an account when its verified address is not already in use. It
+does not claim an existing email account: without an email-verification step,
+that would let whoever registered the address first keep a password to an
+account another person later signs into. Existing email accounts sign in with
+their password.
+
+Google sign-in is configured with `GOOGLE_CLIENT_ID` and
+`GOOGLE_CLIENT_SECRET`, or the equivalent `google.client_id` and
+`google.client_secret` entries in encrypted credentials. Register
+`/auth/google_oauth2/callback` as the authorized redirect URI — for production,
+`https://printlyrics.app/auth/google_oauth2/callback`. Without both values the
+Google control is not rendered and the request phase is refused, so the site
+never implies a sign-in it cannot finish. Password reset mail uses
+`noreply@printlyrics.app` and needs an SMTP provider configured for the
+deployment.
+
 ## Retention
 
 Generated pages and songbooks expire 180 days after their last visit, and visits
 renew the retention window. Visiting a songbook renews it and every song in it.
-Nothing purges expired rows on its own: cleanup is the explicit task below, which
-the `kamal purge` alias runs against production.
+A page saved to an account is kept while the account holds it. Nothing purges
+expired rows on its own: cleanup is the explicit task below, which the
+`kamal purge` alias runs against production.
 
 ```sh
 bin/rails lyrics:purge_expired
@@ -76,7 +101,7 @@ submissions are read.
 A stored submission is also reported to the site's own analytics service as
 `Feedback Submitted`, carrying the song query, the note, the surface it came
 from, and the answer, so the demand can be read beside the counts around it.
-That report is Umami's alone — never Plausible's — and the reply address is not
+That report stays on the site's own Umami service, and the reply address is not
 part of it. The [measurement contract](docs/measurement-contract.md) owns the
 rule and the event's properties.
 
@@ -125,6 +150,12 @@ UMAMI_APP_SECRET=...    # openssl rand -hex 32
 An ordinary deploy does not need those two, and the runbook linked under
 Operations owns the setup.
 
+Optional accounts add no required deployment value: without `GOOGLE_CLIENT_ID`
+and `GOOGLE_CLIENT_SECRET` (or their credential equivalents), Google sign-in is
+hidden and email accounts remain usable. Password reset delivery is the one
+account feature that needs a working SMTP configuration; the registration and
+sign-in forms do not send mail.
+
 The `printlyrics-prod` GitHub environment also requires `KAMAL_SSH_KEY`.
 CI runs for pull requests and pushes to `main`. Release Please maintains a
 release pull request and updates `version.txt`; merging that pull request
@@ -142,8 +173,8 @@ handled errors with the endpoint, HTTP status, attempt count, and LRCLIB's own
 explanation. The visitor's query is never included.
 
 Use the [organic search operations runbook](docs/organic-search-operations.md)
-to configure Search Console, boot the self-hosted Umami analytics service and its
-MCP endpoint, run the two-week parallel measurement beside Plausible, record
-launch baselines, and run the 30- and 90-day reviews. The
+to configure Search Console, boot and operate the self-hosted Umami analytics
+service and its MCP endpoint, record launch baselines, and run the 30- and
+90-day reviews. The
 [measurement contract](docs/measurement-contract.md) holds the event vocabulary,
 how a surface reports an event, and what must never reach analytics.

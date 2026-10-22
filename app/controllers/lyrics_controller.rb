@@ -88,6 +88,13 @@ class LyricsController < ApplicationController
     @lyric = Lyric.renew_retention!(params[:token])
     @generated_page_key = @lyric.token if session.delete(:generated_lyric_token) == @lyric.token
     remember_visit_sheet(@generated_page_key)
+
+    # The second sheet is where the songbook offer appears, so the account ask
+    # waits: two competing prompts on one page would make neither one clear.
+    # Once the offer is settled, a later sheet can ask again.
+    @account_prompt = account_prompt_for?(
+      @generated_page_key.present? || visit.sheets.include?(@lyric.token)
+    ) && !visit.offer_pending?
   end
 
   private

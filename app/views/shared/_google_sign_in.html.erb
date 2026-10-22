@@ -1,0 +1,16 @@
+<%#
+  The loudest sign-in route, on both pages an account is signed in or created
+  on. The request phase answers POST alone and the middleware answers it with a
+  redirect to Google, so this form must not be Turbo's: a fetch cannot take the
+  visitor to Google and back. The authenticity token button_to adds is what
+  omniauth-rails_csrf_protection checks before the middleware runs.
+%>
+<div class="google-sign-in">
+  <%= button_to "/auth/google_oauth2",
+        method: :post,
+        class: "button button-primary button-google",
+        form: { data: { turbo: false } } do %>
+    <span class="google-mark" aria-hidden="true">G</span>
+    <span><%= t("accounts.google.continue") %></span>
+  <% end %>
+</div>

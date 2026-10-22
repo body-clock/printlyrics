@@ -1,0 +1,37 @@
+<% content_for :title, t("accounts.login.title") %>
+<% content_for :description, t("accounts.login.description") %>
+<% content_for :robots, "noindex, nofollow" %>
+
+<div class="account-shell">
+  <header class="account-heading">
+    <p class="eyebrow"><%= t("accounts.eyebrow") %></p>
+    <h1><%= t("accounts.login.heading") %></h1>
+    <p><%= t("accounts.login.intro") %></p>
+  </header>
+
+  <%= render "shared/flash" %>
+
+  <div class="account-panel">
+    <% if google_sign_in_available? %>
+      <%= render "shared/google_sign_in" %>
+      <p class="account-divider"><%= t("accounts.divider") %></p>
+    <% end %>
+
+    <%= form_with url: session_path, class: "account-form" do |form| %>
+      <div class="field">
+        <%= form.label :email_address, t("accounts.email") %>
+        <%= form.email_field :email_address, required: true, autocomplete: "username", value: params[:email_address] %>
+      </div>
+      <div class="field">
+        <%= form.label :password, t("accounts.password") %>
+        <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72 %>
+      </div>
+      <%= form.submit t("accounts.login.submit"), class: "button button-secondary" %>
+    <% end %>
+  </div>
+
+  <div class="account-links">
+    <p><%= link_to t("accounts.forgot_password"), new_password_path %></p>
+    <p><%= link_to t("accounts.register_link"), new_registration_path %></p>
+  </div>
+</div>

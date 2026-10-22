@@ -67,7 +67,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     )
 
     assert_equal(
-      [ "Manual Entry Submitted", "Print Page Generated" ],
+      [ "Manual Entry Submitted", "Print Page Generated", "Account Prompt Shown", "Feedback Prompt Shown" ],
       captured_analytics_calls.map(&:first).reject { |name| name == "pageview" }
     )
   end
@@ -121,10 +121,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     with_lrc_lib_client(client) do
       visit root_path
-      page.execute_script(<<~JS)
-        window.__analyticsCalls = []
-        window.plausible = (...args) => window.__analyticsCalls.push(args)
-      JS
+      install_persistent_analytics_capture
+      page.execute_script(analytics_capture_source)
       fill_in "Song title or artist", with: "The Kiss"
       click_button "Search"
       assert_text "1 match found"
@@ -143,7 +141,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
       # visitor chose. A search that matched leaves the miss prompt out of the
       # panel, so nothing else arrives.
       assert_equal [ "Song Search Submitted", "Song Result Selected" ],
-        page.evaluate_script("window.__analyticsCalls.map((call) => call[0])")
+        captured_umami_events.map(&:first)
 
       assert_difference([ "Lyric.count", "Song.count" ], 1) do
         click_button "Generate print page"
@@ -182,22 +180,19 @@ class OrganicConversionTest < ApplicationSystemTestCase
     refute_includes calls.to_json, lyric.title
     refute_includes calls.to_json, lyric.artist
 
-    page.execute_script(<<~JS)
-      window.__analyticsCalls = []
-      window.plausible = (...args) => window.__analyticsCalls.push(["plausible", ...args])
-      window.print = () => window.__analyticsCalls.push(["print"])
-    JS
+    reset_analytics_capture
+    stub_native_print
     click_button "Print"
 
-    calls = page.evaluate_script("window.__analyticsCalls")
-    print_event_index = calls.index { |call| call[1] == "Print Dialog Opened" }
-    native_print_index = calls.index { |call| call[0] == "print" }
+    entries = analytics_order
+    print_event_index = entries.index { |entry| entry["name"] == "Print Dialog Opened" }
+    native_print_index = entries.index { |entry| entry["name"] == "print" }
     assert print_event_index
     assert native_print_index
     assert_operator print_event_index, :<, native_print_index
-    assert_equal "1", calls.dig(print_event_index, 2, "props", "page_count_in_session")
+    assert_equal "1", entries.dig(print_event_index, "data", "page_count_in_session")
     # A single sheet is not a set print.
-    assert_nil calls.index { |call| call[1] == "Songbook Printed" }
+    assert_nil entries.index { |entry| entry["name"] == "Songbook Printed" }
   end
 
   test "restoring a generated page does not duplicate its generation event" do
@@ -217,11 +212,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
       assert_button "Print"
     end
 
-    count = page.evaluate_script(
-      "JSON.parse(sessionStorage.getItem('test:analyticsCalls') || '[]')" \
-        ".filter((call) => call[0] === 'Print Page Generated').length"
-    )
-    assert_equal 1, count
+    assert_equal 1, analytics_calls_named("Print Page Generated").length
   end
 
   test "generating a second sheet in one session records packet intent once" do
@@ -251,43 +242,33 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal 1, calls.count { |call| call[0] == "Second Print Page Generated" }
   end
 
-  test "campaign attribution follows generation" do
+  test "the landing URL keeps its campaign parameters for native attribution" do
+    inject_on_new_document(analytics_capture_source)
     visit "#{root_path}?utm_source=outreach&utm_campaign=worship_handouts"
-    install_persistent_analytics_capture
-    assert_equal(
-      { "campaign_source" => "outreach", "campaign_name" => "worship_handouts" },
-      JSON.parse(page.evaluate_script("sessionStorage.getItem('printlyrics:campaign') || '{}'"))
-    )
 
     fill_in "Lyrics", with: "A congregation line"
     click_button "Generate print page"
     assert_text "A congregation line"
 
-    generated = captured_analytics_calls.find { |call| call[0] == "Print Page Generated" }
-    assert_equal "outreach", generated.dig(1, "props", "campaign_source")
-    assert_equal "worship_handouts", generated.dig(1, "props", "campaign_name")
-
+    pageview = captured_umami_payloads.find { |payload| !payload["name"] }
+    params = URI.decode_www_form(URI(pageview.fetch("url")).query).to_h
+    assert_equal "outreach", params["utm_source"]
+    assert_equal "worship_handouts", params["utm_campaign"]
     refute_selector "[data-use-case]"
-    refute_includes captured_analytics_calls.to_json, "Print Use Case Selected"
+    refute_includes captured_umami_payloads.to_json, "Print Use Case Selected"
   end
 
   test "opening an existing shared page does not record a generation" do
     lyric = Lyric.create!(lyrics: "Shared line")
 
     visit root_path
-    page.execute_script(<<~JS)
-      window.__analyticsCalls = []
-      window.plausible = (...args) => window.__analyticsCalls.push(args)
-      sessionStorage.clear()
-    JS
+    install_persistent_analytics_capture
+    page.execute_script(analytics_capture_source)
     page.execute_script("Turbo.visit(#{lyric_path(lyric).to_json})")
     assert_text "Shared line"
 
     refute_selector "body[data-generated-page-key]"
-    assert_equal(
-      [ "pageview" ],
-      page.evaluate_script("window.__analyticsCalls.map((call) => call[0])")
-    )
+    assert_equal [ "pageview" ], analytics_order.map { |entry| entry["name"] }
   end
 
   test "a second sheet offers to gather the visit into one songbook" do
@@ -357,7 +338,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     refute_selector ".songbook-prompt"
   end
 
-  test "the offer's own moments reach this site's service alone" do
+  test "the offer's own moments reach the tracker" do
     visit root_path
     install_persistent_analytics_capture
     page.execute_script(analytics_capture_source)
@@ -370,13 +351,11 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     assert_selector ".songbook-prompt", text: "2 sheets so far"
     assert_includes captured_umami_events.map(&:first), "Songbook Offer Shown"
-    refute_includes captured_analytics_calls.to_json, "Songbook Offer Shown"
 
     click_button "Not now"
     refute_selector ".songbook-prompt"
 
     assert_includes captured_umami_events.map(&:first), "Songbook Offer Dismissed"
-    refute_includes captured_analytics_calls.to_json, "Songbook Offer Dismissed"
   end
 
   test "a showing says which placement rendered the offer" do
@@ -587,18 +566,15 @@ class OrganicConversionTest < ApplicationSystemTestCase
     refute_empty entry_urls
     assert(entry_urls.all? { |url| URI.decode_www_form(URI(url).query).to_h["songbook"] == ":token" })
 
-    page.execute_script(<<~JS)
-      window.__analyticsCalls = []
-      window.plausible = (...args) => window.__analyticsCalls.push(["plausible", ...args])
-      window.print = () => {}
-    JS
+    reset_analytics_capture
+    stub_native_print
     click_button "Print all"
 
-    calls = page.evaluate_script("window.__analyticsCalls")
-    print_call = calls.find { |call| call[1] == "Print Dialog Opened" }
-    assert_equal "/songbooks/:token", URI(print_call[2]["url"]).path
-    refute_includes calls.to_json, songbook_token
-    refute_includes calls.to_json, Lyric.last.token
+    entries = analytics_order
+    print_call = entries.find { |entry| entry["name"] == "Print Dialog Opened" }
+    assert_equal "/songbooks/:token", URI(print_call.fetch("url")).path
+    refute_includes entries.to_json, songbook_token
+    refute_includes entries.to_json, Lyric.last.token
   end
 
   test "printing and pagination survive blocked browser storage" do
@@ -659,33 +635,30 @@ class OrganicConversionTest < ApplicationSystemTestCase
       page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "screen")
     end
 
-    page.execute_script(<<~JS)
-      window.__analyticsCalls = []
-      window.plausible = (...args) => window.__analyticsCalls.push(["plausible", ...args])
-      window.print = () => window.__analyticsCalls.push(["print"])
-    JS
-    click_button "Print all"
-
-    calls = page.evaluate_script("window.__analyticsCalls")
-    print_event_index = calls.index { |call| call[1] == "Print Dialog Opened" }
-    native_print_index = calls.index { |call| call[0] == "print" }
-    assert print_event_index
-    assert native_print_index
-    assert_operator print_event_index, :<, native_print_index
-    assert_equal "songbook", calls.dig(print_event_index, 2, "props", "entry_method")
-    assert_equal "2", calls.dig(print_event_index, 2, "props", "songbook_size")
-
-    # Printing a set is also its own goal, which is the only way it stays
-    # readable without custom properties.
-    set_print_index = calls.index { |call| call[1] == "Songbook Printed" }
-    assert set_print_index
-    assert_operator set_print_index, :<, native_print_index
-    assert_equal 1, calls.count { |call| call[1] == "Songbook Printed" }
-
     # The generation funnel keeps reporting its buckets from the new surface.
     generated = captured_analytics_calls.select { |call| call[0] == "Print Page Generated" }
     assert_equal [ "1", "2" ], generated.map { |call| call.dig(1, "props", "page_count_in_session") }
     assert_equal 1, captured_analytics_calls.count { |call| call[0] == "Second Print Page Generated" }
+
+    reset_analytics_capture
+    stub_native_print
+    click_button "Print all"
+
+    entries = analytics_order
+    print_event_index = entries.index { |entry| entry["name"] == "Print Dialog Opened" }
+    native_print_index = entries.index { |entry| entry["name"] == "print" }
+    assert print_event_index
+    assert native_print_index
+    assert_operator print_event_index, :<, native_print_index
+    assert_equal "songbook", entries.dig(print_event_index, "data", "entry_method")
+    assert_equal "2", entries.dig(print_event_index, "data", "songbook_size")
+
+    # Printing a set is also its own event, so the set prints stay countable
+    # while the dialog total stays continuous.
+    set_print_index = entries.index { |entry| entry["name"] == "Songbook Printed" }
+    assert set_print_index
+    assert_operator set_print_index, :<, native_print_index
+    assert_equal 1, entries.count { |entry| entry["name"] == "Songbook Printed" }
   end
 
   test "umami reports each event under its own name and redacts saved pages" do
@@ -697,6 +670,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     fill_in "Artist", with: "Test Artist"
     fill_in "Lyrics", with: "Line one"
     click_button "Generate print page"
+    assert_selector "body[data-generated-page-key]"
     assert_text "Test Song"
 
     lyric = Lyric.last
@@ -728,7 +702,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     # Umami keeps the product's names verbatim, spaces and all, so there is no
     # mapping table between the two, and a pageview is the payload with no name.
     assert_equal(
-      [ "Manual Entry Submitted", nil, "Print Page Generated", "Feedback Prompt Shown", "Print Dialog Opened" ],
+      [ "Manual Entry Submitted", nil, "Print Page Generated", "Account Prompt Shown", "Feedback Prompt Shown", "Print Dialog Opened" ],
       captured_umami_payloads.map { |payload| payload["name"] }
     )
   end
@@ -908,28 +882,24 @@ class OrganicConversionTest < ApplicationSystemTestCase
   end
 
   def install_persistent_analytics_capture
-    page.execute_script("sessionStorage.removeItem('test:analyticsCalls')")
-    page.execute_script("sessionStorage.removeItem('test:umamiCalls')")
+    reset_analytics_capture
     inject_on_new_document(analytics_capture_source)
   end
 
-  # Both destinations are stubbed before the page's own scripts run. Each one
-  # keeps an existing definition — Plausible's bootstrap queues into whatever is
-  # already there, and the Umami tracker only assigns `window.umami` when nothing
-  # has — so the stubs survive the real scripts and no request leaves the browser.
+  def reset_analytics_capture
+    page.execute_script("sessionStorage.removeItem('test:umamiCalls')")
+    page.execute_script("window.__analyticsOrder = []")
+  end
+
+  # The tracker runs the payload function against the properties it collected
+  # and sends the result, so the stub hands it the same document values a real
+  # tracker would. On a saved page those are the share token and the song title
+  # that the redaction exists to replace. The stub keeps two views: the raw
+  # payloads survive navigation in sessionStorage, and the ordered entries let a
+  # test compare an event with the native print call.
   def analytics_capture_source
     <<~JS
-      window.plausible = (...args) => {
-        const key = "test:analyticsCalls"
-        const calls = JSON.parse(sessionStorage.getItem(key) || "[]")
-        calls.push(args)
-        sessionStorage.setItem(key, JSON.stringify(calls))
-      }
-      window.plausible.init = () => {}
-      // The tracker runs the payload function against the properties it
-      // collected and sends the result, so the stub hands it the same document
-      // values a real tracker would. On a saved page those are the share token
-      // and the song title that the redaction exists to replace.
+      window.__analyticsOrder = []
       window.umami = {
         track: (name) => {
           const payload = typeof name === "function"
@@ -947,17 +917,40 @@ class OrganicConversionTest < ApplicationSystemTestCase
           const calls = JSON.parse(sessionStorage.getItem(key) || "[]")
           calls.push(payload)
           sessionStorage.setItem(key, JSON.stringify(calls))
+
+          const entry = { ...payload, name: payload.name || "pageview" }
+          window.__analyticsOrder.push(entry)
+          return entry
         }
       }
     JS
   end
 
-  def captured_analytics_calls
-    JSON.parse(page.evaluate_script("sessionStorage.getItem('test:analyticsCalls') || '[]'"))
+  def analytics_order
+    page.evaluate_script("window.__analyticsOrder || []")
+  end
+
+  def stub_native_print
+    page.execute_script(<<~JS)
+      window.print = () => window.__analyticsOrder.push({ name: "print" })
+    JS
   end
 
   def captured_umami_payloads
     JSON.parse(page.evaluate_script("sessionStorage.getItem('test:umamiCalls') || '[]'"))
+  end
+
+  # The same events with the pageview named and the properties under one key,
+  # which keeps the assertions below about event order rather than payload shape.
+  def captured_analytics_calls
+    captured_umami_payloads.map do |payload|
+      [ payload["name"] || "pageview", {
+        "url" => payload["url"],
+        "title" => payload["title"],
+        "referrer" => payload["referrer"],
+        "props" => payload["data"] || {}
+      } ]
+    end
   end
 
   # The tracker treats a payload with no name as a pageview and the rest as

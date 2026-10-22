@@ -29,9 +29,20 @@ class Songbook < ApplicationRecord
   # member page instead of the set alone.
   def self.renew_retention!(token)
     songbook = super
+    return songbook if songbook.expires_at.nil?
+
     Lyric.where(id: songbook.entries.select(:lyric_id))
+      .where.not(expires_at: nil)
       .update_all(expires_at: RETENTION_PERIOD.from_now)
     songbook
+  end
+
+  # A kept songbook keeps the songs inside it, including songs added later.
+  def preserve!
+    transaction do
+      update!(expires_at: nil)
+      Lyric.where(id: entries.select(:lyric_id)).update_all(expires_at: nil)
+    end
   end
 
   def append!(lyric)
@@ -39,6 +50,7 @@ class Songbook < ApplicationRecord
     # next position.
     with_lock do
       entries.create!(lyric: lyric, position: (entries.maximum(:position) || 0) + 1)
+      lyric.update_column(:expires_at, nil) if expires_at.nil?
     end
   end
 

@@ -37,9 +37,9 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", /UtilitiesApplication/
     assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
     assert_select ".intro p", /no copying from another lyrics site/i
-    assert_select ".landing-footer .app-version[aria-label='PrintLyrics version #{app_version}']", "v#{app_version}"
+    assert_select ".site-footer .app-version[aria-label='PrintLyrics version #{app_version}']", "v#{app_version}"
     assert_select "main", /No account/
-    assert_select "script", /autoCapturePageviews:\s*false/
+    assert_select "script[data-website-id][data-auto-track='false']", count: 1
     assert_select "form[action='#{search_lyrics_path}'][data-action*='lyric-search#start']", count: 1
     assert_no_match(/Genius|AZLyrics|Song URL/, response.body)
   end
@@ -361,21 +361,10 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     # The mark a printed sheet carries. The address itself is inside the code, so
     # the code's own size is what the markup can be read for: it has to be the
     # code for the site's tagged address, not a shorter one.
-    mark = SheetMark.new(root_url(utm_source: AnalyticsCampaigns::SHEET_SOURCE))
+    mark = SheetMark.new(root_url(utm_source: SheetMark::SOURCE))
     assert_select "template[data-preview-mark] svg[aria-hidden='true']" \
                   "[viewBox='0 0 #{mark.extent} #{mark.extent}']", count: 1
     assert_select "template[data-preview-mark] .sheet-mark-label", "printlyrics.app"
-  end
-
-  test "every page exposes the allowlisted campaign values to analytics" do
-    get root_path
-
-    assert_response :success
-    config = JSON.parse(
-      assert_select("body[data-analytics-campaigns]", count: 1).first["data-analytics-campaigns"]
-    )
-    assert_equal AnalyticsCampaigns::SOURCES, config.fetch("sources")
-    assert_equal AnalyticsCampaigns::CAMPAIGNS, config.fetch("campaigns")
   end
 
   test "newly generated page carries the generation key without prompting for a use case" do
