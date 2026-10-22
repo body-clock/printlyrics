@@ -19,7 +19,7 @@ class SongSearchTest < ActiveSupport::TestCase
 
   test "source failures propagate for callers to translate" do
     client = Object.new
-    client.define_singleton_method(:search) { |_| raise LrcLibClient::ServiceError }
+    client.define_singleton_method(:search) { |_, **| raise LrcLibClient::ServiceError }
     search = SongSearch.new(query: "a song")
 
     assert_raises(LrcLibClient::ServiceError) { search.perform(client: client) }
@@ -27,7 +27,7 @@ class SongSearchTest < ActiveSupport::TestCase
 
   test "empty reports a completed search with no matches" do
     client = Object.new
-    client.define_singleton_method(:search) { |_| [] }
+    client.define_singleton_method(:search) { |_, **| [] }
     search = SongSearch.new(query: "a song nobody wrote")
 
     assert search.perform(client: client)
@@ -86,7 +86,99 @@ class SongSearchTest < ActiveSupport::TestCase
     search = SongSearch.new(query: "three little witches")
     assert search.perform(client: client_recording(calls) { |_| [] }, clock: -> { 0.0 })
 
-    assert_equal 3, calls.size
+    assert_equal 8, calls.size
+  end
+
+  test "recovers a compound title from a joined attempt" do
+    wanted = row(title: "Margaritaville", artist: "Jimmy Buffett")
+    calls = []
+    responder = ->(query) { query == "margaritaville" ? [ wanted ] : [] }
+
+    search = SongSearch.new(query: "Margarita Ville")
+    assert search.perform(client: client_recording(calls, &responder))
+
+    assert_equal [ wanted ], search.results
+  end
+
+  test "recovers a record from a word the earlier ladder never asked alone" do
+    wanted = row(title: "One of Us", artist: "Joan Osborne")
+    calls = []
+    responder = ->(query) { query == "osborne" ? [ wanted ] : [] }
+
+    search = SongSearch.new(query: "One of us Joanne Osborne")
+    assert search.perform(client: client_recording(calls, &responder))
+
+    assert_equal [ wanted ], search.results
+  end
+
+  test "recovers a record by dropping the word the source cannot match" do
+    wanted = row(title: "Light On In The Kitchen", artist: "Ashley McBryde")
+    calls = []
+    responder = ->(query) { query == "ashley kitchen light" ? [ wanted ] : [] }
+
+    search = SongSearch.new(query: "ashley mcbride kitchen light on")
+    assert search.perform(client: client_recording(calls, &responder))
+
+    assert_equal [ wanted ], search.results
+  end
+
+  test "a failed attempt with no match stays an outage" do
+    responder = lambda do |query|
+      raise LrcLibClient::ServiceError if query == "ashley mcbride"
+
+      []
+    end
+
+    search = SongSearch.new(query: "ashley mcbride kitchen light on")
+
+    assert_raises(LrcLibClient::ServiceError) do
+      search.perform(client: client_recording([], &responder))
+    end
+  end
+
+  test "a rate limit stops the ladder instead of asking every attempt" do
+    calls = []
+    error = LrcLibClient::ServiceError.new("busy", endpoint: "/api/search", status: 429)
+    responder = ->(_query) { raise error }
+
+    search = SongSearch.new(query: "ashley mcbride kitchen light on")
+    assert_raises(LrcLibClient::ServiceError) do
+      search.perform(client: client_recording(calls, &responder))
+    end
+
+    assert_equal [ "ashley mcbride kitchen light on" ], calls
+  end
+
+  test "a busy first attempt does not hide a later match" do
+    wanted = row(title: "One of Us", artist: "Joan Osborne")
+    calls = []
+    responder = lambda do |query|
+      raise LrcLibClient::ServiceError if query == "one of us joanne osborne"
+
+      query == "osborne" ? [ wanted ] : []
+    end
+
+    search = SongSearch.new(query: "One of us Joanne Osborne")
+    assert search.perform(client: client_recording(calls, &responder))
+
+    assert_equal [ wanted ], search.results
+    assert_includes calls, "osborne"
+  end
+
+  test "a busy broad attempt does not hide a later match" do
+    wanted = row(title: "Light On In The Kitchen", artist: "Ashley McBryde")
+    calls = []
+    responder = lambda do |query|
+      raise LrcLibClient::ServiceError if query == "ashley mcbride"
+
+      query == "ashley kitchen light" ? [ wanted ] : []
+    end
+
+    search = SongSearch.new(query: "ashley mcbride kitchen light on")
+    assert search.perform(client: client_recording(calls, &responder))
+
+    assert_equal [ wanted ], search.results
+    assert_includes calls, "ashley kitchen light"
   end
 
   test "an attempt that matches a different song stays a miss" do
@@ -116,8 +208,8 @@ class SongSearchTest < ActiveSupport::TestCase
     fields = []
 
     client = Object.new
-    client.define_singleton_method(:search) { |_| [] }
-    client.define_singleton_method(:search_by_fields) do |track_name:, artist_name:|
+    client.define_singleton_method(:search) { |_, **| [] }
+    client.define_singleton_method(:search_by_fields) do |track_name:, artist_name:, **|
       fields << [ track_name, artist_name ]
       [ result ]
     end
@@ -133,7 +225,7 @@ class SongSearchTest < ActiveSupport::TestCase
 
   def client_recording(calls, &responder)
     Object.new.tap do |client|
-      client.define_singleton_method(:search) do |query|
+      client.define_singleton_method(:search) do |query, **|
         calls << query
         responder.call(query)
       end

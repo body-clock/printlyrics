@@ -50,6 +50,29 @@ class SongQuery
   # not carry.
   SLACK_FROM = 4
 
+  # The ladder is bounded: every attempt is another round trip to a source that
+  # rate-limits, and a long query could otherwise ask a dozen times. The
+  # precise attempts come first and the broadest tail is cut, not reordered.
+  ATTEMPT_LIMIT = 10
+
+  # Adjacent words, so a title and an artist the visitor put last are still
+  # asked as a pair; only the first pair is not enough ("seven lucas graham").
+  BIGRAM_LIMIT = 4
+
+  # Every significant word on its own, longest first, because the word that
+  # names the song is often the one the earlier ladder never reached. The four
+  # longest are the most distinctive; asking all of them would be a query per
+  # word.
+  SINGLE_LIMIT = 4
+
+  # A query minus one word, because the source requires every token: the word
+  # the source cannot match is often one the visitor misspelled, and dropping it
+  # leaves words the record does carry ("ashley kitchen light" for "ashley
+  # mcbride kitchen light on"). Four covers the usual title/artist query; a
+  # longer query drops its trailing qualifier first, because that is the word a
+  # visitor most often appends.
+  DROP_LIMIT = 4
+
   # What to ask the source. Every row that comes back is scored against the
   # query before it is shown: LRCLIB answers some exact queries with an
   # unrelated record, so the ask and the judgement are separate steps.
@@ -173,17 +196,55 @@ class SongQuery
   def build_attempts
     return [] if blank?
 
-    [].tap do |ladder|
-      append(ladder, :keywords, { q: cleaned })
-      append(ladder, :keywords, { q: significant_tokens.join(" ") })
+    ladder = []
+    append(ladder, :keywords, { q: cleaned })
+    append(ladder, :keywords, { q: significant_tokens.join(" ") })
 
-      if (title, artist = field_parts)
-        append(ladder, :fields, { track_name: title, artist_name: artist })
-      end
-
-      append(ladder, :keywords, { q: significant_tokens.first(2).join(" ") }) if significant_tokens.size > 2
-      append(ladder, :keywords, { q: significant_tokens.first }) if significant_tokens.size > 1
+    if (title, artist = field_parts)
+      append(ladder, :fields, { track_name: title, artist_name: artist })
     end
+
+    append(ladder, :keywords, { q: significant_tokens.join }) if (2..3).cover?(significant_tokens.size)
+
+    # The one most distinctive word first: it is often the artist or the noun
+    # in the title, and the source answers a single word with a list that
+    # scoring can filter. Asking it before the pairs keeps it inside the
+    # attempt and time budget, where it is the only chance for queries whose
+    # other words are misspelled.
+    longest_tokens(1).each { |token| append(ladder, :keywords, { q: token }) }
+
+    significant_tokens.each_cons(2).first(BIGRAM_LIMIT).each do |pair|
+      append(ladder, :keywords, { q: pair.join(" ") })
+    end
+
+    if significant_tokens.size > 2
+      drop_indices.each do |index|
+        append(ladder, :keywords, { q: without(index).join(" ") })
+      end
+    end
+
+    longest_tokens(SINGLE_LIMIT).each { |token| append(ladder, :keywords, { q: token }) }
+
+    ladder.first(ATTEMPT_LIMIT)
+  end
+
+  def longest_tokens(limit)
+    significant_tokens.sort_by { |token| [ -self.class.fold(token).length, token ] }.first(limit)
+  end
+
+  # A long query is usually the song plus a qualifier ("acoustic", "demo"), so
+  # the last word is dropped first, then the words that most often start the
+  # title or artist. A four-word query has a drop for every word.
+  def drop_indices
+    return (0...significant_tokens.size).to_a if significant_tokens.size <= DROP_LIMIT
+
+    [ significant_tokens.size - 1, 0, 1, 2 ]
+  end
+
+  def without(index)
+    tokens = significant_tokens.dup
+    tokens.delete_at(index)
+    tokens
   end
 
   def append(ladder, kind, params)
@@ -204,6 +265,8 @@ class SongQuery
   # album is not the song the visitor asked for.
   def covered(result)
     haystack = self.class.tokenize("#{result.title} #{result.artist}").map { |token| self.class.fold(token) }
+    title_tokens = self.class.tokenize(result.title).map { |token| self.class.fold(token) }
+    return significant_tokens.size if compounds?(title_tokens)
 
     matches = significant_tokens.map do |token|
       folded = self.class.fold(token)
@@ -215,6 +278,21 @@ class SongQuery
     end
 
     matches.count(:word) + [ matches.count(:variant), VARIANT_LIMIT ].min
+  end
+
+  # A title the source stores as one word and the visitor typed as two, which
+  # the per-word comparison can never cover: "margarita ville" against
+  # "Margaritaville". Only the title is compared: the artist is not the song,
+  # and "back street" matching the artist "Backstreet Boys" would show a
+  # different song. Both sides are folded, and the whole query has to form the
+  # title, so two words that merely start alike are still a different title.
+  def compounds?(title_tokens)
+    return false if significant_tokens.size < 2
+
+    joined = significant_tokens.map { |token| self.class.fold(token) }.join
+    return false if joined.empty?
+
+    title_tokens.include?(joined) || title_tokens.join == joined
   end
 
   def required

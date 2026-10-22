@@ -112,7 +112,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     lookup_started = Queue.new
     allow_lookup_to_finish = Queue.new
     client = Object.new
-    client.define_singleton_method(:search) { |_| [ result ] }
+    client.define_singleton_method(:search) { |_, **| [ result ] }
     client.define_singleton_method(:find) do |_|
       lookup_started << true
       allow_lookup_to_finish.pop
@@ -771,7 +771,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   test "a search that finds nothing reports its attempt and its miss once" do
     client = Object.new
-    client.define_singleton_method(:search) { |_| [] }
+    client.define_singleton_method(:search) { |_, **| [] }
 
     with_lrc_lib_client(client) do
       visit root_path
