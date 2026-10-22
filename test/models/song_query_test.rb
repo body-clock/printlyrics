@@ -97,6 +97,14 @@ class SongQueryTest < ActiveSupport::TestCase
       .accepts?([ row(title: "Battle Belongs", artist: "Phil Wickham") ])
   end
 
+  test "does not accept a record when the query has no significant words" do
+    result = row(title: "The Kiss", artist: "Judee Sill")
+
+    assert_not SongQuery.new("the").accepts?([ result ])
+    assert_not SongQuery.new("a").accepts?([ result ])
+    assert_not SongQuery.new("T").accepts?([ result ])
+  end
+
   test "ranks the closest record first" do
     exact = row(id: 1, title: "Battle Belongs", artist: "Phil Wickham")
     partial = row(id: 2, title: "Belongs", artist: "Nobody")

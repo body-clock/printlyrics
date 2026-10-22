@@ -50,5 +50,6 @@ class ApplicationController < ActionController::Base
 
     session[:created_songbook_token] = songbook.token
     session[:created_songbook_origin] = origin
+    session[:created_songbook_size] = songbook.entries.size
   end
 end

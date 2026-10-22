@@ -107,6 +107,17 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_url
   end
 
+  test "a reset link refuses a blank password instead of reporting success" do
+    user = create_user
+    token = user.password_reset_token
+
+    patch password_path(token), params: { password: "", password_confirmation: "" }
+
+    assert_response :unprocessable_content
+    assert_select ".form-errors", /can't be blank/
+    assert user.reload.authenticate("long-password")
+  end
+
   test "a saved lyric is kept, appears in the library, and can be removed" do
     user = create_user
     sign_in(user)

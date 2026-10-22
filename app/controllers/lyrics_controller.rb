@@ -86,7 +86,10 @@ class LyricsController < ApplicationController
 
   def show
     @lyric = Lyric.renew_retention!(params[:token])
-    @generated_page_key = @lyric.token if session.delete(:generated_lyric_token) == @lyric.token
+    if session[:generated_lyric_token] == @lyric.token
+      @generated_page_key = @lyric.token
+      session.delete(:generated_lyric_token)
+    end
     remember_visit_sheet(@generated_page_key)
 
     # The second sheet is where the songbook offer appears, so the account ask
@@ -118,6 +121,9 @@ class LyricsController < ApplicationController
     remember_created_songbook(@songbook, origin: "add_song") unless was_a_set
 
     @songbook
+  rescue Songbook::LimitReached
+    flash[:alert] = t("songbooks.errors.full", limit: Songbook::MAX_SONGS)
+    lyric
   end
 
   def lrc_lib_client

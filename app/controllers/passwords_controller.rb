@@ -19,7 +19,15 @@ class PasswordsController < ApplicationController
   end
 
   def update
-    if @user.update(password_params)
+    attributes = password_params
+    missing = %i[password password_confirmation].select { |attribute| attributes[attribute].blank? }
+
+    if missing.any?
+      missing.each { |attribute| @user.errors.add(attribute, :blank) }
+      return render :edit, status: :unprocessable_content
+    end
+
+    if @user.update(attributes)
       @user.sessions.destroy_all
       redirect_to new_session_path, notice: t("accounts.password_reset.updated")
     else

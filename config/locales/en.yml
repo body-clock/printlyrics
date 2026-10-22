@@ -354,6 +354,7 @@ en:
   songbooks:
     errors:
       expired: "That songbook expired or wasn't found"
+      full: "That songbook already holds %{limit} songs. This sheet has its own page."
     show:
       seo:
         title: "Songbook | PrintLyrics"

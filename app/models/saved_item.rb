@@ -22,6 +22,21 @@ class SavedItem < ApplicationRecord
     { "Lyric" => Lyric, "Songbook" => Songbook }[type]
   end
 
+  # Whether a page is still kept by any shelf: saved on its own, or held by a
+  # songbook some account has saved. Removing one association is not enough to
+  # return the page to the anonymous clock while another keeps it.
+  def self.keeps?(item)
+    exists?(item: item) || (item.is_a?(Lyric) && saved_songbook_containing(item).exists?)
+  end
+
+  def self.saved_songbook_containing(lyric)
+    where(item_type: "Songbook").where(
+      item_id: Songbook.joins(:entries)
+        .where(songbook_entries: { lyric_id: lyric.id })
+        .select(:id)
+    )
+  end
+
   def self.add(user:, item:)
     unless ITEM_TYPES.include?(item.class.name)
       raise ArgumentError, "#{item.class.name} cannot be saved to a library"
@@ -52,7 +67,7 @@ class SavedItem < ApplicationRecord
 
         item.release!
         release_songbook_lyrics
-      elsif !SavedItem.exists?(item: item) && !saved_songbook_containing(item).exists?
+      elsif !SavedItem.keeps?(item)
         item.release!
       end
     end
@@ -62,18 +77,7 @@ class SavedItem < ApplicationRecord
 
   def release_songbook_lyrics
     item.lyrics.find_each do |lyric|
-      next if SavedItem.exists?(item: lyric)
-      next if saved_songbook_containing(lyric).exists?
-
-      lyric.release!
+      lyric.release! unless SavedItem.keeps?(lyric)
     end
-  end
-
-  def saved_songbook_containing(lyric)
-    SavedItem.where(item_type: "Songbook").where(
-      item_id: Songbook.joins(:entries)
-        .where(songbook_entries: { lyric_id: lyric.id })
-        .select(:id)
-    )
   end
 end
