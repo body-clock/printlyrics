@@ -1,9 +1,9 @@
 # Git conventions
 
 Formats for commits, branches, and pull request titles, plus the mechanics that
-keep a mutating git command in the checkout you meant. PrintLyrics has two
-long-lived branches carrying parallel histories, so the operations that move
-work between them need more care than a single-trunk repository does.
+keep a mutating git command in the checkout you meant. PrintLyrics has one
+long-lived branch, `main`. Every change reaches it through a pull request, and
+Release Please turns the commits that land there into the next release.
 
 ## Commits — `<type>(scope)!: description`
 
@@ -20,7 +20,7 @@ chore(deps): bump honeybadger from 6.9.2 to 6.9.3
 ```
 
 Release Please reads these subjects — not the diff — to build `CHANGELOG.md` and
-`version.txt`, using the sections in `.release-please-config.json`. A subject it
+`version.txt`, using the sections in `release-please-config.json`. A subject it
 cannot parse is dropped from the changelog, and so are `build:` and `style:`,
 which have no section configured. `test:` and `ci:` are parsed but hidden.
 
@@ -30,9 +30,8 @@ Types: feat, fix, chore, docs, refactor, test, release
 
 - lowercase, hyphens only, no leading/trailing/double hyphens
 - dots only in release versions: release/v1.2.0
-- trunk (`main`, `development`) = no prefix
-- `main` is released: release PRs and promotions land there
-- `development` is integration: branch off it, merge back into it
+- trunk (`main`) = no prefix
+- branch off `main`
 - tool-generated: `dependabot/*`, `release-please--branches--main`, and agent
   prefixes (`claude/*`, `codex/*`, `agent/*`)
 
@@ -44,37 +43,40 @@ chore/umami-secrets-from-proton-pass
 
 ## Pull requests — title follows the commit convention
 
-A squash merge turns the PR title into the commit subject on the target branch,
-so it uses the same `<type>(scope)!: description` format as a commit. Release
-Please parses those subjects, so a title like `Add the songbook guide` never
-reaches the changelog.
+A squash merge turns the PR title into the commit subject on `main`, so it uses
+the same `<type>(scope)!: description` format as a commit. Release Please parses
+those subjects, so a title like `Add the songbook guide` never reaches the
+changelog.
 
-Pull requests target `development`. The two exceptions are the promotion PR
-(`development` → `main`) and Release Please's own release PR
-(`release-please--branches--main` → `main`).
+Pull requests target `main`. The one exception is Release Please's own release
+PR (`release-please--branches--main` → `main`), which follows the same rules.
 
 ```
 feat(songbook): read the demand list in Umami and gather a visit's sheets
 fix(faq): stop the list drawing a rule above the resource links
 ```
 
-## Promotions — `development` → `main`
+## Releases
 
-- **Squash and merge, never a merge commit.** The histories are parallel: work
-  squashed onto `main` is not reachable from `development` by SHA, so a merge
-  commit puts every already-released commit back into Release Please's range and
-  emits its changelog entry a second time.
-- **Merge `main` into `development` first, and push that.** Release metadata
-  belongs to `main`; without the merge back, the promotion diff reverts it —
-  `version.txt` going backwards and released `CHANGELOG.md` entries
-  disappearing.
-- **Expect conflicts where both branches carry the same work**, and resolve them
-  to `development`'s side. Prove the resolution instead of trusting it:
-  `git diff <pre-merge development head> <merge commit>` should list only the
-  release files, and `git diff main <merge commit>` should list none.
-- **Judge what a promotion ships by tree diff** — `git diff --stat main
-  development` — never by `git log main..development`, which counts features
-  already released on `main` under other commits.
+Release Please runs on every push to `main` and maintains one release pull
+request from the conventional commits merged since the previous release. Do not
+edit `version.txt`, `CHANGELOG.md`, or `.release-please-manifest.json` by hand.
+
+1. A feature or fix PR is squash-merged to `main`; its subject becomes the
+   changelog entry.
+2. Release Please updates, or opens, the release PR. It bumps `version.txt`,
+   writes `CHANGELOG.md`, and updates the manifest.
+3. CI runs on the release PR like any other PR because the workflow
+   authenticates with `RELEASE_PLEASE_TOKEN` instead of `GITHUB_TOKEN`.
+4. Merging the release PR is the release. Release Please creates the `vX.Y.Z`
+   tag and GitHub release, and the same workflow calls `deploy.yml` for that
+   commit. Merging an ordinary PR never deploys.
+
+The release PR title is `chore(main): release X.Y.Z`. Squash-merge it like any
+other PR. Do not add release commits by hand, and do not move or reuse tags.
+
+The former `development` branch is retired. Do not branch from it or retarget
+work to it; `main` is the only integration and release branch.
 
 ## Never let a command run in the wrong checkout
 
@@ -134,6 +136,6 @@ all, and to check a resolution before committing it.
 ## Rules
 
 - 1 change/commit, subject ≤72 chars
-- branch off `development`
+- branch off `main`, and open the PR against `main`
 - no force-push of shared branches without confirmation
 - PR title in commit format, since it becomes the squash-merge subject
