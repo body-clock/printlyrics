@@ -380,6 +380,24 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "[data-controller='print-feedback']", count: 0
   end
 
+  test "an unrelated page does not consume the generated sheet's marker" do
+    post lyrics_path, params: {
+      lyric: { title: "Generated Song", lyrics: "A printable line" }
+    }
+    generated = Lyric.last
+    other = Lyric.create!(lyrics: "Someone else's line", title: "Other Song")
+
+    get lyric_path(other)
+    assert_response :success
+    assert_select "body[data-generated-page-key]", count: 0
+
+    get lyric_path(generated)
+
+    assert_response :success
+    assert_select "body[data-generated-page-key='#{generated.token}']", count: 1
+    assert_select ".feedback-prompt", count: 1
+  end
+
   test "visiting a shareable page renews its retention" do
     lyric = Lyric.create!(lyrics: "A line", expires_at: 1.day.from_now)
 

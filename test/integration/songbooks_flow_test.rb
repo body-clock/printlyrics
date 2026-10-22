@@ -17,6 +17,39 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
     assert_equal [ "First Song", "Second Song" ], Songbook.last.lyrics.map(&:title)
   end
 
+  test "an unrelated set does not consume the creation marker" do
+    first = generate_sheet(title: "First Song")
+    second = generate_sheet(title: "Second Song")
+
+    post songbooks_path, params: { lyric_tokens: [ first.token, second.token ] }
+    created = Songbook.last
+    other = Songbook.start_with(Lyric.create!(lyrics: "Other line"))
+
+    get songbook_path(other)
+    assert_response :success
+    assert_select "body[data-created-songbook-size]", count: 0
+
+    get songbook_path(created)
+
+    assert_response :success
+    assert_select "body[data-created-songbook-size='2']", count: 1
+    assert_select "body[data-created-songbook-origin='offer']", count: 1
+  end
+
+  test "the creation event reports the size the set had when it was created" do
+    first = generate_sheet(title: "First Song")
+    second = generate_sheet(title: "Second Song")
+
+    post songbooks_path, params: { lyric_tokens: [ first.token, second.token ] }
+    songbook = Songbook.last
+    songbook.append!(Lyric.create!(lyrics: "Third line", title: "Third Song"))
+
+    get songbook_path(songbook)
+
+    assert_response :success
+    assert_select "body[data-created-songbook-size='2']", count: 1
+  end
+
   test "the second sheet a visit makes carries the offer with it" do
     generate_sheet(title: "First Song")
     post lyrics_path, params: { lyric: { title: "Second Song", lyrics: "Second line" } }
@@ -49,6 +82,19 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
     # A later sheet in the same visit does not ask again, and the answer is the
     # server's, so it holds for every page it renders.
     generate_sheet(title: "Third Song")
+    assert_select ".songbook-prompt", count: 0
+  end
+
+  test "accepting the offer settles it for the rest of the visit" do
+    first = generate_sheet(title: "First Song")
+    second = generate_sheet(title: "Second Song")
+
+    post songbooks_path, params: { lyric_tokens: [ first.token, second.token ] }
+    assert_redirected_to songbook_path(Songbook.last)
+
+    get root_path
+
+    assert_response :success
     assert_select ".songbook-prompt", count: 0
   end
 
@@ -134,6 +180,23 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
     assert_equal Songbook::MAX_SONGS, Songbook.last.lyrics.count
   end
 
+  test "a full set leaves the next song on its own page" do
+    lyrics = Songbook::MAX_SONGS.times.map { |index| Lyric.create!(lyrics: "Line #{index}") }
+    songbook = Songbook.start_with(*lyrics)
+
+    post lyrics_path, params: {
+      songbook: songbook.token,
+      lyric: { title: "One More", lyrics: "A line that does not fit" }
+    }
+
+    generated = Lyric.last
+    assert_redirected_to lyric_path(generated)
+    assert_equal Songbook::MAX_SONGS, songbook.entries.count
+    assert_not_includes songbook.lyrics, generated
+    follow_redirect!
+    assert_select "[role=alert]", /already holds 25 songs/
+  end
+
   test "generating from the songbook context appends the song and lands on the set" do
     songbook = Songbook.start_with(Lyric.create!(lyrics: "First line", title: "First Song"))
 
@@ -176,6 +239,23 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
 
     get songbook_path(songbook)
     assert_select "body[data-generated-page-key]", count: 0
+  end
+
+  test "an unrelated set does not consume the generated page's marker" do
+    post lyrics_path, params: {
+      lyric: { title: "Generated Song", lyrics: "A printable line" }
+    }
+    generated = Lyric.last
+    other = Songbook.start_with(Lyric.create!(lyrics: "Other line"))
+
+    get songbook_path(other)
+    assert_response :success
+    assert_select "body[data-generated-page-key]", count: 0
+
+    get lyric_path(generated)
+
+    assert_response :success
+    assert_select "body[data-generated-page-key='#{generated.token}']", count: 1
   end
 
   test "the entry form carries the songbook and ignores an unknown one" do

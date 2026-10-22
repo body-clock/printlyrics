@@ -27,6 +27,15 @@ class LrcLibClientTest < ActiveSupport::TestCase
     assert_equal [ 1, 3, 4, 5, 6 ], results.map(&:id)
   end
 
+  test "search drops a record whose synced lyrics have no printable text" do
+    rows = [ result(id: 9, title: "Timestamps Only", plain_lyrics: nil, synced_lyrics: "[00:01.00]\n[00:02.00]") ]
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 200, json_headers, JSON.generate(rows) ] }
+    end
+
+    assert_empty LrcLibClient.new(connection: connection).search("timestamps only")
+  end
+
   test "find returns printable metadata and strips timestamps when only synced lyrics exist" do
     row = result(
       id: 42,
