@@ -11,6 +11,8 @@ class Songbook < ApplicationRecord
   # set built by hand in one request cannot exceed it either.
   MAX_SONGS = 25
 
+  class LimitReached < StandardError; end
+
   has_many :entries, -> { order(:position) },
     class_name: "SongbookEntry", dependent: :destroy, inverse_of: :songbook
   has_many :lyrics, through: :entries
@@ -49,13 +51,23 @@ class Songbook < ApplicationRecord
     # Two tabs adding a song at the same time would otherwise choose the same
     # next position.
     with_lock do
+      raise LimitReached if entries.count >= MAX_SONGS
+
       entries.create!(lyric: lyric, position: (entries.maximum(:position) || 0) + 1)
       lyric.update_column(:expires_at, nil) if expires_at.nil?
     end
   end
 
   def remove!(lyric)
-    entries.find_by(lyric_id: lyric.id)&.destroy!
+    removed = entries.find_by(lyric_id: lyric.id)&.destroy!
+    return unless removed
+
+    # A kept set keeps its songs. Once a song leaves the set, it is kept only if
+    # it is on a shelf or inside another kept set. The passed object can predate
+    # the set's preservation, so ask the row rather than its cached state.
+    lyric.reload
+    lyric.release! if lyric.expires_at.nil? && !SavedItem.keeps?(lyric)
+    removed
   end
 
   def a_set?

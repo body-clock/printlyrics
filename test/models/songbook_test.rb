@@ -62,6 +62,16 @@ class SongbookTest < ActiveSupport::TestCase
     assert_equal 1, songbook.entries.count
   end
 
+  test "a set cannot hold more than its maximum" do
+    lyrics = Songbook::MAX_SONGS.times.map { |index| Lyric.create!(lyrics: "Line #{index}") }
+    songbook = Songbook.start_with(*lyrics)
+
+    assert_raises(Songbook::LimitReached) do
+      songbook.append!(Lyric.create!(lyrics: "One too many"))
+    end
+    assert_equal Songbook::MAX_SONGS, songbook.entries.count
+  end
+
   test "new songbooks expire after 180 days" do
     travel_to Time.zone.local(2026, 7, 27, 12) do
       songbook = Songbook.create!

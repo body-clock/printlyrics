@@ -78,6 +78,8 @@ class SongQuery
   end
 
   def accepts?(results)
+    return false if significant_tokens.empty?
+
     results.any? { |result| covered(result) >= required }
   end
 

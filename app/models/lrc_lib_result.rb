@@ -47,7 +47,7 @@ class LrcLibResult
   end
 
   def printable?
-    !instrumental && (plain_lyrics.present? || synced_lyrics.present?)
+    !instrumental && lyrics.present?
   end
 
   def deduplication_key
