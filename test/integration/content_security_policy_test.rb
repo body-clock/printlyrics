@@ -12,10 +12,12 @@ class ContentSecurityPolicyTest < ActionDispatch::IntegrationTest
     assert_includes policy, "object-src 'none'"
     assert_includes policy, "script-src 'self' #{Rails.configuration.x.umami_origin} https://challenges.cloudflare.com 'nonce-"
     assert_includes policy, "frame-src https://challenges.cloudflare.com"
+    assert_includes policy, "style-src 'self' https: 'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='"
     assert_includes policy, "style-src-attr 'unsafe-inline'"
     assert_includes policy, "frame-ancestors 'none'"
     assert_no_match(/unsafe-eval/, policy)
     assert_no_match(/script-src[^;]*'unsafe-inline'/, policy)
+    assert_no_match(/style-src\s[^;]*'unsafe-inline'/, policy)
   end
 
   test "importmap and module scripts carry the request nonce" do

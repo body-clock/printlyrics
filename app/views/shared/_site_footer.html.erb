@@ -1,0 +1,23 @@
+<%# The guides and feedback live here so the header stays a brand and account
+    bar. The current page is left out rather than linked to itself. %>
+<footer class="site-footer no-print">
+  <div class="site-footer-inner">
+    <nav class="site-footer-nav" aria-label="<%= t("shared.site_footer.navigation_label") %>">
+      <% unless current_page?(print_lyrics_on_one_page_path) %>
+        <%= link_to t("shared.site_footer.one_page"), print_lyrics_on_one_page_path %>
+      <% end %>
+      <% unless current_page?(print_a_songbook_path) %>
+        <%= link_to t("shared.site_footer.songbook"), print_a_songbook_path %>
+      <% end %>
+      <% unless current_page?(feedback_path) %>
+        <%= link_to t("shared.site_footer.feedback"), feedback_path %>
+      <% end %>
+    </nav>
+
+    <div class="site-footer-meta">
+      <p><%= t("shared.site_footer.retention") %></p>
+      <p class="app-version"
+         aria-label="<%= t("shared.site_footer.version", version: app_version) %>"><%= t("shared.site_footer.version_display", version: app_version) %></p>
+    </div>
+  </div>
+</footer>

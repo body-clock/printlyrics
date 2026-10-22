@@ -55,6 +55,16 @@
   changing this workflow.
 - Saved pages use opaque tokens, remain `noindex, nofollow`, and never appear
   in the sitemap. Tokens are shareable URLs, not an authentication system.
+- Accounts are optional. `SavedItem` is the account's library and owns the
+  ten-place cap across lyric sheets and songbooks; saving sets the page's
+  `expires_at` to nil and removing it restores the anonymous window. Keep public
+  flows working without a session, and make account-only controllers opt into
+  `require_authentication` rather than protecting every controller by default.
+- Google is the first sign-in control when `GOOGLE_CLIENT_ID` and
+  `GOOGLE_CLIENT_SECRET` (or their credential equivalents) are present. The
+  callback trusts only Google's verified address; a returning visitor is matched
+  by `Identity` provider and uid. Email/password remains the fallback, with the
+  password floor enforced in `User` and stated in the forms.
 - Active page visits renew the 180-day retention window. Expired or unknown
   tokens return to the form. Keep cleanup in the explicit purge operation/task;
   do not revive expired pages during lookup.
@@ -147,6 +157,11 @@
   helper, which swaps the controller's client factory. Do not assume WebMock is
   installed or that the suite globally blocks network access, and do not redefine
   controller methods to inject a client.
+- Google tests use `with_google_configured` to supply a client and
+  `with_google_auth` to make OmniAuth answer with a payload; the callback and
+  middleware under test are the production ones. Every test starts with Google
+  unconfigured, so assertions about a host without a client do not depend on the
+  machine running the suite.
 - Cover relevant failure paths: malformed or unavailable source data, invalid
   catalog tokens, failed atomic saves, expiration boundaries, and transient
   source failures. Use Rails time helpers for deterministic time tests.

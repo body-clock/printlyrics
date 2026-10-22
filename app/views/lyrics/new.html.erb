@@ -50,7 +50,6 @@
 
     <section class="entry-panel" aria-labelledby="page-heading">
       <div class="intro">
-        <p class="eyebrow"><%= t("application.name") %></p>
         <h1 id="page-heading"><%= t(".heading") %></h1>
         <p><%= t(".intro") %></p>
       </div>
@@ -327,11 +326,5 @@
     <% end %>
   </section>
 
-  <%= render "shared/resource_navigation", current_section: :tool %>
 
-  <footer class="landing-footer">
-    <p><%= t(".footer.retention") %></p>
-    <p class="app-version"
-       aria-label="<%= t(".footer.version", version: app_version) %>"><%= t(".footer.version_display", version: app_version) %></p>
-  </footer>
 </div>

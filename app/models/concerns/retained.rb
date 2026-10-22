@@ -12,7 +12,9 @@ module Retained
 
     validates :token, presence: true, uniqueness: true, length: { is: 16 }
 
-    scope :active, -> { where("expires_at > ?", Time.current) }
+    # A nil expiry belongs to a page an account has kept. Everything else is on
+    # the anonymous 180-day clock.
+    scope :active, -> { where("expires_at IS NULL OR expires_at > ?", Time.current) }
   end
 
   class_methods do
@@ -35,7 +37,19 @@ module Retained
   end
 
   def touch_retention!
+    return if expires_at.nil?
+
     update_column(:expires_at, RETENTION_PERIOD.from_now)
+  end
+
+  # A saved page stops expiring. Removing it from the library puts it back on
+  # the anonymous clock instead of deleting anything.
+  def preserve!
+    update!(expires_at: nil)
+  end
+
+  def release!
+    update!(expires_at: RETENTION_PERIOD.from_now)
   end
 
   private

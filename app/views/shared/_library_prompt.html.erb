@@ -1,0 +1,21 @@
+<%#
+  The signed-in sibling of the account prompt: it keeps a page with the other
+  saved things without asking the visitor to make an account they already have.
+%>
+<% if current_user.saved?(item) %>
+  <p class="library-prompt no-print">
+    <%= t("shared.library_prompt.saved_html", library_link: link_to(t("shared.library_prompt.library_link"), library_path)) %>
+  </p>
+<% elsif current_user.library_full? %>
+  <p class="library-prompt no-print">
+    <%= t("shared.library_prompt.full_html", library_link: link_to(t("shared.library_prompt.library_link"), library_path)) %>
+  </p>
+<% else %>
+  <div class="library-prompt no-print">
+    <p><%= t("shared.library_prompt.signed_in") %></p>
+    <%= button_to t("shared.library_prompt.save"),
+          saved_items_path,
+          params: { item_type: item.class.name, token: item.token },
+          class: "button button-secondary" %>
+  </div>
+<% end %>

@@ -76,9 +76,22 @@ export function trackPageResponses(root) {
     const surface = marker.dataset.analyticsOfferSurface
     trackEvent(marker.dataset.analyticsPageResponse, {
       ...sessionPageCountProperties(),
+      ...responseProperties(marker),
       ...(surface && { songbook_offer_surface: surface })
     })
   })
+}
+
+// Properties a server response chose to attach: the account method, the kind
+// of saved item, or which account prompt was shown. A malformed value is
+// ignored rather than allowed to stop the event.
+function responseProperties(marker) {
+  try {
+    const props = JSON.parse(marker.dataset.analyticsProps || "{}")
+    return props && typeof props === "object" && !Array.isArray(props) ? props : {}
+  } catch {
+    return {}
+  }
 }
 
 // An outcome the server knows and the client cannot: the marker is rendered

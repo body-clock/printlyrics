@@ -87,4 +87,45 @@ module ApplicationHelper
   def lyric_title(lyric)
     lyric.title.presence || t("lyrics.show.untitled")
   end
+
+  # Outcomes the server recorded for the page that follows. Reading clears them
+  # so a reload does not report the same account creation or save again; the
+  # response key covers a Turbo snapshot of this same page. A marker written by
+  # the previous deploy has no properties, so a bare key still renders.
+  def take_page_responses
+    responses = session.delete(:analytics_page_responses)
+    return {} unless responses.is_a?(Hash)
+
+    responses.transform_values do |value|
+      value.is_a?(Hash) ? value : { "key" => value, "props" => {} }
+    end
+  end
+
+  def google_sign_in_available?
+    GoogleSignIn.configured?
+  end
+
+  def password_hint
+    t("accounts.password_hint", count: User::PASSWORD_MINIMUM_LENGTH)
+  end
+
+  # A songbook has no title of its own. The library names it by its first song,
+  # which is what the owner recognizes, and says how many sheets sit behind it.
+  def saved_songbook_title(songbook)
+    first_entry = songbook.entries.first
+    return t("accounts.library.untitled_songbook") unless first_entry
+
+    t("accounts.library.songbook_title",
+      title: lyric_title(first_entry.lyric),
+      count: songbook.entries.size)
+  end
+
+  def saved_item_kind(saved_item)
+    t("accounts.library.kinds.#{saved_item.item_type.underscore}")
+  end
+
+  def saved_item_title(saved_item)
+    item = saved_item.item
+    item.is_a?(Songbook) ? saved_songbook_title(item) : lyric_title(item)
+  end
 end

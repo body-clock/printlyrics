@@ -14,7 +14,12 @@ Rails.application.configure do
     policy.img_src     :self, :https, :data
     policy.object_src  :none
     policy.script_src  :self, config.x.umami_origin, "https://challenges.cloudflare.com"
-    policy.style_src   :self, :https
+    # Turbo injects one inline <style> for its progress bar. A nonce cannot
+    # cover a style element a library writes after load, so its exact hash is
+    # allowed here. If Turbo updates that stylesheet, the browser console names
+    # the new hash.
+    policy.style_src   :self, :https,
+                       "'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='"
     # Umami collects on its own host, at the `/api/send` the tracker derives from
     # where its script was loaded.
     policy.connect_src :self, config.x.umami_origin

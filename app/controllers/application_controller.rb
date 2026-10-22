@@ -1,4 +1,6 @@
 class ApplicationController < ActionController::Base
+  include Authentication
+
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and :has.
   allow_browser versions: :modern
 
@@ -16,6 +18,21 @@ class ApplicationController < ActionController::Base
   helper_method :visit
 
   private
+
+  # An outcome the server knows and the next page reports. The response names
+  # itself so a snapshot Turbo replays cannot report the same outcome twice.
+  # Properties travel with the marker and reach the event payload.
+  def remember_page_response(name, **props)
+    responses = session[:analytics_page_responses] ||= {}
+    responses[name] = { "key" => SecureRandom.hex(8), "props" => props }
+  end
+
+  # A signed-out visitor sees an account prompt only for a page this visit
+  # made, and only until they answer it. Shared or older pages are not a moment
+  # to ask.
+  def account_prompt_for?(made_by_visit)
+    !authenticated? && made_by_visit && !session[:account_prompt_dismissed]
+  end
 
   # A sheet this visit just made joins the visit, wherever the generation landed:
   # its own page, or the set it was added to. It is the same event from the

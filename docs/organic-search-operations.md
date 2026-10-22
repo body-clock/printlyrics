@@ -15,9 +15,9 @@ Copy this table into the launch issue and fill every field.
 | Production release and smoke-test time | Site owner | Current release is healthy | |
 | Search Console Domain property | Site owner | `printlyrics.app` is verified | |
 | Sitemap fetch | Site owner | `https://printlyrics.app/sitemap.xml` is `Success` | |
-| Umami destination | Site owner | The Umami site exists, the tracker renders on production, and all fourteen event names arrive with their properties | |
+| Umami destination | Site owner | The Umami site exists, the tracker renders on production, and all twenty event names arrive with their properties | |
 | Organic referrer segments | Site owner | One saved referrer segment per search engine; the channels Umami reports are not filterable, so there is no single organic segment to save | |
-| Umami readings saved | Site owner | The four funnels and the saved segments named in "Read the events in Umami" exist and reopen | |
+| Umami readings saved | Site owner | The five funnels and the saved segments named in "Read the events in Umami" exist and reopen | |
 | Launch baseline | Site owner | Search and conversion figures are recorded | |
 | Measurement start | Site owner | Date is set only after all rows above pass | |
 
@@ -86,10 +86,11 @@ list: the naming, the slots every tool fills, and what must never travel.
 
 Umami reads both counts and event properties. The application sends
 `entry_method`, `songbook_size`, `songbook_origin`, `page_count_in_session`,
-`songbook_offer_surface`, and `feedback_reason` with the events that carry them,
-so a split can be read as a property rather than only as another row. The subset
-events below remain because a total and its split are clearer as one count over
-another, and because a funnel step has to be an event.
+`songbook_offer_surface`, `account_method`, `account_prompt_surface`,
+`saved_item_type`, `save_source`, and `feedback_reason` with the events that
+carry them, so a split can be read as a property rather than only as another
+row. The subset events below remain because a total and its split are clearer as
+one count over another, and because a funnel step has to be an event.
 
 Four events are subsets of another:
 
@@ -287,18 +288,21 @@ name mapping to keep in step, and no per-event charge.
 | --- | --- |
 | **Events** | The row's **Events** count is the total; **Visitors** is the unique count. |
 | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
-| **Funnels** | Build four, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), and **Search to printer** (`Song Search Submitted` → `Song Result Selected` → `Print Page Generated` → `Print Dialog Opened`). |
-| **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `page_count_in_session`, `songbook_offer_surface`, and the feedback event's `feedback_surface`, `song_query`, `feedback_note`, and `feedback_reason`. |
+| **Funnels** | Build five, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), **Search to printer** (`Song Search Submitted` → `Song Result Selected` → `Print Page Generated` → `Print Dialog Opened`), and **Account to saved item** (`Account Created` → `Library Item Saved`). |
+| **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `page_count_in_session`, `songbook_offer_surface`, `account_method`, `account_prompt_surface`, `saved_item_type`, `save_source`, and the feedback event's `feedback_surface`, `song_query`, `feedback_note`, and `feedback_reason`. |
 | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
 
 Rules that make those surfaces read correctly:
 
 - **Properties are per event.** `entry_method` rides only on
   `Print Dialog Opened`, `songbook_origin` only on `Songbook Created`,
-  `songbook_offer_surface` only on `Songbook Offer Shown`, and the size and
-  page-count buckets only on the events that set them. Event data has no
-  `(not set)` bucket, so a property that never arrived is absent rather than
-  zero, and a breakdown needs the event that carries it.
+  `songbook_offer_surface` only on `Songbook Offer Shown`, `account_method` on
+  `Account Created` and `Account Signed In`, `account_prompt_surface` on the
+  two prompt events, and `saved_item_type` and `save_source` on
+  `Library Item Saved`; the size and page-count buckets ride only on the events
+  that set them. Event data has no `(not set)` bucket, so a property that never
+  arrived is absent rather than zero, and a breakdown needs the event that
+  carries it.
 - **A pageview is a payload with no name.** Umami files a payload without a name
   as a pageview and the rest as events, which is why `Print Page Generated` is an
   event row and not a pageview.
@@ -348,6 +352,29 @@ Rules that make those surfaces read correctly:
   is written as the change happens and cannot be reconstructed afterwards, which
   is why the release that added the offer's two events (`0eca1fd`, 2026-10-07) is
   the worked example of one nobody wrote.
+
+#### Read account adoption in Umami
+
+Accounts are optional, so the first question is whether anyone chooses one and
+the second is whether that choice produces anything. The account events arrive
+through the page-response path, so they are ordinary Umami event rows.
+
+- **Did anyone create an account?** `Account Created`, split by
+  `account_method` (`google` or `password`). The share is the first reading:
+  Google is the loudest control, so an even split is worth understanding rather
+  than assuming the button is wrong.
+- **Did the prompt work?** `Account Prompt Shown` against
+  `Account Prompt Dismissed`, and `Library Item Saved` filtered to
+  `save_source=account_prompt`. `account_prompt_surface` splits the sheet prompt
+  from the songbook prompt; the songbook is the stronger moment, so compare the
+  two before moving the prompt.
+- **What do people keep?** `Library Item Saved` split by `saved_item_type`.
+  Sheets and songbooks are different commitments, and the library cap treats
+  them the same.
+- **Do they come back?** `Account Signed In` and `Account Library Opened`.
+  A creation count with no later opens is a one-time detour, not a habit.
+- **Did a new account ever save anything?** The **Account to saved item** funnel
+  reads `Account Created` → `Library Item Saved` in a 60-minute window.
 
 Campaign performance needs no application support: Umami attributes a visit from
 the landing URL's own `utm_source`, `utm_medium`, and `utm_campaign`, and reports
@@ -548,7 +575,7 @@ No other analytics host should receive a request.
    shows one sheet per song. Adding a third song must not report the creation
    again.
 8. Confirm no other event arrives, custom or automatic. The application emits
-   exactly fourteen names — thirteen the browser sends and one the server sends
+   exactly twenty names — nineteen the browser sends and one the server sends
    (`Feedback Submitted`) — so an unexpected custom event means stale
    instrumentation. There is no automatic form, download, or outbound-link
    event: the tag carries `data-auto-track="false"`. Submit a `button_to` form

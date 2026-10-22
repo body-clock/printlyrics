@@ -1,0 +1,32 @@
+<%#
+  Offered only on a page this visit made, and only until the visitor answers it.
+  The action finishes as a save: signing in or registering keeps the page, so
+  the prompt costs one decision rather than a detour and a second click.
+
+  `surface` is required because the two placements are different moments and
+  the analytics property says which one was answered.
+%>
+<%= tag.section class: "account-prompt no-print",
+      data: {
+        analytics_page_response: "Account Prompt Shown",
+        analytics_response_key: SecureRandom.hex(8),
+        analytics_props: { account_prompt_surface: surface }.to_json
+      } do %>
+  <div class="account-prompt-copy">
+    <p class="account-prompt-title"><%= t("shared.account_prompt.#{surface}.title") %></p>
+    <p><%= t("shared.account_prompt.#{surface}.body") %></p>
+  </div>
+
+  <div class="account-prompt-actions">
+    <%= button_to t("shared.account_prompt.#{surface}.save"),
+          saved_items_path,
+          params: { item_type: item.class.name, token: item.token },
+          class: "button button-primary" %>
+    <%= button_to t("shared.account_prompt.dismiss"),
+          account_prompt_path,
+          method: :delete,
+          params: { surface: surface },
+          class: "account-prompt-dismiss",
+          form: { class: "account-prompt-dismiss-form" } %>
+  </div>
+<% end %>
