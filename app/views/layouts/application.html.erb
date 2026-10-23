@@ -26,8 +26,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="<%= t("application.name") %>">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#f4f0e8" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#1d1d1b" media="(prefers-color-scheme: dark)">
+    <%# Mirrors --elevation-canvas in app/assets/tailwind/application.css. %>
+    <meta name="theme-color" content="#f6f3ed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#121715" media="(prefers-color-scheme: dark)">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
