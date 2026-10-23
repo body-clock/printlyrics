@@ -21,13 +21,36 @@ class SongQueryTest < ActiveSupport::TestCase
     assert_equal [ "battle belongs", "phil wickham" ], query.field_parts
   end
 
+  test "asks a confident title-by-artist split before the keyword ladder" do
+    attempts = SongQuery.new("Battle Belongs by Phil Wickham").attempts
+
+    assert_equal :fields, attempts.first.kind
+    assert_equal({ track_name: "battle belongs", artist_name: "phil wickham" }, attempts.first.params)
+  end
+
+  test "keeps a one-word side of a by phrase out of the leading field attempt" do
+    attempts = SongQuery.new("Stand by Me").attempts
+
+    assert_equal :keywords, attempts.first.kind
+    assert_equal "stand by me", attempts.first.params[:q]
+    assert_includes attempts, SongQuery::Attempt.new(kind: :fields, params: { track_name: "stand", artist_name: "me" })
+  end
+
+  test "asks both directions of an ambiguous dash split" do
+    attempts = SongQuery.new("Judee Sill - The Kiss").attempts
+
+    assert_includes attempts, SongQuery::Attempt.new(kind: :fields, params: { track_name: "judee sill", artist_name: "the kiss" })
+    assert_includes attempts, SongQuery::Attempt.new(kind: :fields, params: { track_name: "the kiss", artist_name: "judee sill" })
+    assert_equal :keywords, attempts.first.kind
+  end
+
   test "asks in the visitor's own words before broadening" do
     attempts = SongQuery.new("Battle Belongs by Phil Wickham").attempts
 
     assert_equal [
+      [ :fields, "battle belongs phil wickham" ],
       [ :keywords, "battle belongs by phil wickham" ],
       [ :keywords, "battle belongs phil wickham" ],
-      [ :fields, "battle belongs phil wickham" ],
       [ :keywords, "belongs" ],
       [ :keywords, "battle belongs" ],
       [ :keywords, "belongs phil" ],
@@ -161,6 +184,20 @@ class SongQueryTest < ActiveSupport::TestCase
     partial = row(id: 2, title: "Belongs", artist: "Nobody")
 
     assert_equal [ exact, partial ], SongQuery.new("battle belongs phil wickham").rank([ partial, exact ])
+  end
+
+  test "ranks the plain title above a title with an appended qualifier" do
+    qualified = row(id: 1, title: "Battle Belongs - Live", artist: "Phil Wickham")
+    plain = row(id: 2, title: "Battle Belongs", artist: "Phil Wickham")
+
+    assert_equal [ plain, qualified ], SongQuery.new("Battle Belongs Phil Wickham").rank([ qualified, plain ])
+  end
+
+  test "ranks the artist the visitor named above an unrelated performer" do
+    other = row(id: 1, title: "Battle Belongs", artist: "Maranatha! Music")
+    wanted = row(id: 2, title: "Battle Belongs", artist: "Phil Wickham")
+
+    assert_equal [ wanted, other ], SongQuery.new("Battle Belongs Phil Wickham").rank([ other, wanted ])
   end
 
   private

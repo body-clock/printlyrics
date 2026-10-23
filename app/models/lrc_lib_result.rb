@@ -1,6 +1,12 @@
 class LrcLibResult
   TIMESTAMP_PREFIX = /\A(?:\[[^\]]+\])+\s*/
 
+  # Video titles arrive as "Artist - Song (Official Lyric Video)"; the sheet
+  # should carry the song, not the upload title. Only a leading repeat of the
+  # artist field and bracketed format noise are removed, so a title that keeps
+  # the artist's name in its own words ("Queen of the Night") is untouched.
+  TITLE_NOISE = /[\[(][^\])]*(?:official|lyric|lyrics|audio|video|hd|hq|remaster|remastered)[^\])]*[\])]/i
+
   attr_reader :id, :title, :artist, :album, :duration,
               :plain_lyrics, :synced_lyrics, :instrumental
 
@@ -20,8 +26,8 @@ class LrcLibResult
     return unless row.is_a?(Hash)
 
     id = Integer(row["id"], exception: false)
-    title = row["trackName"].to_s.strip
     artist = row["artistName"].to_s.strip
+    title = normalize_title(row["trackName"].to_s.strip, artist)
     return unless id&.positive? && title.present? && artist.present?
 
     new(
@@ -35,6 +41,20 @@ class LrcLibResult
       instrumental: row["instrumental"] == true
     )
   end
+
+  # The source's own separators, so an artist field that already leads the
+  # title can be removed before the bracketed upload noise is.
+  def self.normalize_title(title, artist)
+    cleaned = title
+    if artist.present?
+      leading_artist = Regexp.new("\\A\\s*#{Regexp.escape(artist)}\\s*[-–—|:]\\s*", Regexp::IGNORECASE)
+      cleaned = cleaned.sub(leading_artist, "")
+    end
+
+    cleaned = cleaned.gsub(TITLE_NOISE, " ").squish
+    cleaned.presence || title
+  end
+  private_class_method :normalize_title
 
   def lyrics
     return plain_lyrics.strip if plain_lyrics.present?

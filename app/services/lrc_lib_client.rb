@@ -17,8 +17,6 @@ class LrcLibClient
     end
   end
 
-  SEARCH_LIMIT = 5
-
   # LRCLIB asks clients to honor Retry-After: the edge answers 429 when a client
   # overruns the rate limit and 5xx (including the edge's 502 and 504) while the
   # source is busy. Its overload response is `ServerOverloaded`, which its own
@@ -53,15 +51,19 @@ class LrcLibClient
   # `retries` is true for callers with no alternative to offer. The search
   # ladder passes false for every attempt: its attempts are alternatives to one
   # another, and a busy source is better answered by trying the next one than by
-  # spending the visitor's wait on the same query again.
-  def search(query, retries: true)
-    build_results(request_json("/api/search", { q: query }, retries: retries))
+  # spending the visitor's wait on the same query again. `timeout` bounds this
+  # request to the time the caller has left, so a hung source cannot outlast the
+  # ladder's own budget.
+  def search(query, retries: true, timeout: nil)
+    build_results(request_json("/api/search", { q: query }, retries: retries, timeout: timeout))
   end
 
   # LRCLIB matches a separated title and artist more precisely than one keyword
   # string, so a query the visitor already split is asked this way.
-  def search_by_fields(track_name:, artist_name:, retries: true)
-    build_results(request_json("/api/search", { track_name: track_name, artist_name: artist_name }, retries: retries))
+  def search_by_fields(track_name:, artist_name:, retries: true, timeout: nil)
+    build_results(
+      request_json("/api/search", { track_name: track_name, artist_name: artist_name }, retries: retries, timeout: timeout)
+    )
   end
 
   def find(id)
@@ -81,21 +83,25 @@ class LrcLibClient
       raise ServiceError.new("LRCLIB search answered with #{rows.class} instead of a list", endpoint: "/api/search")
     end
 
+    # Every printable candidate is kept: the source's order is not a relevance
+    # order, so the caller scores the whole set before it takes the handful it
+    # shows.
     rows
       .filter_map { |row| build_result(row) }
       .select(&:printable?)
       .uniq(&:deduplication_key)
-      .first(SEARCH_LIMIT)
   end
 
-  def request_json(path, params = {}, not_found: false, retries: true)
+  def request_json(path, params = {}, not_found: false, retries: true, timeout: nil)
     attempts = 0
     started_at = @clock.call
     max_attempts = retries ? MAX_ATTEMPTS : 1
 
     loop do
       attempts += 1
-      response = @connection.get(path, params)
+      response = @connection.get(path, params) do |request|
+        request.options.timeout = timeout if timeout
+      end
       raise NotFoundError if not_found && response.status == 404
 
       if retryable?(response.status, attempts, started_at, max_attempts)

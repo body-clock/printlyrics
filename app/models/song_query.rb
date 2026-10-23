@@ -26,7 +26,9 @@ class SongQuery
   URL = %r{https?://\S+}i
 
   # "Title by Artist", "Artist - Title" and the dash variants of the same idea.
-  FIELD_SEPARATOR = /\A(.+?)\s+(?:by|[-–—|])\s+(.+)\z/i
+  # The separator is captured, and the "by" form is the only one whose direction
+  # is unambiguous: a dash may put either side first.
+  FIELD_SEPARATOR = /\A(.+?)\s+(by|[-–—|])\s+(.+)\z/i
 
   # Two tokens count as the same word when they are equal or one edit apart
   # (adjacent transpositions included), which recovers "Marroon" for "Maroon"
@@ -96,8 +98,19 @@ class SongQuery
     @attempts ||= build_attempts
   end
 
+  # Closest first. Coverage says how much of the query the record carries;
+  # then the title words the visitor never typed separate a clean title from
+  # one with an appended qualifier ("Battle Belongs - Live"), and the artist
+  # match separates the performer from a namesake. Source order is the last
+  # tie-breaker, as before.
   def rank(results)
-    results.each_with_index.sort_by { |(result, index)| [ -covered(result), index ] }.map(&:first)
+    query_tokens = tokens.map { |token| self.class.fold(token) }
+
+    results.each_with_index
+      .sort_by do |(result, index)|
+        [ -covered(result), extra_title_words(result, query_tokens), -artist_words(result), index ]
+      end
+      .map(&:first)
   end
 
   def accepts?(results)
@@ -114,8 +127,11 @@ class SongQuery
     match = structure.match(FIELD_SEPARATOR)
     if match
       title = query_text(match[1])
-      artist = query_text(match[2])
-      @field_parts = [ title, artist ] if title.present? && artist.present?
+      artist = query_text(match[3])
+      if title.present? && artist.present?
+        @field_separator = match[2].downcase
+        @field_parts = [ title, artist ]
+      end
     end
 
     @field_parts
@@ -197,10 +213,13 @@ class SongQuery
     return [] if blank?
 
     ladder = []
+    leading_fields = leading_field_parts
+    leading_fields.each { |(title, artist)| append(ladder, :fields, { track_name: title, artist_name: artist }) }
+
     append(ladder, :keywords, { q: cleaned })
     append(ladder, :keywords, { q: significant_tokens.join(" ") })
 
-    if (title, artist = field_parts)
+    (field_candidates - leading_fields).each do |(title, artist)|
       append(ladder, :fields, { track_name: title, artist_name: artist })
     end
 
@@ -226,6 +245,54 @@ class SongQuery
     longest_tokens(SINGLE_LIMIT).each { |token| append(ladder, :keywords, { q: token }) }
 
     ladder.first(ATTEMPT_LIMIT)
+  end
+
+  # The field forms worth asking: the parsed order, and for an ambiguous dash
+  # the reverse. Track and artist are separate fields to the source, so a
+  # wrong direction returns nothing rather than a wrong song.
+  def field_candidates
+    return [] unless field_parts
+
+    candidates = [ field_parts ]
+    candidates << field_parts.reverse unless field_separator == "by"
+    candidates
+  end
+
+  def field_separator = @field_separator
+
+  # A "Title by Artist" split whose sides are both multiword is precise enough
+  # to ask first: one field request returns the song with its title and artist
+  # clean, where a keyword request can rank a video title above it. A one-word
+  # side after "by" is too often a phrase ("Stand by Me") for the strict field
+  # query to answer.
+  def leading_field_parts
+    parts = field_parts
+    return [] unless parts && field_separator == "by"
+    return [] unless parts.all? { |part| part.split.size >= 2 }
+
+    [ parts ]
+  end
+
+  # Title words the visitor did not type at all. A title with an appended
+  # qualifier ("Battle Belongs - Live") carries one; the clean title carries
+  # none.
+  def extra_title_words(result, query_tokens)
+    self.class.tokenize(result.title).map { |token| self.class.fold(token) }.count do |title_token|
+      query_tokens.none? do |query_token|
+        self.class.same_word?(title_token, query_token) || self.class.variant?(title_token, query_token)
+      end
+    end
+  end
+
+  # How many of the visitor's meaningful words name the performer. Exact and
+  # typo-equal only: a three-letter prefix would match a concatenated artist
+  # name against a split title ("Margaritaville" for "Margarita Ville").
+  def artist_words(result)
+    artist_tokens = self.class.tokenize(result.artist).map { |token| self.class.fold(token) }
+    significant_tokens.count do |token|
+      folded = self.class.fold(token)
+      artist_tokens.any? { |candidate| self.class.same_word?(folded, candidate) }
+    end
   end
 
   def longest_tokens(limit)
