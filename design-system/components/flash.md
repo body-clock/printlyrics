@@ -1,5 +1,5 @@
 ---
-sourcesHash: b3e05be49cd82be2416ffb20bc1818649b8af6c1b20d02f73f7b968051e5c9a9
+sourcesHash: 27758e811567c1b86302904101ac4a28419a1dc30704293f21c5a42ccbd49c61
 id: flash
 description: >-
   Announce one page-level success or error outcome from the server in a fixed
@@ -42,7 +42,7 @@ tests:
   pages, while the entry frame and the preview place it near the top of their
   own shell.
 - The partial adds `role="alert"` for errors and `role="status"` for success,
-  plus a visible mark (`!` or `✓`) that is `aria-hidden`. The mark is the
+  plus a filled mark (`!` or `✓`) that is `aria-hidden`. The mark is the
   non-colour status cue.
 
 ## Behaviour and states
@@ -51,7 +51,12 @@ tests:
   content and does not auto-dismiss; the next navigation or Turbo render
   replaces it.
 - `detail` success and error surfaces use `--ui-success-surface` /
-  `--ui-danger-surface` with `--border-success` / `--border-danger`.
+  `--ui-danger-surface` with `--border-success` / `--border-danger`. A 3px
+  status rule on the leading edge carries `--ui-success` or `--ui-danger`, and
+  the mark is filled with the same colour while its glyph takes
+  `--elevation-surface`, so the outcome reads at a glance and without colour.
+- The message is body-size, medium-weight text in `.flash-message`; it is the
+  one sentence the visitor must read, so it is not set at label size.
 - On preview pages the notice sits below the fixed control bar through the
   `.preview-body .flash` offset.
 - Print hides `.flash`; a notice is never part of the sheet.
