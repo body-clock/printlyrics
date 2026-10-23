@@ -55,7 +55,7 @@
             <%= button_to t("accounts.library.remove"),
                   saved_item_path(saved_item),
                   method: :delete,
-                  class: "library-remove",
+                  class: "button-text button-text-danger",
                   form: { class: "library-remove-form" },
                   aria: { label: t("accounts.library.remove_label", title: saved_item_title(saved_item)) } %>
           </div>

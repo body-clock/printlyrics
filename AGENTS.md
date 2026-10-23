@@ -43,6 +43,11 @@ and configuration files as the source of truth for versions and tooling.
 - [Product direction](PRODUCT.md): visual design, print experience, and
   accessibility. Use current routes and tests to establish supported flows;
   references to URL extraction in product prose are not implemented features.
+- [Design system](DESIGN.md): visual intent, colour/type/spacing/print tokens,
+  agent rules, and the component, layout, and pattern indexes under
+  `design-system/`. Read it before changing styles or adding UI. Regenerate the
+  indexes with `node design-system/scripts/generate-indexes.mjs .` after editing
+  a contract; `bin/rails tailwindcss:build` validates token/CSS syntax.
 - [Organic search operations](docs/organic-search-operations.md): indexing,
   analytics contracts, and operational procedures.
 - [Measurement contract](docs/measurement-contract.md): the event vocabulary,
