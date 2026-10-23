@@ -101,6 +101,9 @@ textarea:focus-visible {
 /* One navigation surface for the whole site. It sits above the content rather
    than repeating a set of links in every page's footer. */
 .site-header {
+  /* Every item in the header occupies this height, so a bordered control such
+     as the register link cannot make one page's header taller than another's. */
+  --site-header-control: 2.1rem;
   position: sticky;
   z-index: 35;
   top: 0;
@@ -117,6 +120,9 @@ textarea:focus-visible {
   gap: 0.65rem 1.5rem;
   margin: 0 auto;
   padding: 0.9rem 0;
+  /* The band is as tall as one control row plus the padding, so the header
+     keeps its size regardless of which links the current page shows. */
+  min-height: calc(var(--site-header-control) + 1.8rem);
 }
 
 .site-brand {
@@ -144,6 +150,9 @@ textarea:focus-visible {
 .site-nav a,
 .site-account a,
 .site-account-link {
+  display: inline-flex;
+  min-height: var(--site-header-control);
+  align-items: center;
   color: var(--ink-muted);
   font-weight: 700;
   text-underline-offset: 0.2em;
@@ -170,9 +179,10 @@ textarea:focus-visible {
 }
 
 .site-account a.site-account-register {
+  height: var(--site-header-control);
   border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 0.42rem 0.65rem;
+  padding: 0 0.65rem;
   background: var(--surface);
   color: var(--ink);
 }
@@ -1907,12 +1917,14 @@ html:has(body.preview-body) {
   .site-header-inner {
     gap: 0.5rem 1rem;
     padding: 0.75rem 0;
+    min-height: calc(var(--site-header-control) + 1.5rem);
   }
 
+  /* The brand already links home. Keeping this one-item nav would put it on a
+     second row, and only pages other than the homepage would have that row,
+     so the header would change height from page to page. */
   .site-nav {
-    order: 3;
-    width: 100%;
-    gap: 0.35rem 0.85rem;
+    display: none;
   }
 
   .site-account-email {
