@@ -8,6 +8,11 @@ class SongSearch
   # the single request's own timeout.
   DEADLINE_SECONDS = 5.0
 
+  # The source answers one search with up to twenty records; the panel shows
+  # five. The cap applies after scoring, so the closest records are the ones
+  # that survive rather than the source's first five.
+  RESULT_LIMIT = 5
+
   DEFAULT_CLOCK = -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) }
 
   attribute :query, :string
@@ -46,7 +51,8 @@ class SongSearch
     failure = nil
 
     song_query.attempts.each_with_index do |attempt, index|
-      break if index.positive? && clock.call >= expires_at
+      remaining = expires_at - clock.call
+      break if index.positive? && remaining <= 0
 
       begin
         # No attempt is retried here. The ladder is a list of alternatives, so
@@ -54,7 +60,7 @@ class SongSearch
         # spending the visitor's wait on the same query again; a source that
         # refuses one request usually refuses the retries too. The client keeps
         # its retries for callers that have no alternative to offer.
-        rows = request(client, attempt, retries: false)
+        rows = request(client, attempt, remaining: remaining)
       rescue LrcLibClient::ServiceError => error
         # A 429 is the client's own rate limit, not this query's answer: asking
         # the other attempts would be refused too and would extend the block.
@@ -67,7 +73,7 @@ class SongSearch
       next if rows.empty?
 
       accepted = song_query.rank(rows.select { |row| song_query.accepts?([ row ]) })
-      return accepted.first(LrcLibClient::SEARCH_LIMIT) if accepted.any?
+      return accepted.first(RESULT_LIMIT) if accepted.any?
     end
 
     # A failure on a broad attempt must not hide a later hit, but a search that
@@ -78,12 +84,19 @@ class SongSearch
     []
   end
 
-  def request(client, attempt, retries:)
+  def request(client, attempt, remaining:)
+    # The budget is checked between attempts, but a single request can outlast
+    # it: the client's own read timeout is longer than the ladder's deadline.
+    # Passing what is left makes the deadline the visitor sees true. An attempt
+    # that still runs with no time left (only the first can) gets the full
+    # budget rather than an unusable sliver.
+    timeout = remaining.positive? ? remaining : DEADLINE_SECONDS
+
     case attempt.kind
     when :fields
-      client.search_by_fields(**attempt.params, retries: retries)
+      client.search_by_fields(**attempt.params, retries: false, timeout: timeout)
     else
-      client.search(attempt.params[:q], retries: retries)
+      client.search(attempt.params[:q], retries: false, timeout: timeout)
     end
   end
 end

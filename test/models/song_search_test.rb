@@ -50,11 +50,26 @@ class SongSearchTest < ActiveSupport::TestCase
     calls = []
     responder = ->(query) { query == "battle belongs phil wickham" ? [ result ] : [] }
 
-    search = SongSearch.new(query: "Battle Belongs by Phil Wickham")
+    search = SongSearch.new(query: "Battle Belongs for Phil Wickham")
     assert search.perform(client: client_recording(calls, &responder))
 
-    assert_equal [ "battle belongs by phil wickham", "battle belongs phil wickham" ], calls
+    assert_equal [ "battle belongs for phil wickham", "battle belongs phil wickham" ], calls
     assert_equal [ result ], search.results
+  end
+
+  test "ranks every source row before taking the five it shows" do
+    wanted = row(id: 7, title: "Battle Belongs", artist: "Phil Wickham")
+    near_misses = (1..5).map do |id|
+      row(id: id, title: "Battle Belongs - Live #{id}", artist: "Phil Wickham")
+    end
+    client = Object.new
+    client.define_singleton_method(:search) { |_, **| near_misses + [ wanted ] }
+
+    search = SongSearch.new(query: "Battle Belongs Phil Wickham")
+    assert search.perform(client: client)
+
+    assert_equal wanted, search.results.first
+    assert_equal SongSearch::RESULT_LIMIT, search.results.size
   end
 
   test "recovers a mistyped title from a broader attempt" do
@@ -78,6 +93,23 @@ class SongSearchTest < ActiveSupport::TestCase
     assert search.perform(client: client_recording(calls) { |_| [] }, clock: clock)
 
     assert_equal 1, calls.size
+  end
+
+  test "bounds each attempt by the time the ladder has left" do
+    timeouts = []
+    ticks = [ 0.0, 0.0, 2.0 ]
+    clock = -> { ticks.shift || 2.0 }
+    client = Object.new
+    client.define_singleton_method(:search) do |_, **options|
+      timeouts << options.fetch(:timeout)
+      []
+    end
+
+    search = SongSearch.new(query: "three little witches")
+    assert search.perform(client: client, clock: clock)
+
+    assert_equal [ SongSearch::DEADLINE_SECONDS, 3.0 ], timeouts.first(2)
+    assert timeouts.all? { |timeout| timeout.positive? && timeout <= SongSearch::DEADLINE_SECONDS }
   end
 
   test "climbs the whole ladder while the budget lasts" do

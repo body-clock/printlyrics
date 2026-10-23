@@ -1,7 +1,7 @@
 require "test_helper"
 
 class LrcLibClientTest < ActiveSupport::TestCase
-  test "search returns five unique results that contain lyrics" do
+  test "search returns every unique result that contains lyrics" do
     rows = [
       result(id: 0, title: ""),
       result(id: 1, title: "The Kiss", album: "Judee Sill"),
@@ -23,8 +23,8 @@ class LrcLibClientTest < ActiveSupport::TestCase
 
     results = LrcLibClient.new(connection: connection).search("judee sill")
 
-    assert_equal 5, results.size
-    assert_equal [ 1, 3, 4, 5, 6 ], results.map(&:id)
+    assert_equal 6, results.size
+    assert_equal [ 1, 3, 4, 5, 6, 7 ], results.map(&:id)
   end
 
   test "search drops a record whose synced lyrics have no printable text" do
@@ -199,6 +199,34 @@ class LrcLibClientTest < ActiveSupport::TestCase
       .search_by_fields(track_name: "Battle Belongs", artist_name: "Phil Wickham")
 
     assert_equal [ 7 ], results.map(&:id)
+  end
+
+  test "search cleans a video title that repeats the artist" do
+    rows = [
+      result(id: 1, title: "Phil Wickham - Battle Belongs (Official Lyric Video)", artist: "Phil Wickham"),
+      result(id: 2, title: "Queen of the Night", artist: "Queen"),
+      result(id: 3, title: "Song (Live at Wembley)", artist: "Somebody"),
+      result(id: 4, title: "AC/DC - Thunderstruck", artist: "AC/DC")
+    ]
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 200, json_headers, JSON.generate(rows) ] }
+    end
+
+    results = LrcLibClient.new(connection: connection).search("battle belongs")
+
+    assert_equal [ "Battle Belongs", "Queen of the Night", "Song (Live at Wembley)", "Thunderstruck" ],
+      results.map(&:title)
+  end
+
+  test "a caller's timeout bounds the request" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") do |env|
+        assert_equal 2.5, env.request.timeout
+        [ 200, json_headers, "[]" ]
+      end
+    end
+
+    assert_empty LrcLibClient.new(connection: connection).search("the kiss", retries: false, timeout: 2.5)
   end
 
   private
