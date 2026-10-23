@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.18.1](https://github.com/body-clock/printlyrics/compare/v1.18.0...v1.18.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* close edge cases around sheets, sets, and reset links ([#127](https://github.com/body-clock/printlyrics/issues/127)) ([#129](https://github.com/body-clock/printlyrics/issues/129)) ([c8a02bf](https://github.com/body-clock/printlyrics/commit/c8a02bf47e5296e4fff2a86b9c4d3a08a0d03023))
+* **search:** recover misses the exact match could not reach ([#131](https://github.com/body-clock/printlyrics/issues/131)) ([78081a4](https://github.com/body-clock/printlyrics/commit/78081a4e82bfd1ed64e37324459d09b275d355a3))
+
 ## [1.18.0](https://github.com/body-clock/printlyrics/compare/v1.17.1...v1.18.0) (2026-10-22)
 
 
