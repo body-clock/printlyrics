@@ -1427,35 +1427,56 @@ textarea:focus-visible {
   align-items: flex-start;
   gap: var(--space-3);
   border: 1px solid;
+  /* The status rule is the notice's loudest edge: it reads as a callout from
+     across the page without a background the lyrics have to compete with. */
+  border-left-width: 3px;
   border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-4);
   box-shadow: var(--elevation-shadow-notice);
-  font-size: var(--text-label);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-body);
   transform: translateX(-50%);
 }
 
 .flash-success {
   border-color: var(--border-success);
+  border-left-color: var(--ui-success);
   background: var(--ui-success-surface);
   color: var(--ui-success);
 }
 
 .flash-error {
   border-color: var(--border-danger);
+  border-left-color: var(--ui-danger);
   background: var(--ui-danger-surface);
   color: var(--ui-danger);
 }
 
+.flash-message {
+  margin: 0;
+}
+
+/* A filled mark stays legible as a shape when the notice is read in a
+   screenshot, at a glance, or without colour. */
 .flash-mark {
   display: grid;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid currentColor;
   border-radius: var(--radius-full);
-  font-size: var(--text-meta);
+  color: var(--elevation-surface);
+  font-size: var(--text-label);
   font-weight: var(--weight-bold);
+}
+
+.flash-success .flash-mark {
+  background: var(--ui-success);
+}
+
+.flash-error .flash-mark {
+  background: var(--ui-danger);
 }
 
 .preview-body {
