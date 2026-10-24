@@ -5,7 +5,7 @@ class SongbooksController < ApplicationController
     lyrics = requested_lyrics
     return songbook_not_found if lyrics.empty?
 
-    songbook = Songbook.start_with(*lyrics)
+    songbook = Songbook.start_with(*lyrics, layout: requested_layout)
 
     # Accepting the offer is an answer to it, the same as declining. The visit
     # must not be offered the same set on the next page it renders.
@@ -39,6 +39,30 @@ class SongbooksController < ApplicationController
     @account_prompt = account_prompt_for?(songbook_made_by_visit?)
   end
 
+  # The control bar above the set changes every song at once. A visitor who
+  # wants one format for the whole book should not have to repeat it per song.
+  def update
+    @songbook = Songbook.active.find_by!(token: params[:token])
+    layout = requested_layout(require_all: false)
+    return render_layout_error unless layout
+
+    @songbook.entries.update_all(layout.merge(updated_at: Time.current))
+    head :no_content
+  end
+
+  # A song's own controls change that song alone. The set keeps one layout per
+  # entry, so a two-column chorus and a one-column verse can sit in one book.
+  def update_song
+    @songbook = Songbook.active.find_by!(token: params[:token])
+    entry = @songbook.entries.joins(:lyric)
+      .find_by!(lyrics: { token: params[:lyric_token] })
+    layout = requested_layout
+    return render_layout_error unless layout
+
+    entry.update!(layout)
+    head :no_content
+  end
+
   def destroy_song
     @songbook = Songbook.active.find_by!(token: params[:token])
     @songbook.remove!(Lyric.find_by!(token: params[:lyric_token]))
@@ -47,6 +71,35 @@ class SongbooksController < ApplicationController
   end
 
   private
+
+  # The preview controls are presentational, but their values are persisted so
+  # the book prints the same way on the next visit or device. Only the four
+  # supported sizes and two column counts are accepted. A bulk control sends the
+  # one dimension it changed, so a mixed set keeps the other dimension as it is.
+  def requested_layout(require_all: true)
+    attributes = {}
+
+    if params.key?(:size)
+      size = params[:size].to_s
+      return unless SongbookEntry::SIZES.include?(size)
+      attributes[:size] = size
+    end
+
+    if params.key?(:columns)
+      columns = params[:columns].to_s
+      return unless SongbookEntry::COLUMN_STRINGS.include?(columns)
+      attributes[:columns] = columns.to_i
+    end
+
+    return if attributes.empty?
+    return if require_all && attributes.size < 2
+
+    attributes
+  end
+
+  def render_layout_error
+    render json: { error: t("songbooks.errors.layout") }, status: :unprocessable_content
+  end
 
   # The request order is the set order, so this resolves tokens against active
   # pages and drops anything unknown, expired, or repeated without disturbing
@@ -93,6 +146,10 @@ class SongbooksController < ApplicationController
   end
 
   def songbook_not_found
-    redirect_to root_path, alert: t("songbooks.errors.expired")
+    if request.format.json?
+      head :not_found
+    else
+      redirect_to root_path, alert: t("songbooks.errors.expired")
+    end
   end
 end

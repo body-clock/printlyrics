@@ -62,6 +62,25 @@ class SongbookTest < ActiveSupport::TestCase
     assert_equal 1, songbook.entries.count
   end
 
+  test "a new entry inherits the set's current layout" do
+    first = Lyric.create!(lyrics: "First line", title: "First")
+    songbook = Songbook.start_with(first)
+    songbook.entries.first.update!(size: "l", columns: 2)
+
+    songbook.append!(Lyric.create!(lyrics: "Second line", title: "Second"))
+
+    second = songbook.entries.reload.last
+    assert_equal "l", second.size
+    assert_equal 2, second.columns
+  end
+
+  test "entries default to the medium one-column layout" do
+    entry = Songbook.start_with(Lyric.create!(lyrics: "A line")).entries.first
+
+    assert_equal "m", entry.size
+    assert_equal 1, entry.columns
+  end
+
   test "a set cannot hold more than its maximum" do
     lyrics = Songbook::MAX_SONGS.times.map { |index| Lyric.create!(lyrics: "Line #{index}") }
     songbook = Songbook.start_with(*lyrics)

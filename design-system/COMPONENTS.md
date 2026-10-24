@@ -31,7 +31,7 @@
   - Contract: [contract](components/paper-sheet.md)
 
 - **Segmented control**
-  - Description: Let the visitor choose one value from a small fixed set of display options that changes the current preview, with every option visible at once.
+  - Description: Let the visitor choose one value from a small fixed set of display options for a sheet, one song in a set, or every song, with every option visible at once.
   - Contract: [contract](components/segmented-control.md)
 
 - **Site header**

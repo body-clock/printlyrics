@@ -11,7 +11,7 @@
   - Contract: [contract](patterns/lyric-entry.md)
 
 - **Print preview**
-  - Description: Let a visitor review a generated sheet or songbook, adjust lyric size and columns, print or save it as PDF, and optionally gather sheets into a songbook.
+  - Description: Let a visitor review a generated sheet or songbook, adjust lyric size and columns for a sheet or for each song in a set, print or save it as PDF, and optionally gather sheets into a songbook.
   - Contract: [contract](patterns/print-preview.md)
 
 - **Saved library**

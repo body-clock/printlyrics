@@ -45,8 +45,9 @@
         <% end %>
 
         <%= button_to songbooks_path,
-              params: { lyric_token: @lyric.token, then: "add_song" },
-              class: "button button-secondary button-add-song" do %>
+              params: { lyric_token: @lyric.token, then: "add_song", size: "m", columns: 1 },
+              class: "button button-secondary button-add-song",
+              form: { data: { controller: "layout-preference" } } do %>
           <span aria-hidden="true">+</span>
           <span><%= t(".controls.add_to_songbook") %></span>
         <% end %>

@@ -355,6 +355,7 @@ en:
     errors:
       expired: "That songbook expired or wasn't found"
       full: "That songbook already holds %{limit} songs. This sheet has its own page."
+      layout: "Choose a supported size and column count"
     show:
       seo:
         title: "Songbook | PrintLyrics"
@@ -363,8 +364,25 @@ en:
         label: "Songbook controls"
         add_song: "Add a song"
         print: "Print all"
+      layout_error: "That formatting didn't save. Try again."
+      dock:
+        label: "Format the song you are reading"
+        eyebrow: "Formatting"
+        format: "Format for %{title}"
+        all_songs: "All songs"
+        all_songs_label: "Format all songs"
+      binder:
+        heading: "This songbook"
+        count:
+          one: "%{count} song"
+          other: "%{count} songs"
+        whole: "All songs"
+        whole_hint: "Apply a size or column count to every song."
       tracks:
-        label: "Songs in this songbook"
+        format_summary:
+          one: "%{size} · %{count} column"
+          other: "%{size} · %{count} columns"
+        reading: "Reading"
         remove: "Remove"
         remove_label: "Remove %{title} from this songbook"
       page_count:

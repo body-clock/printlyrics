@@ -27,7 +27,10 @@ Rails.application.routes.draw do
       post :select
     end
   end
-  resources :songbooks, only: %i[create show], param: :token
+  resources :songbooks, only: %i[create show update], param: :token
+  patch "songbooks/:token/songs/:lyric_token",
+    to: "songbooks#update_song",
+    as: :update_songbook_song
   delete "songbooks/:token/songs/:lyric_token",
     to: "songbooks#destroy_song",
     as: :songbook_song

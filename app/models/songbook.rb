@@ -19,10 +19,10 @@ class Songbook < ApplicationRecord
 
   # A set starts from the sheets the visitor already made, in the order they
   # made them, so the first song is the one that carried them here.
-  def self.start_with(*lyrics)
+  def self.start_with(*lyrics, layout: nil)
     transaction do
       songbook = create!
-      lyrics.flatten.each { |lyric| songbook.append!(lyric) }
+      lyrics.flatten.each { |lyric| songbook.append!(lyric, layout: layout) }
       songbook
     end
   end
@@ -47,13 +47,25 @@ class Songbook < ApplicationRecord
     end
   end
 
-  def append!(lyric)
+  def append!(lyric, layout: nil)
     # Two tabs adding a song at the same time would otherwise choose the same
     # next position.
     with_lock do
       raise LimitReached if entries.count >= MAX_SONGS
 
-      entries.create!(lyric: lyric, position: (entries.maximum(:position) || 0) + 1)
+      # The sheet that starts a set carries the format it was viewed in. Later
+      # songs join the format the set is already using, so formatting one song
+      # and adding another does not send the visitor back to the defaults.
+      previous = entries.reorder(position: :desc).first
+      layout ||= {
+        size: previous&.size || SongbookEntry::DEFAULT_SIZE,
+        columns: previous&.columns || SongbookEntry::DEFAULT_COLUMNS
+      }
+      entries.create!(
+        lyric: lyric,
+        position: (entries.maximum(:position) || 0) + 1,
+        **layout
+      )
       lyric.update_column(:expires_at, nil) if expires_at.nil?
     end
   end

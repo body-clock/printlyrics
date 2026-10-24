@@ -1,9 +1,10 @@
 ---
-sourcesHash: 9ff3b2bc39fd210595013f11d4d357091a60964964741d2025c1b299d0009d49
+sourcesHash: c7df2ca65f9ffdc5f4ed13ec265ef8c44546c6ad4fa3d20101c953690a28c849
 id: segmented-control
 description: >-
   Let the visitor choose one value from a small fixed set of display options
-  that changes the current preview, with every option visible at once.
+  for a sheet, one song in a set, or every song, with every option visible at
+  once.
 status: discoverable
 sources:
   - app/assets/tailwind/application.css
@@ -13,6 +14,7 @@ sources:
   - app/javascript/controllers/preview_controller.js
 tests:
   - test/system/organic_conversion_test.rb
+  - test/system/songbook_layout_test.rb
 ---
 
 # Segmented control
@@ -24,6 +26,9 @@ tests:
   column count (`1`, `2`).
 - The options have short, unambiguous labels and apply immediately.
 - The change is presentational and does not leave the page or submit a form.
+- In a songbook, the dock's control changes the song in view and the binder's
+  control changes every song. The two scopes are distinct; do not let a
+  per-song control update its neighbours.
 
 ## When not to use
 
@@ -39,26 +44,39 @@ tests:
 ## Public API
 
 ```erb
-<fieldset class="segmented-control">
+<%= render "shared/preview_controls",
+      size: "m",
+      columns: 1,
+      scope: "all" %>
+```
+
+The partial renders two fieldsets:
+
+```erb
+<fieldset class="segmented-control"
+          data-preview-layout="size"
+          data-preview-layout-scope="<%= scope %>">
   <legend><%= t(".size") %></legend>
-  <% %w[s m l xl].each do |size| %>
-    <button type="button"
-            class="<%= size == "m" ? "is-active" : nil %>"
-            aria-pressed="<%= size == "m" %>"
-            data-preview-target="sizeButton"
-            data-action="preview#setSize"
-            data-size="<%= size %>"><%= t(".sizes.#{size}") %></button>
-  <% end %>
+  <button type="button"
+          class="is-active"
+          aria-pressed="true"
+          data-action="preview#setSize"
+          data-preview-value="m">M</button>
 </fieldset>
 ```
 
 - The root is a `<fieldset class="segmented-control">` with a visible
   `<legend>`; the legend names the dimension being chosen.
-- Each option is a native `<button type="button">`. `.is-active` and
-  `aria-pressed="true"` mark the selected option; all others carry
-  `aria-pressed="false"`.
-- The `data-*` names connect the option to the Stimulus controller. The
-  preview controller owns the state, the paper class, and repagination.
+- `data-preview-layout` names the dimension (`size` or `columns`).
+  `data-preview-layout-scope="all"` scopes the control to the whole set, and
+  `data-preview-layout-scope="active"` scopes it to the song in view. A control
+  with neither attribute belongs to a single sheet.
+- Each option is a native `<button type="button">` with a
+  `data-preview-value`. `.is-active` and `aria-pressed="true"` mark the selected
+  option; all others carry `aria-pressed="false"`.
+- The preview controller owns the state, the paper class, repagination, and the
+  background save for a songbook. The partial accepts `size`, `columns`, and
+  `scope` locals.
 - `.columns-control` is an empty marker class used by markup; it has no styles.
   Do not rely on it for layout.
 - The component owns only the visual group. The caller supplies the option
@@ -68,6 +86,13 @@ tests:
 
 - Exactly one option is active at a time. Activating an option is immediate and
   does not submit.
+- A bulk control is active only while every song agrees. A mixed set leaves every
+  option unselected so it cannot claim a format the set does not have.
+- A bulk control changes its own dimension only. Applying a size to every song
+  must not overwrite a column choice that songs deliberately differ on, and the
+  reverse holds too.
+- A control scoped to the active song updates its pressed options as the visitor
+  scrolls between songs. Its change applies only to that song.
 - The selected option uses `--elevation-sunken`, a `--border-default` edge, and
   `--ui-accent` text. Unselected options are transparent and use
   `--content-secondary`.

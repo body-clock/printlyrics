@@ -11,7 +11,7 @@
   - Contract: [contract](layouts/guide-shell.md)
 
 - **Preview shell**
-  - Description: Own the print-preview page: a fixed control bar, the neutral stage, one or more paper sheets, and the optional offers that follow them.
+  - Description: Own the print-preview page: a fixed control bar, the neutral stage, one or more paper sheets with per-song formatting, and the optional offers that follow them.
   - Contract: [contract](layouts/preview-shell.md)
 
 - **Site shell**
