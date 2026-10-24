@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.19.0](https://github.com/body-clock/printlyrics/compare/v1.18.1...v1.19.0) (2026-10-24)
+
+
+### Features
+
+* **design-system:** establish tokens and component contracts ([#135](https://github.com/body-clock/printlyrics/issues/135)) ([45d6ce8](https://github.com/body-clock/printlyrics/commit/45d6ce8aae288616b387c63da4ff7eb6fce41d9c))
+* **flash:** make page alerts louder ([#136](https://github.com/body-clock/printlyrics/issues/136)) ([6e8475f](https://github.com/body-clock/printlyrics/commit/6e8475f4578bd77b2b74c00f0929d538e28f4713))
+* **songbook:** make each song's layout configurable ([#137](https://github.com/body-clock/printlyrics/issues/137)) ([3eec869](https://github.com/body-clock/printlyrics/commit/3eec86917a7deb0991d8ad41d2a355110f05fb72))
+
+
+### Bug Fixes
+
+* **header:** keep the site header one size across pages ([#132](https://github.com/body-clock/printlyrics/issues/132)) ([dd70624](https://github.com/body-clock/printlyrics/commit/dd7062425723003335a6e1ba84b74918e9a145bc))
+* **search:** rank all source matches and bound each attempt ([#134](https://github.com/body-clock/printlyrics/issues/134)) ([3811851](https://github.com/body-clock/printlyrics/commit/38118515a13787d8bace8c5172062e7bfb08ceac))
+
 ## [1.18.1](https://github.com/body-clock/printlyrics/compare/v1.18.0...v1.18.1) (2026-10-22)
 
 
