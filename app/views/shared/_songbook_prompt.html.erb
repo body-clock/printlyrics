@@ -29,9 +29,9 @@
 
     <%= button_to t("shared.songbook_prompt.action"),
           songbooks_path,
-          params: { lyric_tokens: visit.sheets },
+          params: { lyric_tokens: visit.sheets, size: "m", columns: 1 },
           class: "button button-primary button-songbook",
-          form: { data: { turbo_frame: "_top" } } %>
+          form: { data: { turbo_frame: "_top", controller: "layout-preference" } } %>
 
     <%# The answer settles the offer for the rest of the visit, and the visit is
         the server's, so the next page it renders leaves the offer out. %>

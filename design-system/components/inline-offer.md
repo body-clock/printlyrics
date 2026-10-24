@@ -1,5 +1,5 @@
 ---
-sourcesHash: 98d5fc582f68b22f43179ea2fd477967243b2a1c2213ac727aa5b9d35d0d4490
+sourcesHash: 4afeb3e04e2a67ba59d535eadc0556153f1dcd6df5ab1726bcff14480561a36a
 id: inline-offer
 description: >-
   Offer one optional next step beneath the page's main result, such as keeping a

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_183615) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_23_200000) do
   create_table "feedbacks", force: :cascade do |t|
     t.string "surface", null: false
     t.string "query", limit: 200
@@ -49,6 +49,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_183615) do
     t.index ["token"], name: "index_lyrics_on_token", unique: true
   end
 
+  create_table "premium_grants", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "provider", default: "stripe", null: false
+    t.string "provider_ref", null: false
+    t.string "kind", null: false
+    t.integer "amount_cents"
+    t.string "currency"
+    t.datetime "starts_at", null: false
+    t.datetime "ends_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "provider_ref"], name: "index_premium_grants_on_provider_and_provider_ref", unique: true
+    t.index ["user_id"], name: "index_premium_grants_on_user_id"
+  end
+
   create_table "saved_items", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "item_type", null: false
@@ -73,9 +88,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_183615) do
     t.integer "position", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "size", default: "m", null: false
+    t.integer "columns", default: 1, null: false
     t.index ["lyric_id"], name: "index_songbook_entries_on_lyric_id"
     t.index ["songbook_id", "lyric_id"], name: "index_songbook_entries_on_songbook_id_and_lyric_id", unique: true
     t.index ["songbook_id", "position"], name: "index_songbook_entries_on_songbook_id_and_position", unique: true
+    t.check_constraint "columns IN (1, 2)", name: "songbook_entries_columns_supported"
+    t.check_constraint "size IN ('s', 'm', 'l', 'xl')", name: "songbook_entries_size_supported"
   end
 
   create_table "songbooks", force: :cascade do |t|
@@ -83,8 +102,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_183615) do
     t.datetime "expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.string "visitor_key"
+    t.string "share_token"
     t.index ["expires_at"], name: "index_songbooks_on_expires_at"
+    t.index ["share_token"], name: "index_songbooks_on_share_token", unique: true
     t.index ["token"], name: "index_songbooks_on_token", unique: true
+    t.index ["user_id"], name: "index_songbooks_on_user_id"
+    t.index ["visitor_key", "created_at"], name: "index_songbooks_on_visitor_key_and_created_at"
   end
 
   create_table "songs", force: :cascade do |t|
@@ -103,15 +128,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_183615) do
   create_table "users", force: :cascade do |t|
     t.string "email_address", null: false
     t.string "password_digest", null: false
+    t.datetime "premium_until"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "stripe_customer_id"
+    t.string "stripe_subscription_id"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["stripe_customer_id"], name: "index_users_on_stripe_customer_id", unique: true
   end
 
   add_foreign_key "identities", "users"
   add_foreign_key "lyrics", "songs"
+  add_foreign_key "premium_grants", "users"
   add_foreign_key "saved_items", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "songbook_entries", "lyrics", on_delete: :cascade
   add_foreign_key "songbook_entries", "songbooks", on_delete: :cascade
+  add_foreign_key "songbooks", "users"
 end

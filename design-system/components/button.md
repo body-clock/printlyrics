@@ -1,5 +1,5 @@
 ---
-sourcesHash: 2b780d6999a1f409f94384dcc65a9a806e5029f26efc6be871db1744e3e31bcb
+sourcesHash: 5e2e93b6daa011c5bfc634bb2e9be4462a745e473b91eb79f18a4348f82f42be
 id: button
 description: >-
   Invoke one immediate action or styled navigation step through the shared

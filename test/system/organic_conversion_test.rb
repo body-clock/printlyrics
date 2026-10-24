@@ -21,7 +21,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_text "First line"
     assert_button "Print"
     assert_selector "meta[name='robots'][content*='noindex']", visible: false
-    find("[data-columns='2']").click
+    find("[data-preview-layout='columns'] [data-preview-value='2']").click
     assert_selector ".lyrics.cols-2"
 
     screen_layout = preview_layout
@@ -91,7 +91,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
       page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "screen")
     end
 
-    find("[data-columns='2']").click
+    find("[data-preview-layout='columns'] [data-preview-value='2']").click
     assert_operator all("[data-preview-page]").count, :<, screen_pages.length
     assert_equal 2, page.evaluate_script(
       "document.querySelector('[data-preview-page] .lyrics').children.length"

@@ -1,5 +1,5 @@
 ---
-sourcesHash: 22bc8e4b1d6be2cd6112212f4b8a81a126a899e96afb5dc0a9fbc84ef8da52cf
+sourcesHash: 5b91f2547063c2c5f40f734d03bef68059216d03b69397010e993a9dda49d366
 id: paper-sheet
 description: >-
   Render one letter-size, print-first lyric sheet with a title, optional artist,
@@ -14,6 +14,7 @@ sources:
   - app/javascript/controllers/preview_controller.js
 tests:
   - test/system/organic_conversion_test.rb
+  - test/system/songbook_layout_test.rb
   - test/models/sheet_mark_test.rb
 ---
 
@@ -78,9 +79,12 @@ tests:
 - Interactivity lives outside the sheet: size, columns, pagination, and print
   are preview-shell controls.
 - The sheet can appear more than once in a songbook. Page order follows DOM
-  order and the track list order.
+  order and the binder order.
 - `size-m` is the default. Other sizes are chosen only through the segmented
   control.
+- Each songbook entry carries its own size and column count. A song's
+  continuation pages keep that entry's format, and changing one entry never
+  restyles another.
 
 ## Accessibility
 
