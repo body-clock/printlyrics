@@ -324,6 +324,57 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "#song-search-results [role='alert']", /Song search is temporarily unavailable/
   end
 
+  test "an expected source outage reaches Insights instead of opening a fault" do
+    client = Object.new
+    client.define_singleton_method(:search) do |_, **|
+      raise LrcLibClient::ServiceError.new(
+        "LRCLIB answered 503 for /api/search after 1 attempt in 1.11s",
+        endpoint: "/api/search", status: 503, attempts: 1
+      )
+    end
+
+    events = faults = nil
+    with_honeybadger_stubbed do |reported_events, reported_faults|
+      events = reported_events
+      faults = reported_faults
+      with_lrc_lib_client(client) do
+        post search_lyrics_path, params: { query: "the kiss" }
+      end
+    end
+
+    assert_response :service_unavailable
+    assert_empty faults
+    assert_equal "lrclib_source_failure", events.first.first
+    assert_equal "/api/search", events.first.last[:endpoint]
+    assert_equal 503, events.first.last[:status]
+    assert_equal 1, events.first.last[:attempts]
+    assert_not_includes events.first.last.values, "the kiss"
+  end
+
+  test "a source failure the client did not anticipate still opens a fault" do
+    client = Object.new
+    client.define_singleton_method(:search) do |_, **|
+      raise LrcLibClient::ServiceError.new(
+        "LRCLIB search answered with Hash instead of a list",
+        endpoint: "/api/search"
+      )
+    end
+
+    events = faults = nil
+    with_honeybadger_stubbed do |reported_events, reported_faults|
+      events = reported_events
+      faults = reported_faults
+      with_lrc_lib_client(client) do
+        post search_lyrics_path, params: { query: "the kiss" }
+      end
+    end
+
+    assert_response :service_unavailable
+    assert_empty events
+    assert_equal 1, faults.size
+    assert_equal "/api/search", faults.first.last[:endpoint]
+  end
+
   test "search with no matches reports the empty result set" do
     client = Object.new
     client.define_singleton_method(:search) { |_, **| [] }
@@ -434,6 +485,20 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  # Honeybadger is disabled in the test environment, so the choice between an
+  # Insights event and a fault is only observable if both calls are captured.
+  def with_honeybadger_stubbed
+    events = []
+    faults = []
+    originals = { event: Honeybadger.method(:event), notify: Honeybadger.method(:notify) }
+    Honeybadger.define_singleton_method(:event) { |name, payload = {}| events << [ name, payload ] }
+    Honeybadger.define_singleton_method(:notify) { |error, context: {}| faults << [ error, context ] }
+
+    yield events, faults
+  ensure
+    originals.each { |name, method| Honeybadger.define_singleton_method(name, method) }
+  end
 
   def app_version
     Rails.root.join("version.txt").read.strip
