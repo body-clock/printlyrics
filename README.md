@@ -173,9 +173,12 @@ Errors reach Honeybadger through the `honeybadger` gem. `config/honeybadger.yml`
 reads `honeybadger_api_key` from Rails credentials, enables Insights, and keeps
 development and test out of the stream, so deploying needs nothing beyond
 `RAILS_MASTER_KEY`. Source failures that become visitor copy — a search or
-lyrics lookup that stays unavailable after its retries — are reported as
-handled errors with the endpoint, HTTP status, attempt count, and LRCLIB's own
-explanation. The visitor's query is never included.
+lyrics lookup that stays unavailable after its retries — are reported with the
+endpoint, HTTP status, attempt count, and LRCLIB's own explanation. A source
+that is busy, rate limiting, or unreachable is an outage it owns, so that
+failure reaches Insights as an `lrclib_source_failure` event and opens no
+fault; a failure the client did not anticipate, such as an unreadable payload,
+is still reported as a handled error. The visitor's query is never included.
 
 Use the [organic search operations runbook](docs/organic-search-operations.md)
 to configure Search Console, boot and operate the self-hosted Umami analytics

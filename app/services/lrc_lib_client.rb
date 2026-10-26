@@ -6,14 +6,26 @@ class LrcLibClient
   # app. The message never includes the visitor's query: `/api/search` keeps it
   # in params, and the endpoint is the only part of the request recorded here.
   class ServiceError < Error
+    # A source that is busy, rate limiting, or unreachable is an operational
+    # condition this app already answers with fallback copy. A parse failure, a
+    # payload the client cannot read, or a status it never retried is a defect.
+    UNAVAILABLE_CAUSES = [ Faraday::Error, SocketError, SystemCallError ].freeze
+
     attr_reader :endpoint, :status, :detail, :attempts
 
-    def initialize(message = nil, endpoint: nil, status: nil, detail: nil, attempts: nil)
+    def initialize(message = nil, endpoint: nil, status: nil, detail: nil, attempts: nil, cause: nil)
       @endpoint = endpoint
       @status = status
       @detail = detail
       @attempts = attempts
+      @cause = cause
       super(message || "LRCLIB request failed")
+    end
+
+    def source_unavailable?
+      return LrcLibClient::RETRYABLE_STATUSES.include?(status) if status
+
+      UNAVAILABLE_CAUSES.any? { |klass| @cause.is_a?(klass) }
     end
   end
 
@@ -184,7 +196,7 @@ class LrcLibClient
       end
     summary += " (#{detail})" if detail.present?
 
-    ServiceError.new(summary, endpoint: path, status: status, detail: detail, attempts: attempts)
+    ServiceError.new(summary, endpoint: path, status: status, detail: detail, attempts: attempts, cause: error)
   end
 
   # LRCLIB explains its own overload in the body; keep that phrase for the

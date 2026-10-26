@@ -165,6 +165,42 @@ class LrcLibClientTest < ActiveSupport::TestCase
     assert_equal 1, error.attempts
   end
 
+  test "a busy source reads as unavailable rather than a defect in this app" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 503, json_headers, JSON.generate(name: "ServerOverloaded") ] }
+    end
+
+    error = assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(connection: connection).search("the kiss", retries: false)
+    end
+
+    assert_predicate error, :source_unavailable?
+  end
+
+  test "a hung source reads as unavailable" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { raise Faraday::TimeoutError }
+    end
+
+    error = assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(connection: connection).search("the kiss", retries: false)
+    end
+
+    assert_predicate error, :source_unavailable?
+  end
+
+  test "a payload this app cannot read is a defect" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 200, json_headers, JSON.generate("error" => "nope") ] }
+    end
+
+    error = assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(connection: connection).search("the kiss", retries: false)
+    end
+
+    refute_predicate error, :source_unavailable?
+  end
+
   test "stops retrying once the retry budget is spent" do
     connection = connection_with do |stub|
       stub.get("/api/search") { [ 503, json_headers, "{}" ] }

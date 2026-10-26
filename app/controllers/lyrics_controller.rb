@@ -154,20 +154,26 @@ class LyricsController < ApplicationController
     render :new, status: status
   end
 
-  # A source failure is handled copy for the visitor, but it is still a fault
-  # worth seeing. Honeybadger receives the endpoint, status, and the source's own
-  # explanation; the visitor's query never leaves this method.
+  # A source failure is handled copy for the visitor, and an outage the source
+  # owns is not a defect in this app: it becomes an Insights event, so a busy
+  # or hung LRCLIB is visible without opening a fault nobody can act on. A
+  # failure the client did not anticipate still opens one. Honeybadger receives
+  # the endpoint, status, and the source's own explanation; the visitor's query
+  # never leaves this method.
   def report_source_failure(error)
     Rails.logger.warn("LRCLIB unavailable during lyrics##{action_name}: #{error.message}")
-    Honeybadger.notify(
-      error,
-      context: {
-        action: action_name,
-        endpoint: error.endpoint,
-        status: error.status,
-        attempts: error.attempts,
-        detail: error.detail
-      }.compact
-    )
+    detail = {
+      action: action_name,
+      endpoint: error.endpoint,
+      status: error.status,
+      attempts: error.attempts,
+      detail: error.detail
+    }.compact
+
+    if error.source_unavailable?
+      Honeybadger.event("lrclib_source_failure", detail)
+    else
+      Honeybadger.notify(error, context: detail)
+    end
   end
 end
