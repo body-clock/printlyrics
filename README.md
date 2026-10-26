@@ -32,7 +32,12 @@ bin/rails assets:precompile
 
 Song search uses the public LRCLIB API. Selecting a result fills the editable
 form without creating a database record. A record is persisted only after the
-user generates the print page.
+user generates the print page. Answered searches and selections are cached for
+an hour (an empty answer for five minutes), so a repeated query or a song picked
+again does not reach the source twice, and a cached song still works while
+LRCLIB is unavailable. A rate limit or overload answer ends the search ladder at
+once rather than spending the visitor's remaining wait on attempts the source
+would refuse.
 
 ## Songbooks
 

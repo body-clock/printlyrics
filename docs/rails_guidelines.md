@@ -84,7 +84,10 @@
 - Keep LRCLIB HTTP behavior in `LrcLibClient`, despite its existing location in
   `app/services/`. Inject clients/connections for tests. Retain finite connect
   and read timeouts, response-shape validation, and distinct not-found and
-  temporary-service errors.
+  temporary-service errors. Cache answered searches and lookups in
+  `Rails.cache` — search rows without their lyric text — so repeat traffic does
+  not reach a shared source, and let the ladder stop on a source-wide status
+  rather than asking every attempt.
 - Treat `LrcLibClient::NotFoundError` and `LrcLibClient::ServiceError` as the
   shared source vocabulary: `SongLookup` and `SongSearch` let them propagate and
   controllers translate them into user copy and HTTP status. Do not add a

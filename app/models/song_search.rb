@@ -8,6 +8,12 @@ class SongSearch
   # the single request's own timeout.
   DEADLINE_SECONDS = 5.0
 
+  # A rung cannot hear an answer in the last half second, and a timed-out
+  # request costs the visitor the same wait as a slow one that answers. A late
+  # rung may overrun the deadline by this much rather than fire a request fated
+  # to time out; the loop still stops between attempts once the budget is spent.
+  MIN_ATTEMPT_SECONDS = 1.5
+
   # The source answers one search with up to twenty records; the panel shows
   # five. The cap applies after scoring, so the closest records are the ones
   # that survive rather than the source's first five.
@@ -57,14 +63,13 @@ class SongSearch
       begin
         # No attempt is retried here. The ladder is a list of alternatives, so
         # a busy source is better answered by asking the next one than by
-        # spending the visitor's wait on the same query again; a source that
-        # refuses one request usually refuses the retries too. The client keeps
-        # its retries for callers that have no alternative to offer.
+        # spending the visitor's wait on the same query again. An answer with a
+        # status is about the source rather than this query — a rate limit, an
+        # edge error, its overload refusal — so the next attempt would meet it
+        # too; only a timeout, which is about the request, still tries on.
         rows = request(client, attempt, remaining: remaining)
       rescue LrcLibClient::ServiceError => error
-        # A 429 is the client's own rate limit, not this query's answer: asking
-        # the other attempts would be refused too and would extend the block.
-        raise if error.status == 429
+        raise if LrcLibClient::RETRYABLE_STATUSES.include?(error.status)
 
         failure = error
         next
@@ -87,10 +92,15 @@ class SongSearch
   def request(client, attempt, remaining:)
     # The budget is checked between attempts, but a single request can outlast
     # it: the client's own read timeout is longer than the ladder's deadline.
-    # Passing what is left makes the deadline the visitor sees true. An attempt
-    # that still runs with no time left (only the first can) gets the full
-    # budget rather than an unusable sliver.
-    timeout = remaining.positive? ? remaining : DEADLINE_SECONDS
+    # Passing what is left makes the deadline the visitor sees true, and a late
+    # rung gets a usable floor rather than a sliver that only records a timeout.
+    # An attempt that still runs with no time left (only the first can) gets the
+    # full budget.
+    timeout = if remaining.positive?
+      [ remaining, MIN_ATTEMPT_SECONDS ].max
+    else
+      DEADLINE_SECONDS
+    end
 
     case attempt.kind
     when :fields
