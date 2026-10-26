@@ -181,6 +181,35 @@ class SongSearchTest < ActiveSupport::TestCase
     assert_equal [ "ashley mcbride kitchen light on" ], calls
   end
 
+  test "an overload refusal stops the ladder instead of asking every attempt" do
+    calls = []
+    error = LrcLibClient::ServiceError.new("overloaded", endpoint: "/api/search", status: 503)
+    responder = ->(_query) { raise error }
+
+    search = SongSearch.new(query: "ashley mcbride kitchen light on")
+    assert_raises(LrcLibClient::ServiceError) do
+      search.perform(client: client_recording(calls, &responder))
+    end
+
+    assert_equal [ "ashley mcbride kitchen light on" ], calls
+  end
+
+  test "gives a late attempt a usable timeout rather than a sliver" do
+    timeouts = []
+    ticks = [ 0.0, 0.0, 4.6 ]
+    clock = -> { ticks.shift || 4.6 }
+    client = Object.new
+    client.define_singleton_method(:search) do |_, **options|
+      timeouts << options.fetch(:timeout)
+      []
+    end
+
+    search = SongSearch.new(query: "three little witches")
+    assert search.perform(client: client, clock: clock)
+
+    assert_equal [ SongSearch::DEADLINE_SECONDS, SongSearch::MIN_ATTEMPT_SECONDS ], timeouts.first(2)
+  end
+
   test "a busy first attempt does not hide a later match" do
     wanted = row(title: "One of Us", artist: "Joan Osborne")
     calls = []

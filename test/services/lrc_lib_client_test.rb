@@ -265,6 +265,90 @@ class LrcLibClientTest < ActiveSupport::TestCase
     assert_empty LrcLibClient.new(connection: connection).search("the kiss", retries: false, timeout: 2.5)
   end
 
+  test "a search row carries the metadata a selection needs and no lyrics" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 200, json_headers, JSON.generate([ result(id: 1, title: "The Kiss") ]) ] }
+    end
+    client = LrcLibClient.new(connection: connection, cache: ActiveSupport::Cache::MemoryStore.new)
+
+    found = client.search("the kiss").first
+
+    assert_equal 1, found.id
+    assert_equal "The Kiss", found.title
+    assert_equal "Judee Sill", found.artist
+    assert_equal "Heart Food", found.album
+    assert_equal 214.0, found.duration
+    assert_empty found.lyrics
+  end
+
+  test "a repeated search is answered from the cache without asking the source" do
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        [ 200, json_headers, JSON.generate([ result(id: 1, title: "The Kiss") ]) ]
+      end
+    end
+    client = LrcLibClient.new(connection: connection, cache: ActiveSupport::Cache::MemoryStore.new)
+
+    first = client.search("the kiss")
+    second = client.search("the kiss")
+
+    assert_equal 1, calls
+    assert_equal first.map(&:id), second.map(&:id)
+    assert_equal "The Kiss", second.first.title
+  end
+
+  test "a repeated selection is answered from the cache with its lyrics" do
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/get/42") do
+        calls += 1
+        [ 200, json_headers, JSON.generate(result(id: 42, title: "The Kiss")) ]
+      end
+    end
+    client = LrcLibClient.new(connection: connection, cache: ActiveSupport::Cache::MemoryStore.new)
+
+    client.find(42)
+    cached = client.find(42)
+
+    assert_equal 1, calls
+    assert_equal "Love, rising from the mists", cached.lyrics
+  end
+
+  test "an empty answer is cached so a miss does not ask again" do
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        [ 200, json_headers, "[]" ]
+      end
+    end
+    client = LrcLibClient.new(connection: connection, cache: ActiveSupport::Cache::MemoryStore.new)
+
+    assert_empty client.search("a song nobody wrote")
+    assert_empty client.search("a song nobody wrote")
+
+    assert_equal 1, calls
+  end
+
+  test "a failed request is not cached" do
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        [ 503, json_headers, "{}" ]
+      end
+    end
+    client = LrcLibClient.new(connection: connection, cache: ActiveSupport::Cache::MemoryStore.new)
+
+    2.times do
+      assert_raises(LrcLibClient::ServiceError) { client.search("the kiss", retries: false) }
+    end
+
+    assert_equal 2, calls
+  end
+
   private
 
   def connection_with
