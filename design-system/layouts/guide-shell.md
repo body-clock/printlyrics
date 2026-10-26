@@ -72,6 +72,10 @@ tests:
   Child sections do not add their own outer width or page padding.
 - Below `700px` the shell uses the same width rule as every other page; the
   steps keep their numbered indent.
+- Guides remain reading surfaces, not editor workspaces or inspector layouts.
+  Native FAQ summaries and the closing action retain 44px minimum targets.
+  Copy must describe current Format controls, per-song scope, Letter paper,
+  and browser Save as PDF without promising automatic one-page fitting.
 
 ## Accessibility
 

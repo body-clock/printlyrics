@@ -5,12 +5,14 @@ class LyricsController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, with: :lyric_not_found
 
   def new
-    @lyric = Lyric.new
-    @songbook = songbook_context
+    prepare_entry_context
+    @lyric = @revision ? Lyric.new(@revision.attributes.slice("title", "artist", "lyrics")) : Lyric.new
+    @entry_response = @revision ? "revision" : "initial"
+    @entry_mode = @revision ? "paste" : "find"
   end
 
   def create
-    @songbook = songbook_context
+    prepare_entry_context
 
     creation = LyricPageCreation.new(
       attributes: lyric_params,
@@ -19,6 +21,8 @@ class LyricsController < ApplicationController
 
     unless creation.save
       @lyric = creation.lyric
+      @entry_response = "validation"
+      @entry_mode = "paste"
       # A valid lyric whose verified metadata was rejected can only fail again
       # with the same token, so the form falls back to manual entry.
       @catalog_token = @lyric.errors.empty? ? nil : params[:catalog_token]
@@ -32,8 +36,10 @@ class LyricsController < ApplicationController
   end
 
   def search
-    @lyric = Lyric.new
-    @songbook = songbook_context
+    prepare_entry_context
+    @lyric = entry_draft
+    @entry_response = "search"
+    @entry_mode = "find"
     @query = params[:query].to_s.strip
 
     search = SongSearch.new(query: @query)
@@ -42,10 +48,7 @@ class LyricsController < ApplicationController
       @results = search.results
 
       if search.empty?
-        # A search that found nothing still tells us the song's name, and the
-        # manual form on this page can use it: the sheet is made from the
-        # visitor's own words either way.
-        @lyric = Lyric.new(title: @query)
+        @lyric.title = @query if @lyric.title.blank?
         @search_status = t("lyrics.search.empty")
       else
         @search_status = t("lyrics.search.status", count: @results.size)
@@ -64,7 +67,7 @@ class LyricsController < ApplicationController
 
   def select
     @query = params[:query].to_s.strip
-    @songbook = songbook_context
+    prepare_entry_context
 
     lookup = SongLookup.new
     lookup.perform(params[:result_id], client: lrc_lib_client)
@@ -72,6 +75,8 @@ class LyricsController < ApplicationController
     @lyric = lookup.lyric
     @loaded_status = t("lyrics.status.loaded")
     @catalog_token = lookup.catalog_token
+    @entry_response = "selected"
+    @entry_mode = "paste"
 
     render :new, status: :ok
   rescue LrcLibClient::NotFoundError
@@ -102,6 +107,17 @@ class LyricsController < ApplicationController
 
   private
 
+  def prepare_entry_context
+    @songbook = songbook_context
+    @revision = Lyric.active.find_by!(token: params[:revision]) if params[:revision].present?
+    @entry_size = params[:size].presence_in(%w[s m l xl])
+    @entry_columns = params[:columns].to_s.presence_in(%w[1 2])
+  end
+
+  def entry_draft
+    params[:lyric].present? ? Lyric.new(lyric_params) : Lyric.new
+  end
+
   # Adding a song keeps the set in the URL, so the entry form, the search
   # results, and the select buttons all carry it without any session state. An
   # unknown or expired token simply means the visitor generates a single page.
@@ -112,7 +128,7 @@ class LyricsController < ApplicationController
   end
 
   def destination_for(lyric)
-    return lyric unless @songbook
+    return lyric if @revision || !@songbook
 
     # The song that turns a one-song songbook into a set is the moment the set
     # exists, and the only moment the creation event reports.
@@ -146,7 +162,10 @@ class LyricsController < ApplicationController
   end
 
   def render_select_error(message, status, retry_result_id: nil)
-    @lyric = Lyric.new(title: @query)
+    @lyric = entry_draft
+    @lyric.title = @query if @lyric.title.blank?
+    @entry_response = "search"
+    @entry_mode = "find"
     @catalog_token = nil
     @search_error = message
     @retry_result_id = retry_result_id

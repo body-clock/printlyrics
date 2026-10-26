@@ -11,26 +11,21 @@ class OrganicConversionTest < ApplicationSystemTestCase
     page.execute_script(analytics_capture_source)
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"),
       :<=, page.evaluate_script("window.innerWidth")
-    fill_in "Song title", with: "Practice Song"
-    fill_in "Artist", with: "Home Guitarist"
-    fill_in "Lyrics", with: "First line\nSecond line"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "Practice Song"
+    fill_in_entry "Artist", with: "Home Guitarist"
+    fill_in_entry "Lyrics", with: "First line\nSecond line"
+    click_button "Preview sheet"
 
     assert_text "Practice Song"
     assert_text "Home Guitarist"
     assert_text "First line"
     assert_button "Print"
     assert_selector "meta[name='robots'][content*='noindex']", visible: false
+    open_format
     find("[data-preview-layout='columns'] [data-preview-value='2']").click
     assert_selector ".lyrics.cols-2"
 
     screen_layout = preview_layout
-    mobile_preview_scale = page.evaluate_script(
-      "document.querySelector('.paper').style.getPropertyValue('--preview-scale')"
-    )
-    mobile_preview_height = page.evaluate_script(
-      "document.querySelector('.paper-frame').style.height"
-    )
 
     page.execute_script("window.dispatchEvent(new Event('beforeprint'))")
     page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "print")
@@ -45,12 +40,6 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     assert_equal 2, screen_layout.fetch("columnCount")
     assert_equal print_layout, screen_layout
-    assert_equal mobile_preview_scale, page.evaluate_script(
-      "document.querySelector('.paper').style.getPropertyValue('--preview-scale')"
-    )
-    assert_equal mobile_preview_height, page.evaluate_script(
-      "document.querySelector('.paper-frame').style.height"
-    )
     assert_operator page.evaluate_script("document.querySelector('.paper').getBoundingClientRect().width"),
       :<=, page.evaluate_script("document.querySelector('.paper-frame').clientWidth")
     assert_operator page.evaluate_script("document.querySelector('.paper').getBoundingClientRect().width"),
@@ -61,10 +50,6 @@ class OrganicConversionTest < ApplicationSystemTestCase
     page.current_window.resize_to(1200, 900)
 
     assert_equal print_layout, preview_layout
-    assert_equal "", page.evaluate_script("document.querySelector('.paper-frame').style.height")
-    assert_equal "", page.evaluate_script(
-      "document.querySelector('.paper-pages').style.getPropertyValue('--preview-scale')"
-    )
 
     assert_equal(
       [ "Manual Entry Submitted", "Print Page Generated", "Account Prompt Shown", "Feedback Prompt Shown" ],
@@ -76,10 +61,12 @@ class OrganicConversionTest < ApplicationSystemTestCase
     lyrics = long_lyrics
 
     visit root_path
-    fill_in "Song title", with: "A Long Song"
-    fill_in "Lyrics", with: lyrics
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "A Long Song"
+    fill_in_entry "Lyrics", with: lyrics
+    click_button "Preview sheet"
 
+    find("[data-preview-layout='columns'] [data-preview-value='1']").click
+    assert_selector ".lyrics.cols-1"
     assert_selector "[data-preview-page]", minimum: 2
     assert_text(/\d+ pages/)
     screen_pages = printed_page_geometry
@@ -92,7 +79,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     end
 
     find("[data-preview-layout='columns'] [data-preview-value='2']").click
-    assert_operator all("[data-preview-page]").count, :<, screen_pages.length
+    assert_selector "[data-preview-page]", maximum: screen_pages.length - 1
     assert_equal 2, page.evaluate_script(
       "document.querySelector('[data-preview-page] .lyrics').children.length"
     )
@@ -144,7 +131,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
         captured_umami_events.map(&:first)
 
       assert_difference([ "Lyric.count", "Song.count" ], 1) do
-        click_button "Generate print page"
+        click_button "Preview sheet"
         # Wait for the generated page. Asserting the lyric text would not
         # synchronise: it is already on screen in the form's textarea, so this
         # block used to exit and sample the counts while the POST was still in
@@ -162,10 +149,10 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Song title", with: "Test Song"
-    fill_in "Artist", with: "Test Artist"
-    fill_in "Lyrics", with: "Line one"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "Test Song"
+    fill_in_entry "Artist", with: "Test Artist"
+    fill_in_entry "Lyrics", with: "Line one"
+    click_button "Preview sheet"
     assert_text "Test Song"
 
     lyric = Lyric.last
@@ -199,8 +186,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Lyrics", with: "Line one"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "Line one"
+    click_button "Preview sheet"
     assert_selector "body[data-generated-page-key]"
     generated_path = current_path
     page.execute_script(analytics_capture_source)
@@ -219,8 +206,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
     # The lyric text is already on screen in the form's textarea, so asserting it
     # does not wait for the POST: the paper only exists on the generated page.
     assert_selector ".paper .lyrics", text: "First song line"
@@ -228,8 +215,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
     2.times do |index|
       page.execute_script("Turbo.visit('/')")
       assert_selector "h1", text: "Find, format, and print song lyrics"
-      fill_in "Lyrics", with: "Later song line #{index}"
-      click_button "Generate print page"
+      fill_in_entry "Lyrics", with: "Later song line #{index}"
+      click_button "Preview sheet"
       assert_selector ".paper .lyrics", text: "Later song line #{index}"
     end
 
@@ -246,8 +233,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
     inject_on_new_document(analytics_capture_source)
     visit "#{root_path}?utm_source=outreach&utm_campaign=worship_handouts"
 
-    fill_in "Lyrics", with: "A congregation line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "A congregation line"
+    click_button "Preview sheet"
     assert_text "A congregation line"
 
     pageview = captured_umami_payloads.find { |payload| !payload["name"] }
@@ -273,36 +260,36 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   test "a second sheet offers to gather the visit into one songbook" do
     visit root_path
-    fill_in "Song title", with: "First Song"
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "First Song"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
     refute_selector ".songbook-prompt"
 
-    click_link "Back"
-    fill_in "Song title", with: "Second Song"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    click_link "New sheet"
+    fill_in_entry "Song title", with: "Second Song"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
 
     assert_selector ".songbook-prompt", text: "2 sheets so far"
     click_button "Make a songbook"
 
     assert_current_path %r{/songbooks/}
-    assert_selector ".songbook-track", count: 2
-    assert_equal [ "First Song", "Second Song" ], all(".paper .lyric-header h1").map(&:text)
+    assert_selector ".songbook-track", count: 2, visible: :all
+    assert_equal [ "First Song", "Second Song" ], all(".paper:not(.is-unpaginated) .lyric-header h1", count: 2).map(&:text)
   end
 
   test "the entry panel offers the sheets the visit already made" do
     visit root_path
     refute_selector ".songbook-prompt"
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
-    click_link "Back"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
+    click_link "New sheet"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
     assert_selector ".songbook-prompt", text: "2 sheets so far"
 
-    click_link "Back"
+    click_link "New sheet"
 
     # The entry panel is where a visit that already made sheets returns for the
     # next one, so the offer is there too, not only on the sheet it just made.
@@ -310,31 +297,31 @@ class OrganicConversionTest < ApplicationSystemTestCase
     click_button "Make a songbook"
 
     assert_current_path %r{/songbooks/}
-    assert_selector ".songbook-track", count: 2
+    assert_selector ".songbook-track", count: 2, visible: :all
   end
 
   test "declining the songbook suggestion keeps it away for the visit" do
     visit root_path
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
-    click_link "Back"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
+    click_link "New sheet"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
     assert_selector ".songbook-prompt", text: "2 sheets so far"
 
     click_button "Not now"
     refute_selector ".songbook-prompt"
 
-    click_link "Back"
-    fill_in "Lyrics", with: "Third song line"
-    click_button "Generate print page"
+    click_link "New sheet"
+    fill_in_entry "Lyrics", with: "Third song line"
+    click_button "Preview sheet"
 
     assert_selector ".paper"
     refute_selector ".songbook-prompt"
 
     # The answer is the visit's, so the next page the server renders leaves the
     # offer out rather than asking again.
-    click_link "Back"
+    click_link "New sheet"
     refute_selector ".songbook-prompt"
   end
 
@@ -343,11 +330,11 @@ class OrganicConversionTest < ApplicationSystemTestCase
     install_persistent_analytics_capture
     page.execute_script(analytics_capture_source)
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
-    click_link "Back"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
+    click_link "New sheet"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
 
     assert_selector ".songbook-prompt", text: "2 sheets so far"
     assert_includes captured_umami_events.map(&:first), "Songbook Offer Shown"
@@ -363,16 +350,16 @@ class OrganicConversionTest < ApplicationSystemTestCase
     install_persistent_analytics_capture
     page.execute_script(analytics_capture_source)
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
-    click_link "Back"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
+    click_link "New sheet"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
 
     # The sheet that crossed two, then the panel the visit came back to for the
     # next one. Both are one event, and only the marker says which is which.
     assert_selector ".songbook-prompt", text: "2 sheets so far"
-    click_link "Back"
+    click_link "New sheet"
     assert_selector ".songbook-prompt", text: "2 sheets so far"
 
     showings = wait_for_umami_events("Songbook Offer Shown", count: 2)
@@ -385,9 +372,9 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
   test "adding another song goes straight to the entry form" do
     visit root_path
-    fill_in "Song title", with: "First Song"
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "First Song"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
 
     click_button "Add another song"
 
@@ -397,25 +384,25 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_selector "form[action='#{lyrics_path}'] input[name='songbook']", visible: :all
     refute_selector ".songbook-tracks"
 
-    fill_in "Song title", with: "Second Song"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "Second Song"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
 
-    assert_selector ".songbook-track", count: 2
-    assert_equal [ "First Song", "Second Song" ], all(".paper .lyric-header h1").map(&:text)
+    assert_selector ".songbook-track", count: 2, visible: :all
+    assert_equal [ "First Song", "Second Song" ], all(".paper:not(.is-unpaginated) .lyric-header h1", count: 2).map(&:text)
   end
 
   test "a set gathered from existing sheets records its creation once" do
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
-    click_link "Back"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
+    click_link "New sheet"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
     click_button "Make a songbook"
-    assert_selector ".songbook-track", count: 2
+    assert_selector ".songbook-track", count: 2, visible: :all
 
     assert_equal 1, created_songbook_calls.length
     assert_equal "2", created_songbook_calls.first.dig(1, "props", "songbook_size")
@@ -425,7 +412,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     # Returning to the same set later is not another creation.
     set_path = current_path
     page.execute_script("Turbo.visit(#{set_path.to_json})")
-    assert_selector ".songbook-track", count: 2
+    assert_selector ".songbook-track", count: 2, visible: :all
     assert_equal 1, created_songbook_calls.length
     assert_equal 1, analytics_calls_named("Songbook Created From Offer").length
   end
@@ -434,23 +421,23 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
-    click_link "Back"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
+    click_link "New sheet"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
     click_button "Make a songbook"
-    assert_selector ".songbook-track", count: 2
+    assert_selector ".songbook-track", count: 2, visible: :all
     assert_equal 1, created_songbook_calls.length
 
     # Leaving and returning with the Back button restores Turbo's cached copy of
     # this page, creation marker and all. The server's one-shot flag is long
     # consumed by then, so only the client can tell the two apart.
     click_link "Add a song"
-    assert_selector "form[action='#{lyrics_path}']"
+    assert_current_path root_path(songbook: Songbook.last.token)
     page.go_back
 
-    assert_selector ".songbook-track", count: 2
+    assert_selector ".songbook-track", count: 2, visible: :all
     assert_equal 1, created_songbook_calls.length
     assert_equal 1, analytics_calls_named("Songbook Created From Offer").length
   end
@@ -459,14 +446,14 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
     click_button "Add another song"
     assert_text "Adding to a songbook with 1 song"
 
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
-    assert_selector ".songbook-track", count: 2
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
+    assert_selector ".songbook-track", count: 2, visible: :all
 
     assert_equal 1, created_songbook_calls.length
     assert_equal "2", created_songbook_calls.first.dig(1, "props", "songbook_size")
@@ -475,10 +462,10 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_empty analytics_calls_named("Songbook Created From Offer")
 
     click_link "Add a song"
-    fill_in "Lyrics", with: "Third song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "Third song line"
+    click_button "Preview sheet"
 
-    assert_selector ".songbook-track", count: 3
+    assert_selector ".songbook-track", count: 3, visible: :all
     assert_equal 1, created_songbook_calls.length
   end
 
@@ -486,32 +473,15 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
     click_button "Add another song"
     click_link "View songbook"
 
-    assert_selector ".songbook-track", count: 1
+    assert_selector ".songbook-track", count: 1, visible: :all
     assert_empty created_songbook_calls
   end
 
-  test "the songbook context notice clears the list below it" do
-    songbook = Songbook.start_with(Lyric.create!(lyrics: "First song line", title: "First Song"))
-
-    visit root_path(songbook: songbook.token)
-
-    gap_below = page.evaluate_script(<<~JS)
-      (() => {
-        const strip = document.querySelector(".songbook-context").getBoundingClientRect()
-        const below = document.querySelector(".tool-benefits").getBoundingClientRect()
-        return Math.round(below.top - strip.bottom)
-      })()
-    JS
-
-    # The notice sits between the introduction and the benefit list, and shipped
-    # flush against the list below it while keeping its full gap above.
-    assert_operator gap_below, :>=, 8
-  end
 
   test "the songbook link leaves the entry frame" do
     songbook = Songbook.start_with(Lyric.create!(lyrics: "First song line", title: "First Song"))
@@ -520,25 +490,25 @@ class OrganicConversionTest < ApplicationSystemTestCase
     click_link "View songbook"
 
     assert_current_path songbook_path(songbook)
-    assert_selector ".songbook-track", count: 1
+    assert_selector ".songbook-track", count: 1, visible: :all
     assert_no_text "Content missing"
   end
 
   test "a long song keeps its sheets together inside a set" do
     visit root_path
-    fill_in "Song title", with: "Long Song"
-    fill_in "Lyrics", with: long_lyrics
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "Long Song"
+    fill_in_entry "Lyrics", with: long_lyrics
+    click_button "Preview sheet"
     click_button "Add another song"
     assert_text "Adding to a songbook with 1 song"
-    fill_in "Song title", with: "Short Song"
-    fill_in "Lyrics", with: "One short line"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "Short Song"
+    fill_in_entry "Lyrics", with: "One short line"
+    click_button "Preview sheet"
 
     assert_selector ".paper", minimum: 3
     # One heading per song: the set never runs two titles together, and a
     # continuation sheet carries only lyrics.
-    assert_equal [ "Long Song", "Short Song" ], all(".paper .lyric-header h1").map(&:text)
+    assert_equal [ "Long Song", "Short Song" ], all(".paper:not(.is-unpaginated) .lyric-header h1", count: 2).map(&:text)
 
     # Every printed page carries the mark, the bare continuation sheet
     # included, so a loose page from the middle of a set still says where it
@@ -550,13 +520,13 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
     click_button "Add another song"
     assert_text "Adding to a songbook with 1 song"
     songbook_token = URI.decode_www_form(URI(current_url).query).to_h.fetch("songbook")
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
 
     assert_selector ".paper", count: 2
     refute_includes captured_analytics_calls.to_json, songbook_token
@@ -598,8 +568,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
     JS
 
     visit root_path
-    fill_in "Lyrics", with: "First line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First line"
+    click_button "Preview sheet"
 
     assert_text "First line"
     assert_selector "[data-preview-page]", count: 1
@@ -613,20 +583,20 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Song title", with: "First Song"
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "First Song"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
     assert_text "First song line"
 
     click_button "Add another song"
     assert_text "Adding to a songbook with 1 song"
 
-    fill_in "Song title", with: "Second Song"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "Second Song"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
 
     assert_selector ".paper", count: 2
-    assert_equal [ "First Song", "Second Song" ], all(".paper .lyric-header h1").map(&:text)
+    assert_equal [ "First Song", "Second Song" ], all(".paper:not(.is-unpaginated) .lyric-header h1", count: 2).map(&:text)
 
     page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "print")
     begin
@@ -666,10 +636,10 @@ class OrganicConversionTest < ApplicationSystemTestCase
     install_persistent_analytics_capture
     page.execute_script(analytics_capture_source)
 
-    fill_in "Song title", with: "Test Song"
-    fill_in "Artist", with: "Test Artist"
-    fill_in "Lyrics", with: "Line one"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "Test Song"
+    fill_in_entry "Artist", with: "Test Artist"
+    fill_in_entry "Lyrics", with: "Line one"
+    click_button "Preview sheet"
     assert_selector "body[data-generated-page-key]"
     assert_text "Test Song"
 
@@ -711,13 +681,13 @@ class OrganicConversionTest < ApplicationSystemTestCase
     visit root_path
     install_persistent_analytics_capture
 
-    fill_in "Lyrics", with: "First song line"
-    click_button "Generate print page"
-    click_link "Back"
-    fill_in "Lyrics", with: "Second song line"
-    click_button "Generate print page"
+    fill_in_entry "Lyrics", with: "First song line"
+    click_button "Preview sheet"
+    click_link "New sheet"
+    fill_in_entry "Lyrics", with: "Second song line"
+    click_button "Preview sheet"
     click_button "Make a songbook"
-    assert_selector ".songbook-track", count: 2
+    assert_selector ".songbook-track", count: 2, visible: :all
 
     created = captured_umami_events.find { |name, _| name == "Songbook Created" }
     assert created
@@ -799,8 +769,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
       assert_equal 1, analytics_calls_named("Song Search Submitted").length
 
       # The manual form reports its own attempt, which is the other way in.
-      fill_in "Lyrics", with: "A line we typed ourselves"
-      click_button "Generate print page"
+      fill_in_entry "Lyrics", with: "A line we typed ourselves"
+      click_button "Preview sheet"
       assert_selector "body[data-generated-page-key]"
 
       assert_equal 1, analytics_calls_named("Manual Entry Submitted").length
@@ -813,9 +783,9 @@ class OrganicConversionTest < ApplicationSystemTestCase
     install_persistent_analytics_capture
     page.execute_script(analytics_capture_source)
 
-    fill_in "Song title", with: "Practice Song"
-    fill_in "Lyrics", with: "A line we typed ourselves"
-    click_button "Generate print page"
+    fill_in_entry "Song title", with: "Practice Song"
+    fill_in_entry "Lyrics", with: "A line we typed ourselves"
+    click_button "Preview sheet"
     assert_selector "body[data-generated-page-key]"
 
     calls = captured_analytics_calls
@@ -828,6 +798,26 @@ class OrganicConversionTest < ApplicationSystemTestCase
     # The event names the moment; what the visitor typed stays out of it.
     refute_includes calls.to_json, "A line we typed ourselves"
     refute_includes calls.to_json, "Practice Song"
+  end
+
+  test "revision and songbook entry contexts never expose share tokens to analytics" do
+    original = Lyric.create!(title: "Unreported revision title", lyrics: "Unreported revision words")
+    book = Songbook.start_with(original)
+    visit root_path
+    install_persistent_analytics_capture
+    visit root_path(revision: original.token, songbook: book.token)
+    assert_field "lyric_lyrics", with: original.lyrics
+
+    call = captured_analytics_calls.find do |name, payload|
+      name == "pageview" && URI(payload.fetch("url")).query.to_s.include?("revision")
+    end
+    assert call, "the revision entry must report a redacted pageview"
+    query = URI.decode_www_form(URI(call.last.fetch("url")).query).to_h
+    assert_equal({ "revision" => ":token", "songbook" => ":token" }, query)
+    payloads = captured_analytics_calls.to_json
+    [ original.token, book.token, original.title, original.lyrics ].each do |private_value|
+      refute_includes payloads, private_value
+    end
   end
 
   private

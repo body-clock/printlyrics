@@ -9,26 +9,28 @@
   </header>
 
   <%= render "shared/flash" %>
+  <%= render "shared/account_context" %>
 
   <div class="account-panel">
     <%= render "shared/form_errors", errors: @user.errors %>
     <%= form_with url: password_path(params[:token]), method: :put, class: "account-form" do |form| %>
       <div class="field">
-        <div class="field-label-row">
-          <%= form.label :password, t("accounts.password") %>
-          <span><%= password_hint %></span>
-        </div>
-        <%= form.password_field :password, required: true, autocomplete: "new-password", maxlength: 72 %>
+        <%= form.label :password, t("accounts.password") %>
+        <p class="field-hint" id="user_password_hint"><%= password_hint %></p>
+        <%= form.password_field :password, required: true, autocomplete: "new-password", minlength: User::PASSWORD_MINIMUM_LENGTH, maxlength: 72, **field_feedback_attributes(@user, :password, hint: "user_password_hint") %>
+        <%= render "shared/field_feedback", record: @user, attribute: :password %>
       </div>
       <div class="field">
         <%= form.label :password_confirmation, t("accounts.password_confirmation") %>
-        <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", maxlength: 72 %>
+        <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", minlength: User::PASSWORD_MINIMUM_LENGTH, maxlength: 72, **field_feedback_attributes(@user, :password_confirmation) %>
+        <%= render "shared/field_feedback", record: @user, attribute: :password_confirmation %>
       </div>
-      <%= form.submit t("accounts.password_reset.save_submit"), class: "button button-secondary" %>
+      <%= form.button t("accounts.password_reset.save_submit"), class: "button button-primary" %>
     <% end %>
   </div>
 
   <div class="account-links">
     <p><%= link_to t("accounts.login_link_short"), new_session_path %></p>
+    <%= button_to t("redesign_support.account.cancel"), session_path, method: :delete, params: { cancel: true }, class: "button-text account-cancel" %>
   </div>
 </div>

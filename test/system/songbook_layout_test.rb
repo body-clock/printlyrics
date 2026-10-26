@@ -12,6 +12,7 @@ class SongbookLayoutTest < ApplicationSystemTestCase
       find("[data-preview-layout='columns'] [data-preview-value='2']").click
     end
 
+    assert_selector ".paper[data-preview-song-token='#{first.token}'] .lyrics.cols-2"
     first_paper = find(".paper[data-preview-song-token='#{first.token}']")
     assert_equal "paper size-xl", first_paper[:class]
     assert_equal 2, first_paper.all(".lyric-column").length
@@ -59,6 +60,7 @@ class SongbookLayoutTest < ApplicationSystemTestCase
     wait_for_preview_render
 
     assert_selector ".song-format-dock-title", text: "First Song"
+    open_outline
     assert_selector ".songbook-track.is-current", text: "First Song"
     assert_selector ".song-format-dock-all[href='#songbook-format']"
 
@@ -70,6 +72,7 @@ class SongbookLayoutTest < ApplicationSystemTestCase
       find("[data-preview-layout='size'] [data-preview-value='l']").click
       find("[data-preview-layout='columns'] [data-preview-value='2']").click
     end
+    assert_selector ".paper[data-preview-song-token='#{second.token}'].size-l .lyrics.cols-2"
 
     second_paper = find(".paper[data-preview-song-token='#{second.token}']")
     assert_equal "paper size-l", second_paper[:class]
@@ -82,6 +85,7 @@ class SongbookLayoutTest < ApplicationSystemTestCase
     # The dock reads the entry's saved layout after the next load too.
     visit songbook_path(songbook)
     wait_for_preview_render
+    open_format
     scroll_to_song(second)
     assert_selector ".song-format-dock-title", text: "Second Song"
 
@@ -96,13 +100,15 @@ class SongbookLayoutTest < ApplicationSystemTestCase
 
     visit songbook_path(songbook)
     wait_for_preview_render
+    open_outline
 
     within(all(".songbook-track").last) do
       find(".songbook-track-link").click
     end
 
+    open_format
     assert_selector ".song-format-dock-title", text: "Second Song"
-    assert_selector ".songbook-track.is-current", text: "Second Song"
+    assert_selector ".songbook-track.is-current", text: "Second Song", visible: :all
   end
 
   test "a bulk size leaves a per-song column choice alone" do
@@ -166,6 +172,7 @@ class SongbookLayoutTest < ApplicationSystemTestCase
   # controls are connected before the test starts clicking them.
   def wait_for_preview_render
     assert_no_selector "[data-preview-page].is-unpaginated"
+    open_format
   end
 
   def scroll_to_song(lyric)

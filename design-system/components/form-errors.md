@@ -1,5 +1,5 @@
 ---
-sourcesHash: 61646f4fd99633df3c974195499f02f9bf86f71b8dc777adedd7bb968f581ad3
+sourcesHash: 654de67c0c9706417209994c90054d32d21ee4713ff206eb611c1013627901be
 id: form-errors
 description: >-
   Summarise the validation errors of one form in a single announced alert above
@@ -10,8 +10,10 @@ sources:
   - app/views/shared/_form_errors.html.erb
   - app/views/registrations/new.html.erb
   - app/views/passwords/edit.html.erb
+  - app/views/feedbacks/new.html.erb
 tests:
   - test/integration/accounts_flow_test.rb
+  - test/integration/feedback_flow_test.rb
 ---
 
 # Form errors
@@ -38,6 +40,9 @@ tests:
 - The partial renders nothing when `errors` is absent or empty.
 - When present, it prints `errors.full_messages.to_sentence()` in
   `.form-errors`.
+- Optional `id` supplies a stable association target for form-level feedback
+  through `aria-describedby`, including base errors not owned by one field.
+  Omitted `id` leaves existing consumers unchanged.
 - The panel owns the spacing above the summary; inside an account panel the
   summary sits at the top with no added outer margin.
 
@@ -56,6 +61,8 @@ tests:
 - The summary is not a substitute for a field label. The consumer must keep
   labels and the submitted values so the visitor can find the field each
   message refers to.
+- Attribute-level invalid state and associated messages use the Field helper and
+  partial alongside this summary; the summary does not replace inline feedback.
 - Do not focus the summary automatically. The project's form controller may
   choose to move focus; that is behaviour outside this component.
 - The error colour is paired with the summary's position and wording; colour is

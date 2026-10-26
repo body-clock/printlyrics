@@ -1,5 +1,5 @@
 ---
-sourcesHash: c7df2ca65f9ffdc5f4ed13ec265ef8c44546c6ad4fa3d20101c953690a28c849
+sourcesHash: 89596080353b4ec1583decf8522c05d2df7e322d1cac3a8cc17ba53021c5414d
 id: segmented-control
 description: >-
   Let the visitor choose one value from a small fixed set of display options
@@ -15,6 +15,7 @@ sources:
 tests:
   - test/system/organic_conversion_test.rb
   - test/system/songbook_layout_test.rb
+  - test/system/workspace_interaction_test.rb
 ---
 
 # Segmented control
@@ -26,9 +27,8 @@ tests:
   column count (`1`, `2`).
 - The options have short, unambiguous labels and apply immediately.
 - The change is presentational and does not leave the page or submit a form.
-- In a songbook, the dock's control changes the song in view and the binder's
-  control changes every song. The two scopes are distinct; do not let a
-  per-song control update its neighbours.
+- In a songbook, the inspector's current-song group changes the named song;
+  the separate whole-book group changes every song. The outline only navigates.
 
 ## When not to use
 
@@ -87,18 +87,17 @@ The partial renders two fieldsets:
 - Exactly one option is active at a time. Activating an option is immediate and
   does not submit.
 - A bulk control is active only while every song agrees. A mixed set leaves every
-  option unselected so it cannot claim a format the set does not have.
+  option unselected and shows visible Mixed text rather than claiming a value.
 - A bulk control changes its own dimension only. Applying a size to every song
   must not overwrite a column choice that songs deliberately differ on, and the
   reverse holds too.
 - A control scoped to the active song updates its pressed options as the visitor
   scrolls between songs. Its change applies only to that song.
-- The selected option uses `--elevation-sunken`, a `--border-default` edge, and
-  `--ui-accent` text. Unselected options are transparent and use
-  `--content-secondary`.
+- The selected option uses `--elevation-sunken`, a `--border-control` edge and
+  `--ui-accent` text. Unselected options use `--content-secondary`.
 - Hover is a `--elevation-sunken` fill without the accent.
-- Below `700px` the option box shrinks from `--control-icon` to `1.9rem`; the
-  group stays on one row.
+- Options retain the 44px `--control-icon` box at every width. The inspector
+  stacks dimension groups; it never shrinks targets to fit a toolbar.
 - Keyboard activation is the native button behaviour: Tab reaches each option,
   Enter/Space activates it.
 

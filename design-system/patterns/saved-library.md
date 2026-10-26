@@ -1,5 +1,5 @@
 ---
-sourcesHash: f573503267da8eb3b3634988c4f105a3cda6f7c941df4c9345b194051c631919
+sourcesHash: 569899b3df4c0805891aa1951c41c3a753dd0af2948ef40f1f7767b4cf1440c9
 id: saved-library
 description: >-
   Show a signed-in visitor's ten library slots, the saved sheets and songbooks
@@ -34,48 +34,47 @@ tests:
 
 Required regions, in order:
 
-1. **Heading** — eyebrow, `h1`, intro with the limit, the count, and the
-   capacity meter.
+1. **Heading** — `h1`, short intro, and understated count/capacity.
 2. **Flash** — if an item was saved or removed.
-3. **Content** — either the card grid or the empty panel.
+3. **Content** — either a saved-item list or the empty panel. A populated list
+   has a visible removal explanation; full capacity adds an informational note.
 
-The capacity meter is `SavedItem::LIMIT` dots. The first `capacity` dots carry
-`.is-filled`; the meter exposes `role="progressbar"` with min, max, and now.
+Capacity is a plain count derived from the loaded items and `SavedItem::LIMIT`.
+It remains secondary to titles and actions; no progress meter competes with them.
 
-The card grid is a `<ul class="library-grid">` of library-card items. It is two
-columns at wide widths and one below `700px`.
+The list is a `<ul class="library-grid">` of library-card rows, one readable
+column at every width. Extra width aligns actions rather than creating a dashboard.
 
-The empty panel is a bordered surface with an eyebrow, `h2`, one explanatory
-paragraph, and a primary action back to the entry page.
+The empty panel uses a quiet top rule, eyebrow, `h2`, explanatory paragraph and
+primary action back to entry.
 
 ## Composition
 
-- The count and meter describe the same number. Do not compute one from the
-  other in the view; both derive from the loaded saved items and the model
-  limit.
+- The count derives from loaded saved items and the model limit.
 - A songbook counts as one slot even though it contains many sheets. The list
   does not expand a songbook into its songs.
-- Removing an item uses the card's quiet danger action. It returns the item to
-  the anonymous retention window; the page re-renders with the new count.
+- Removing an item uses the quiet “Remove from library” action, whose accessible
+  name includes the title and whose description references the visible retention
+  explanation. It removes library membership, not the shared output; the usual
+  180-day retention window resumes. The outcome returns to the updated list.
 - The empty state is not an error and does not use danger styling.
 - The page reuses the account shell for width (`--layout-library`) but is not a
-  single-form account page. Do not add an account panel around the grid.
+  single-form account page. Do not add an account panel around the list.
 - There is no "create folder" or bulk action. The library is a flat set of ten.
 
 ## Verification
 
 Static:
 
-- The meter has exactly `SavedItem::LIMIT` dots and a matching
-  `aria-valuenow`.
-- Every card is an `<li>` inside the grid `<ul>` and has a titled `h2` link and
-  a named remove action.
+- Capacity counts saved items, never individual songs inside books.
+- Every row is an `<li>` inside the list `<ul>` with a titled `h2` link and a
+  named removal action associated with its consequence.
 - The empty state renders only when there are no saved items.
 
 Behavioural:
 
-- Saving a sheet from the preview adds it and the count/meter increase.
-- Removing an item decreases the count/meter and the card disappears.
+- Saving a sheet adds it and increases the count.
+- Removing membership decreases the count and removes the row.
 - A full library shows the full state and does not offer an eleventh save.
 - At 390px the grid is one column and no card overflows.
 
@@ -86,5 +85,5 @@ bin/rails test test/system/accounts_test.rb
 bin/rails test test/models/saved_item_test.rb
 ```
 
-An intentional violation: a meter that counts sheets inside a songbook, or a
-library with an unlabelled remove control, must be rejected.
+Intentional violations: counting songs inside a book as library slots, or an
+unlabelled removal action without its retention consequence, must be rejected.

@@ -13,7 +13,7 @@
 %>
 
 <%= tag.fieldset class: "segmented-control", data: size_data do %>
-  <legend><%= t(".size") %></legend>
+  <legend><%= t(".size") %><span class="format-mixed" data-preview-mixed hidden> · <%= t("redesign_preview.mixed") %></span></legend>
   <% %w[s m l xl].each do |value| %>
     <button type="button"
             class="<%= "is-active" if value == size %>"
@@ -24,7 +24,7 @@
 <% end %>
 
 <%= tag.fieldset class: "segmented-control columns-control", data: column_data do %>
-  <legend><%= t(".columns") %></legend>
+  <legend><%= t(".columns") %><span class="format-mixed" data-preview-mixed hidden> · <%= t("redesign_preview.mixed") %></span></legend>
   <% [ 1, 2 ].each do |value| %>
     <button type="button"
             class="<%= "is-active" if value.to_s == columns.to_s %>"

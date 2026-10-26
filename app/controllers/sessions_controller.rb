@@ -15,12 +15,19 @@ class SessionsController < ApplicationController
       redirect_to after_authentication_url,
         notice: flash[:notice].presence || t("accounts.login.welcome_back")
     else
-      redirect_to new_session_path, alert: t("accounts.login.failure")
+      @sign_in_failed = true
+      render :new, status: :unprocessable_content
     end
   end
 
   def destroy
-    terminate_session
-    redirect_to root_path, status: :see_other, notice: t("accounts.logout_done")
+    destination = session.delete(:return_to_after_authenticating) || root_path
+    session.delete(PendingSave::SESSION_KEY)
+    if params[:cancel] == "true"
+      redirect_to destination, status: :see_other
+    else
+      terminate_session
+      redirect_to root_path, status: :see_other, notice: t("accounts.logout_done")
+    end
   end
 end

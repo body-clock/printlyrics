@@ -39,8 +39,7 @@ class SongbooksController < ApplicationController
     @account_prompt = account_prompt_for?(songbook_made_by_visit?)
   end
 
-  # The control bar above the set changes every song at once. A visitor who
-  # wants one format for the whole book should not have to repeat it per song.
+  # Whole-book formatting changes only the requested dimension.
   def update
     @songbook = Songbook.active.find_by!(token: params[:token])
     layout = requested_layout(require_all: false)
@@ -56,7 +55,7 @@ class SongbooksController < ApplicationController
     @songbook = Songbook.active.find_by!(token: params[:token])
     entry = @songbook.entries.joins(:lyric)
       .find_by!(lyrics: { token: params[:lyric_token] })
-    layout = requested_layout
+    layout = requested_layout(require_all: false)
     return render_layout_error unless layout
 
     entry.update!(layout)
@@ -74,8 +73,8 @@ class SongbooksController < ApplicationController
 
   # The preview controls are presentational, but their values are persisted so
   # the book prints the same way on the next visit or device. Only the four
-  # supported sizes and two column counts are accepted. A bulk control sends the
-  # one dimension it changed, so a mixed set keeps the other dimension as it is.
+  # supported sizes and two column counts are accepted. A PATCH changes only
+  # supplied dimensions, preserving the other saved value.
   def requested_layout(require_all: true)
     attributes = {}
 

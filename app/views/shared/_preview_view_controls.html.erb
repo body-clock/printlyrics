@@ -1,0 +1,20 @@
+<div class="workspace-view-controls no-print">
+  <p class="page-summary"
+     data-preview-target="pageSummary"
+     data-one-page-label="<%= t("lyrics.show.page_count.one") %>"
+     data-many-pages-label="<%= t("lyrics.show.page_count.other") %>"
+     data-measuring-label="<%= t("redesign_preview.measuring") %>"
+     aria-live="polite"><%= t("redesign_preview.measuring") %></p>
+  <div class="workspace-zoom">
+    <label for="preview-zoom"><%= t("redesign_preview.zoom") %></label>
+    <select id="preview-zoom" data-preview-target="zoom" data-action="preview#setZoom"
+            aria-describedby="preview-zoom-hint">
+      <option value="fit"><%= t("redesign_preview.fit") %></option>
+      <% [50, 75, 100, 125].each do |value| %>
+        <option value="<%= value %>"><%= value %>%</option>
+      <% end %>
+    </select>
+  </div>
+  <p id="preview-zoom-hint" class="workspace-hint"><%= t("redesign_preview.zoom_hint") %></p>
+  <p class="workspace-hint"><%= t("redesign_preview.pdf_hint") %></p>
+</div>

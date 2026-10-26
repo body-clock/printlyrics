@@ -29,7 +29,7 @@
   /* Content — text and glyphs on elevation surfaces. */
   --content-primary: oklch(0.25 0.012 70);
   --content-secondary: oklch(0.48 0.014 70);
-  --content-placeholder: color-mix(in oklch, var(--content-secondary), transparent 20%);
+  --content-placeholder: var(--content-secondary);
   --content-on-accent: oklch(0.98 0.008 75);
 
   /* UI — interactive and status colors. accent is the single brand hue. */
@@ -58,8 +58,8 @@
   --text-heading: 1.5rem;
   --text-title: 1.25rem;
   --text-body: 1rem;
-  --text-label: 0.85rem;
-  --text-meta: 0.75rem;
+  --text-label: 0.9375rem;
+  --text-meta: 0.8125rem;
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -95,17 +95,19 @@
 
   /* Control and layout dimensions. */
   --control-lg: 3rem;
-  --control-md: 2.55rem;
-  --control-sm: 2.35rem;
-  --control-xs: 2.1rem;
+  --control-md: 2.75rem;
+  --control-sm: 2.75rem;
+  --control-xs: 2.75rem;
   --control-touch: 2.75rem;
-  --control-icon: 2.15rem;
+  --control-icon: 2.75rem;
   --icon-md: 1.25rem;
-  --layout-landing: 43rem;
+  --layout-landing: 45rem;
   --layout-reading: 46rem;
   --layout-library: 60rem;
   --layout-wide: 62rem;
-  --layout-toolbar: 76rem;
+  --layout-toolbar: 88rem;
+  --layout-inspector: 17.5rem;
+  --layout-outline: 14.5rem;
   --measure-prose: 39rem;
   --measure-panel: 32rem;
 
@@ -203,7 +205,7 @@ textarea:focus-visible {
 .site-header {
   /* Every item in the header occupies this height, so a bordered control such
      as the register link cannot make one page's header taller than another's. */
-  --site-header-control: var(--control-xs);
+  --site-header-control: var(--control-touch);
   position: sticky;
   z-index: 35;
   top: 0;
@@ -219,13 +221,14 @@ textarea:focus-visible {
   justify-content: flex-start;
   gap: var(--space-3) var(--space-6);
   margin: 0 auto;
-  padding: var(--space-4) 0;
-  /* The band is as tall as one control row plus the padding, so the header
-     keeps its size regardless of which links the current page shows. */
-  min-height: calc(var(--site-header-control) + 1.8rem);
+  padding: var(--space-2) 0;
+  min-height: calc(var(--site-header-control) + var(--space-4));
 }
 
 .site-brand {
+  display: inline-flex;
+  min-height: var(--control-touch);
+  align-items: center;
   color: var(--content-primary);
   font-family: var(--font-serif);
   font-size: var(--text-title);
@@ -238,7 +241,6 @@ textarea:focus-visible {
   color: var(--ui-accent-hover);
 }
 
-.site-nav,
 .site-account {
   display: flex;
   flex-wrap: wrap;
@@ -247,7 +249,6 @@ textarea:focus-visible {
   font-size: var(--text-meta);
 }
 
-.site-nav a,
 .site-account a,
 .site-account-link {
   display: inline-flex;
@@ -258,7 +259,6 @@ textarea:focus-visible {
   text-underline-offset: 0.2em;
 }
 
-.site-nav a:hover,
 .site-account a:hover,
 .site-account-link:hover {
   color: var(--ui-accent-hover);
@@ -278,20 +278,6 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
-.site-account a.site-account-register {
-  height: var(--site-header-control);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0 var(--space-3);
-  background: var(--elevation-surface);
-  color: var(--content-primary);
-}
-
-.site-account a.site-account-register:hover {
-  border-color: var(--content-secondary);
-  background: var(--elevation-sunken);
-  color: var(--content-primary);
-}
 
 .site-account-form {
   display: inline;
@@ -348,27 +334,112 @@ textarea:focus-visible {
   font-size: var(--text-body);
 }
 
-.tool-benefits {
+.entry-modes {
+  display: flex;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.entry-mode-tab {
+  min-height: var(--control-lg);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  padding: var(--space-2) var(--space-1);
+  background: transparent;
+  color: var(--content-secondary);
+  cursor: pointer;
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+}
+
+.entry-mode-tab[aria-selected="true"] {
+  border-bottom-color: var(--ui-accent);
+  color: var(--content-primary);
+}
+
+.entry-mode-tab:hover {
+  color: var(--ui-accent);
+}
+
+.entry-review-title {
+  display: none;
+}
+
+.entry-panel:has(.entry-mode-tab[data-mode="paste"][aria-selected="true"]) .entry-find-title,
+.entry-panel:has(.entry-mode-tab[data-mode="paste"][aria-selected="true"]) .intro > p {
+  display: none;
+}
+
+.entry-panel:has(.entry-mode-tab[data-mode="paste"][aria-selected="true"]) .entry-review-title {
+  display: inline;
+}
+
+.entry-review-heading {
+  margin: 0 0 var(--space-5);
+  color: var(--content-secondary);
+  font-size: var(--text-label);
+}
+
+.entry-review-heading p {
+  margin: 0;
+}
+
+.entry-draft-status,
+.entry-revision-note,
+.account-context {
+  margin: 0 0 var(--space-4);
+  color: var(--content-secondary);
+  font-size: var(--text-label);
+}
+
+.entry-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1-5) var(--space-5);
-  margin: 0 0 var(--space-10);
-  padding: 0;
-  color: var(--content-secondary);
-  font-size: var(--text-meta);
-  font-weight: var(--weight-bold);
-  list-style: none;
-}
-
-.tool-benefits li {
-  display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3) var(--space-5);
 }
 
-.tool-benefits li::before {
-  color: var(--ui-accent);
-  content: "✓";
+.entry-actions .button-wide {
+  width: auto;
+}
+
+.field .entry-lyrics {
+  min-height: 45svh;
+  padding: var(--space-4);
+}
+
+.field-error,
+.field-hint {
+  margin: 0;
+  font-size: var(--text-label);
+  line-height: var(--leading-label);
+}
+
+.field-error {
+  color: var(--ui-danger);
+}
+
+.field-hint {
+  color: var(--content-secondary);
+}
+
+.field [aria-invalid="true"] {
+  border-color: var(--ui-danger);
+}
+
+.account-cancel {
+  display: inline-flex;
+  min-height: var(--control-touch);
+  align-items: center;
+  color: var(--content-secondary);
+  text-underline-offset: 0.2em;
+}
+
+.button:disabled,
+.button-text:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .search-section,
@@ -418,6 +489,7 @@ textarea:focus-visible {
 
 .search-form {
   display: flex;
+  flex-wrap: wrap;
   align-items: stretch;
   gap: var(--space-3);
 }
@@ -446,17 +518,9 @@ textarea:focus-visible {
 }
 
 .search-results-panel {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + var(--space-2));
-  right: calc(7.2rem + var(--space-3));
-  left: 0;
-  max-height: min(20.5rem, 55vh);
-  overflow-y: auto;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  margin-top: var(--space-4);
+  border-block: 1px solid var(--border-default);
   background: var(--elevation-surface);
-  box-shadow: var(--elevation-shadow-panel);
 }
 
 .search-results-header {
@@ -632,30 +696,10 @@ textarea:focus-visible {
 }
 
 .grow {
-  flex: 1;
+  flex: 1 1 12rem;
   min-width: 0;
 }
 
-.divider {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin: var(--space-8) 0;
-  padding: 0;
-  color: var(--content-secondary);
-  font-size: var(--text-meta);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-divider);
-  text-transform: uppercase;
-}
-
-.divider::before,
-.divider::after {
-  height: 1px;
-  flex: 1;
-  background: var(--border-default);
-  content: "";
-}
 
 .lyrics-form {
   display: grid;
@@ -687,6 +731,7 @@ textarea:focus-visible {
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   background: var(--elevation-surface);
+  font-size: var(--text-body);
   color: var(--content-primary);
   transition: border-color var(--motion-fast) ease-out, background var(--motion-fast) ease-out;
 }
@@ -727,6 +772,7 @@ textarea:focus-visible {
 .button {
   display: inline-flex;
   min-height: var(--control-lg);
+  max-width: 100%;
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
@@ -737,6 +783,7 @@ textarea:focus-visible {
   font-size: var(--text-label);
   font-weight: var(--weight-bold);
   line-height: var(--leading-compact);
+  text-align: center;
   text-decoration: none;
   transition: background var(--motion-fast) ease-out, border-color var(--motion-fast) ease-out, color var(--motion-fast) ease-out;
 }
@@ -772,7 +819,7 @@ textarea:focus-visible {
    text so it cannot compete with the decision the surface is asking for. */
 .button-text {
   display: inline-flex;
-  min-height: 1.5rem;
+  min-height: var(--control-touch);
   align-items: center;
   border: 0;
   padding: 0;
@@ -837,6 +884,9 @@ textarea:focus-visible {
 }
 
 .site-footer-nav a {
+  display: inline-flex;
+  min-height: var(--control-touch);
+  align-items: center;
   color: var(--content-secondary);
   text-underline-offset: 0.2em;
 }
@@ -1028,6 +1078,8 @@ textarea:focus-visible {
 
 .guide-steps li {
   position: relative;
+  min-width: 0;
+  overflow-wrap: anywhere;
   border-bottom: 1px solid var(--border-default);
   padding: var(--space-8) 0 var(--space-8) var(--space-12);
   counter-increment: guide-step;
@@ -1127,7 +1179,7 @@ textarea:focus-visible {
   margin-top: var(--space-5);
 }
 
-.account-form input[type="submit"] {
+.account-form .button {
   width: 100%;
   margin-top: var(--space-1-5);
 }
@@ -1185,6 +1237,9 @@ textarea:focus-visible {
 }
 
 .account-links a {
+  display: inline-flex;
+  min-height: var(--control-touch);
+  align-items: center;
   color: var(--ui-accent);
   font-weight: var(--weight-bold);
   text-underline-offset: 0.2em;
@@ -1217,50 +1272,35 @@ textarea:focus-visible {
   font-weight: var(--weight-bold);
 }
 
-/* Ten places, not a progress rule: the library's size is part of the product,
-   and the spots read at a glance without drawing another line. */
-.library-meter {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.library-meter span {
-  width: 0.55rem;
-  height: 0.55rem;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xs);
-  background: var(--elevation-sunken);
-}
-
-.library-meter span.is-filled {
-  border-color: var(--ui-accent);
-  background: var(--ui-accent);
+.library-full,
+.library-removal-note {
+  max-width: var(--measure-prose);
+  margin: var(--space-2) 0 0;
+  color: var(--content-secondary);
+  font-size: var(--text-label);
 }
 
 .library-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
   margin: var(--space-8) 0 0;
   padding: 0;
   list-style: none;
 }
 
-/* Cards separate saved things without drawing a rule between every one of
-   them. The page's only horizontal line is the site header's. */
+/* A saved library is a working list, not a dashboard of competing cards. */
 .library-card {
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex-direction: column;
-  gap: var(--space-4);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: var(--space-5);
-  background: var(--elevation-surface);
+  gap: var(--space-2);
+  border-top: 1px solid var(--border-default);
+  padding: var(--space-5) 0;
 }
 
 .library-card-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-4);
@@ -1303,6 +1343,7 @@ textarea:focus-visible {
 
 .library-card-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
@@ -1311,7 +1352,7 @@ textarea:focus-visible {
 
 .library-open {
   display: inline-flex;
-  min-height: 1.5rem;
+  min-height: var(--control-touch);
   align-items: center;
   color: var(--content-primary);
   font-size: var(--text-meta);
@@ -1331,14 +1372,33 @@ textarea:focus-visible {
 .library-remove-form {
   margin: 0;
 }
+@media screen and (min-width: 700px) {
+  .library-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-8);
+  }
+
+  .library-card-head {
+    grid-column: 1;
+    flex-wrap: wrap;
+  }
+
+  .library-card h2 {
+    grid-column: 1;
+  }
+
+  .library-card-actions {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+}
 
 .library-empty {
   max-width: var(--measure-prose);
   margin-top: var(--space-8);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: var(--space-8);
-  background: var(--elevation-surface);
+  border-top: 1px solid var(--border-default);
+  padding: var(--space-8) 0;
 }
 
 .library-empty h2 {
@@ -1359,7 +1419,7 @@ textarea:focus-visible {
 .account-prompt,
 .library-prompt {
   display: flex;
-  width: var(--sheet-width);
+  width: min(100%, var(--sheet-width));
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -1501,110 +1561,274 @@ html:has(body.preview-body) {
 
 .preview-shell {
   min-height: 100vh;
-  padding: 6.25rem var(--space-6) var(--space-12);
-}
-
-/* The dock is fixed over the bottom of the stage, so the last sheet needs room
-   to scroll clear of it. */
-.preview-shell:has(.song-format-dock) {
-  padding-bottom: calc(var(--space-12) + 5.5rem);
-}
-
-/* A compact formatting bar for the song currently under the fixed control bar.
-   The track-list controls answer the same question, but only while the list is
-   on screen. */
-.song-format-dock {
-  position: fixed;
-  z-index: 30;
-  right: 0;
-  bottom: var(--space-4);
-  left: 0;
-  display: flex;
-  width: min(100% - 2rem, var(--sheet-width));
-  align-items: center;
-  gap: var(--space-3);
-  margin: 0 auto;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-3);
-  background: var(--elevation-surface);
-  box-shadow: var(--elevation-shadow-notice);
-}
-
-.song-format-dock-heading {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-.song-format-dock-title {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin: 0;
-  font-size: var(--text-label);
-  font-weight: var(--weight-semibold);
-  white-space: nowrap;
-}
-
-.song-format-dock-all {
-  display: inline-flex;
-  min-height: 1.75rem;
-  flex: 0 0 auto;
-  align-items: center;
-  color: var(--content-secondary);
-  font-size: var(--text-meta);
-  font-weight: var(--weight-bold);
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-}
-
-.song-format-dock-all:hover {
-  color: var(--ui-accent);
-}
-
-.song-format-dock-title > span:last-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.song-format-dock-eyebrow {
-  flex: 0 0 auto;
-  color: var(--content-secondary);
-  font-size: var(--text-meta);
-  font-weight: var(--weight-bold);
-}
-
-.song-format-dock-controls {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-12);
 }
 
 .control-bar {
-  position: fixed;
+  position: sticky;
   z-index: 40;
   top: 0;
-  right: 0;
-  left: 0;
+  margin-inline: calc(-1 * var(--space-4));
   border-bottom: 1px solid var(--border-default);
-  background: var(--elevation-surface);
+  background: var(--elevation-canvas);
 }
 
 .control-inner {
   display: flex;
   width: min(100% - 2rem, var(--layout-toolbar));
-  min-height: 4.75rem;
+  min-height: 4.25rem;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-8);
+  gap: var(--space-3);
   margin: 0 auto;
+  padding-block: var(--space-2);
+}
+
+.workspace-layout {
+  display: grid;
+  width: min(100%, var(--layout-toolbar));
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-6);
+  margin: var(--space-6) auto 0;
+}
+
+.workspace-stage {
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: var(--space-3);
+}
+
+.workspace-inspector {
+  position: fixed;
+  z-index: 45;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: none;
+  max-height: 55dvh;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-strong);
+  padding: var(--space-4) var(--space-5) max(var(--space-5), env(safe-area-inset-bottom));
+  background: var(--elevation-surface);
+  box-shadow: var(--elevation-shadow-panel);
+}
+
+.workspace-inspector[data-open="true"] {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.workspace-inspector-heading {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  padding-block: var(--space-2);
+  background: var(--elevation-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.workspace-inspector h2,
+.workspace-inspector h3 {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: var(--weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.workspace-inspector p {
+  margin: 0;
+}
+
+.workspace-inspector .segmented-control {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.workspace-inspector .segmented-control legend {
+  float: none;
+  width: 100%;
+  margin: 0 0 var(--space-2);
+}
+
+.workspace-view-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+  color: var(--content-secondary);
+  font-size: var(--text-meta);
+}
+
+.workspace-view-controls .page-summary {
+  width: auto;
+  margin: 0;
+  text-align: left;
+}
+
+.workspace-zoom {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.workspace-zoom select {
+  min-height: var(--control-touch);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+  background: var(--elevation-surface);
+  color: var(--content-primary);
+  font-size: var(--text-body);
+}
+
+.workspace-hint {
+  flex: 1 0 100%;
+  margin: 0;
+  color: var(--content-secondary);
+  font-size: var(--text-meta);
+}
+.workspace-secondary {
+  display: grid;
+  width: min(100%, var(--sheet-width));
+  gap: var(--space-4);
+  margin: var(--space-6) auto 0;
+}
+
+.workspace-secondary > form {
+  margin: 0;
+}
+
+.song-format-dock,
+.song-format-dock-controls {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.song-format-dock-title {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.song-format-dock-eyebrow {
+  color: var(--content-secondary);
+  font-size: var(--text-meta);
+}
+
+.workspace-revision-link,
+.song-format-dock-all {
+  display: inline-flex;
+  min-height: var(--control-touch);
+  align-items: center;
+  color: var(--ui-accent);
+  font-size: var(--text-label);
+  text-underline-offset: 0.2em;
+}
+
+
+summary:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+.workspace-outline {
+  min-width: 0;
+  border-block: 1px solid var(--border-default);
+}
+
+.workspace-outline summary {
+  display: flex;
+  min-height: var(--control-touch);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  cursor: pointer;
+  font-weight: var(--weight-bold);
+}
+
+.workspace-outline summary::after {
+  content: "+";
+}
+
+.workspace-outline[open] summary::after {
+  content: "−";
+}
+
+.workspace-outline .songbook-tracks {
+  padding-bottom: var(--space-3);
+}
+
+.layout-save-feedback {
+  position: sticky;
+  z-index: 39;
+  top: var(--workspace-toolbar-height, 4.25rem);
+  display: grid;
+  gap: var(--space-3);
+  border-left: 3px solid var(--ui-danger);
+  padding: var(--space-3);
+  background: var(--ui-danger-surface);
+  color: var(--ui-danger);
+  font-size: var(--text-label);
+}
+
+.format-mixed {
+  color: var(--content-secondary);
+  font-size: var(--text-meta);
+}
+
+@media screen and (min-width: 1100px) {
+  .workspace-layout {
+    grid-template-columns: minmax(0, 1fr) var(--layout-inspector);
+    gap: var(--space-8);
+  }
+
+  .workspace-layout-songbook .workspace-outline {
+    grid-column: 1 / -1;
+  }
+
+  .workspace-inspector {
+    position: sticky;
+    top: 5.25rem;
+    display: grid;
+    max-height: calc(100dvh - 6rem);
+    gap: var(--space-5);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    box-shadow: none;
+  }
+
+  .workspace-inspector-close,
+  .workspace-format-trigger {
+    display: none;
+  }
+}
+
+@media screen and (min-width: 1440px) {
+  .workspace-layout-songbook {
+    grid-template-columns: var(--layout-outline) minmax(0, 1fr) var(--layout-inspector);
+    gap: var(--space-6);
+  }
+
+  .workspace-layout-songbook .workspace-outline {
+    position: sticky;
+    top: 5.25rem;
+    grid-column: auto;
+    max-height: calc(100dvh - 6rem);
+    overflow-y: auto;
+  }
+
+  .workspace-outline summary::after {
+    content: none;
+  }
 }
 
 .back-link {
@@ -1656,7 +1880,7 @@ html:has(body.preview-body) {
   background: transparent;
   color: var(--content-secondary);
   cursor: pointer;
-  font-size: var(--text-meta);
+  font-size: var(--text-label);
   font-weight: var(--weight-bold);
 }
 
@@ -1666,7 +1890,7 @@ html:has(body.preview-body) {
 }
 
 .segmented-control button.is-active {
-  border-color: var(--border-default);
+  border-color: var(--border-control);
   background: var(--elevation-sunken);
   color: var(--ui-accent);
 }
@@ -1697,65 +1921,19 @@ html:has(body.preview-body) {
   min-height: var(--control-md);
 }
 
-/* The songbook reads as a binder: a small set-wide format card, then one
-   comfortable card per song. The card is a link into the set, not another set of
-   controls; the dock owns formatting while the visitor reads. */
-.songbook-binder {
-  width: min(100% - 2rem, var(--layout-wide));
-  margin: 0 auto var(--space-5);
-}
-
-.songbook-binder-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-}
-
-.songbook-binder-head h2 {
-  margin: 0;
-  font-size: var(--text-title);
-  font-weight: var(--weight-semibold);
-}
-
-.songbook-binder-count {
-  margin: 0;
-  color: var(--content-secondary);
-  font-size: var(--text-meta);
-  font-weight: var(--weight-bold);
-}
 
 .songbook-format {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  background: var(--elevation-surface);
+  border-top: 1px solid var(--border-default);
+  padding-top: var(--space-5);
   scroll-margin-top: 6rem;
 }
 
-.songbook-format-copy h3 {
-  margin: 0;
-  font-size: var(--text-label);
-  font-weight: var(--weight-semibold);
-}
-
-.songbook-format-copy p {
-  margin: var(--space-0-5) 0 0;
-  color: var(--content-secondary);
-  font-size: var(--text-meta);
-}
 
 .songbook-format-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  display: grid;
+  gap: var(--space-4);
 }
 
 .songbook-tracks {
@@ -1772,21 +1950,22 @@ html:has(body.preview-body) {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-2);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
-  background: var(--elevation-surface);
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--border-default);
+  padding: var(--space-2);
+  background: transparent;
   font-size: var(--text-label);
 }
 
 .songbook-track.is-current {
-  border-color: var(--border-accent);
-  box-shadow: inset 3px 0 var(--ui-accent);
+  border-left-color: var(--ui-accent);
+  background: var(--elevation-sunken);
 }
 
 .songbook-track-link {
   display: grid;
   min-width: 0;
+  min-height: var(--control-touch);
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: var(--space-2);
@@ -1850,6 +2029,7 @@ html:has(body.preview-body) {
 
 .songbook-track-remove {
   border: 1px solid transparent;
+  min-height: var(--control-touch);
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--content-secondary);
@@ -1865,25 +2045,22 @@ html:has(body.preview-body) {
   color: var(--ui-danger);
 }
 
-@media (min-width: 701px) {
-  .songbook-tracks {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 
-.paper-frame,
 .paper-pages,
 .paper {
   width: var(--sheet-width);
 }
 
 .paper-frame {
+  width: 100%;
   margin: 0 auto;
 }
 
 .paper-pages {
   display: grid;
   gap: 0.3in;
+  transform: scale(var(--preview-scale, 1));
+  transform-origin: top left;
 }
 
 .page-summary {
@@ -1898,7 +2075,7 @@ html:has(body.preview-body) {
 /* The sheet's own line, under the paper: an invitation, not the next step, so it
    stays quieter than the songbook prompt above it. */
 .feedback-prompt {
-  width: var(--sheet-width);
+  width: min(100%, var(--sheet-width));
   margin: var(--space-3) auto 0;
   color: var(--content-secondary);
   font-size: var(--text-meta);
@@ -1907,7 +2084,7 @@ html:has(body.preview-body) {
 
 .songbook-prompt {
   display: flex;
-  width: var(--sheet-width);
+  width: min(100%, var(--sheet-width));
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
@@ -1917,6 +2094,11 @@ html:has(body.preview-body) {
   padding: var(--space-3) var(--space-3);
   background: var(--elevation-surface);
 }
+.songbook-prompt form {
+  min-width: 0;
+  max-width: 100%;
+}
+
 
 /* The entry panel is fluid, so the strip takes its width instead of the
    preview shell's fixed paper width. */
@@ -1933,26 +2115,9 @@ html:has(body.preview-body) {
 .button-songbook {
   min-height: var(--control-sm);
   flex: 0 0 auto;
-  white-space: nowrap;
+  white-space: normal;
 }
 
-.songbook-prompt-dismiss {
-  flex: 0 0 auto;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--content-secondary);
-  cursor: pointer;
-  font-size: var(--text-meta);
-  font-weight: var(--weight-bold);
-  padding: var(--space-2) var(--space-2);
-}
-
-.songbook-prompt-dismiss:hover {
-  border-color: var(--border-default);
-  background: var(--elevation-sunken);
-  color: var(--content-primary);
-}
 
 .paper {
   --lyric-body-size: 11pt;
@@ -2090,30 +2255,9 @@ html:has(body.preview-body) {
 }
 
 @media screen and (max-width: 700px) {
-  .landing-shell {
-    width: min(100% - 2rem, var(--layout-landing));
-    padding-top: var(--space-10);
-  }
-
-  .intro,
-  .search-section,
-  .lyrics-form {
-    padding-right: 0;
-    padding-left: 0;
-  }
-
-  .intro {
-    padding-top: 0;
-  }
-
-  .intro h1 {
-    font-size: var(--text-display);
-  }
-
-  .tool-benefits {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-2) var(--space-4);
+  .landing-shell,
+  .account-shell {
+    padding-top: var(--space-8);
   }
 
   .explainer-steps {
@@ -2130,141 +2274,16 @@ html:has(body.preview-body) {
     padding-left: 0;
   }
 
-  .divider {
-    padding-inline: 0;
-  }
-
-  .metadata-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .search-form {
-    align-items: stretch;
-  }
-
   .search-result-button {
-    min-height: 4rem;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--space-3);
   }
 
   .search-result-meta {
-    max-width: 7rem;
+    max-width: 5rem;
   }
 
   .search-result-meta span:first-child {
-    display: none;
-  }
-
-  .search-results-panel {
-    right: 0;
-  }
-
-  .button-secondary {
-    flex: 0 0 auto;
-  }
-
-  .site-footer-inner {
-    align-items: flex-start;
-  }
-
-  .site-footer-meta {
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  .preview-shell {
-    padding: 8.25rem 0 var(--space-8);
-  }
-
-  .preview-shell:has(.song-format-dock) {
-    padding-bottom: calc(var(--space-8) + 7rem);
-  }
-
-  .song-format-dock {
-    width: calc(100% - 1rem);
-    bottom: var(--space-2);
-    flex-wrap: wrap;
-    gap: var(--space-1);
-    padding: var(--space-1) var(--space-2) var(--space-2);
-  }
-
-  .song-format-dock-heading {
-    flex: 1 0 100%;
-  }
-
-  .song-format-dock-title {
-    font-size: var(--text-meta);
-  }
-
-  .song-format-dock-controls {
-    width: 100%;
-    justify-content: space-between;
-    gap: var(--space-1);
-  }
-
-  .control-inner {
-    display: grid;
-    width: 100%;
-    min-height: 7rem;
-    grid-template-columns: 1fr;
-    gap: 0;
-    padding: var(--space-2) var(--space-3) var(--space-3);
-  }
-
-  .back-link {
-    min-height: 2.2rem;
-  }
-
-  .control-groups {
-    justify-content: space-between;
-    gap: var(--space-1-5);
-  }
-
-  .segmented-control {
-    gap: 0;
-  }
-
-  .segmented-control legend {
-    margin-right: var(--space-1);
-  }
-
-  .segmented-control button {
-    width: 1.9rem;
-    height: 1.9rem;
-  }
-
-  .button-print {
-    min-height: var(--control-sm);
-    padding-inline: var(--space-3);
-  }
-
-  .paper-frame {
-    width: calc(100% - 1rem);
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .page-summary {
-    width: calc(100% - 1rem);
-  }
-
-  .feedback-prompt,
-  .account-prompt,
-  .library-prompt {
-    width: calc(100% - 1rem);
-  }
-
-  .site-header-inner {
-    gap: var(--space-2) var(--space-4);
-    padding: var(--space-3) 0;
-    min-height: calc(var(--site-header-control) + 1.5rem);
-  }
-
-  /* The brand already links home. Keeping this one-item nav would put it on a
-     second row, and only pages other than the homepage would have that row,
-     so the header would change height from page to page. */
-  .site-nav {
     display: none;
   }
 
@@ -2272,124 +2291,64 @@ html:has(body.preview-body) {
     display: none;
   }
 
-  .flash {
-    top: 6rem;
+  .site-header-inner {
+    gap: var(--space-2);
   }
 
-  .preview-body .flash {
-    top: 7.5rem;
+  .site-account {
+    gap: var(--space-3);
   }
 
-  .account-shell {
-    padding: var(--space-8) 0 0;
+  .site-footer-meta {
+    flex-direction: column;
+    gap: var(--space-1);
   }
 
   .account-panel {
     padding: var(--space-5);
   }
 
-  .account-heading h1,
-  .library-heading h1 {
-    font-size: var(--text-display);
-  }
-
-  .library-grid {
-    grid-template-columns: 1fr;
-    margin-top: var(--space-6);
-  }
-
-  .library-card {
-    padding: var(--space-4);
-  }
-
-  .library-card-head {
-    flex-direction: column;
-    gap: var(--space-1-5);
-  }
-
-  .library-saved {
-    text-align: left;
-  }
-
   .songbook-prompt {
-    width: calc(100% - 1rem);
     flex-wrap: wrap;
-    gap: var(--space-2);
   }
 
   .songbook-prompt-message {
     flex: 1 1 100%;
   }
 
-  .songbook-binder {
-    width: calc(100% - 1rem);
-  }
-
-  .songbook-binder-head {
-    padding-inline: var(--space-1);
-  }
-
-  .songbook-format {
-    align-items: flex-start;
-    flex-direction: column;
+  .control-start,
+  .control-groups {
+    flex-wrap: wrap;
     gap: var(--space-2);
-    scroll-margin-top: 5rem;
+  }
+}
+
+@media screen and (max-width: 559px) {
+  .metadata-grid {
+    grid-template-columns: 1fr;
   }
 
-  .songbook-format-controls {
-    width: 100%;
-    justify-content: space-between;
-    gap: var(--space-1);
-  }
-
-  .songbook-track {
-    padding-right: var(--space-3);
-  }
-
-  .songbook-track form {
-    margin-left: auto;
-  }
-
-  /* The songbook bar has one row now that sizing lives on the binder and the
-     dock. It leaves more of the phone to the songs. */
-  .preview-shell[data-songbook-size] {
-    padding-top: 5rem;
-  }
-
-  .preview-shell[data-songbook-size] .control-inner {
-    display: flex;
-    min-height: 4rem;
+  .control-inner {
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: var(--space-2) var(--space-3);
+  }
+}
+
+@media screen and (max-width: 359px) {
+
+  .control-start {
+    flex: 1 0 100%;
   }
 
-  .preview-shell[data-songbook-size] .control-groups {
-    width: auto;
+  .control-groups {
+    width: 100%;
     justify-content: flex-end;
   }
 
-  .paper[id^="song-"] {
-    scroll-margin-top: 5rem;
-  }
-
-  .control-start {
-    gap: var(--space-3);
-  }
-
-  .button-add-song {
-    min-height: var(--control-sm);
-    padding-inline: var(--space-3);
-  }
-
-  .paper {
-    transform: none;
-  }
-
-  .paper-pages {
-    transform: scale(var(--preview-scale, 1));
-    transform-origin: top left;
+  .workspace-layout {
+    gap: var(--space-4);
+    margin-top: var(--space-4);
   }
 }
 
@@ -2446,18 +2405,30 @@ html:has(body.preview-body) {
   }
 
   .no-print,
+  .skip-link,
   .flash {
     display: none !important;
   }
 
-  .preview-shell,
-  .preview-shell:has(.song-format-dock) {
+  .preview-shell {
     min-height: 0;
     padding: 0;
   }
 
+  .workspace-layout,
+  .workspace-layout-songbook,
+  .workspace-stage {
+    display: block;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
   .paper-frame {
     width: var(--sheet-width);
+    height: auto !important;
     margin: 0;
     overflow: visible;
   }

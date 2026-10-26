@@ -35,7 +35,8 @@ Required rules:
   not leak into `@media print`.
 - **One navigation surface.** The site header is the only global navigation and
   the footer holds the guides, feedback, retention note, and version. Do not
-  repeat the same links in page bodies.
+  repeat global/account menus in page bodies. Contextual prose links to the
+  printing guides may support the task without becoming another navigation menu.
 - **One system, not page-specific styles.** An element that appears on more than
   one page uses a contract in `design-system/` or the token catalogue. Do not
   copy a block of CSS into a page because it is faster.
@@ -55,8 +56,8 @@ Recommendations:
 There is no separate Figma or Storybook source. The reference implementation is
 the shipped interface, and these four surfaces define the visual bar:
 
-- `/` — entry: serif display, warm canvas, one rust accent, search and manual
-  entry as equals.
+- `/` — entry: compact serif introduction, accessible Find/Paste modes, in-flow
+  results, and a lyrics-first review surface with recoverable drafts.
 - `/print-lyrics-on-one-page` and `/print-a-songbook` — public guides: a readable
   column, numbered steps, native disclosures, one closing action.
 - `/account/new` — account panel: one bordered surface, Google first, email as
@@ -113,6 +114,7 @@ text, 3:1 for non-text indicators):
 | `content-primary` on `elevation-surface` | 15.66 | 12.78 | 4.5 |
 | `content-secondary` on `elevation-canvas` | 5.92 | 6.78 | 4.5 |
 | `content-secondary` on `elevation-surface` | 6.40 | 6.07 | 4.5 |
+| `content-placeholder` on `elevation-surface` | 6.40 | 6.07 | 4.5 |
 | `ui-accent` on `elevation-canvas` | 6.29 | 6.42 | 4.5 |
 | `content-on-accent` on `ui-accent` | 6.57 | 6.67 | 4.5 |
 | `ui-success` on `ui-success-surface` | 5.42 | 7.99 | 4.5 |
@@ -123,6 +125,8 @@ text, 3:1 for non-text indicators):
 Rules:
 
 - Use semantic tokens only. Never write a raw colour in a component.
+- Placeholder text uses the opaque secondary tone through its semantic role;
+  reducing its opacity can fail text contrast even when labels remain visible.
 - Use `--border-default` for separators and `--border-control` for anything a
   visitor must perceive as an input edge. The default border is intentionally
   quiet and does not meet non-text contrast.
@@ -150,9 +154,9 @@ decision, it is a system defect.
 | `--text-display` | `clamp(2rem, 5vw, 2.75rem)` | The `h1` of a page: entry, guide, account, library. | Use for section headings or marketing copy inside a page. |
 | `--text-heading` | `1.5rem` | A section `h2` that opens a distinct block: explainer, FAQ, empty state. | Use for card titles or dense form sections. |
 | `--text-title` | `1.25rem` | A card, step, or answer title; the brand wordmark. | Use for an action label. |
-| `--text-body` | `1rem` | Running prose, introductions, textareas. | Use for controls or metadata. |
-| `--text-label` | `0.85rem` | Interactive labels, field labels, buttons, card actions, prompt titles. | Use for paragraphs longer than one sentence. |
-| `--text-meta` | `0.75rem` | Eyebrows, dividers, timestamps, counts, footer, helper text, tertiary actions. | Use for body copy or a primary action. |
+| `--text-body` | `1rem` | Running prose, all text inputs and textareas. | Shrink input text below 16px on phones. |
+| `--text-label` | `0.9375rem` | Interactive labels, field labels, buttons, list actions, prompt titles. | Use for long reading passages. |
+| `--text-meta` | `0.8125rem` | Eyebrows, timestamps, counts, footer and helper text. | Use for body copy or a primary action. |
 
 Weights: `--weight-regular: 400` (prose), `--weight-medium: 500` (serif display
 and titles), `--weight-semibold: 600` (printed lyric title, selected track),
@@ -271,25 +275,28 @@ Rules:
 
 | Token | Width | Surface |
 | --- | --- | --- |
-| `--layout-landing` | `43rem` | Entry and manual form |
+| `--layout-landing` | `45rem` | Find/Paste entry and review |
 | `--layout-reading` | `46rem` | Guides and account pages |
-| `--layout-library` | `60rem` | Saved-items grid |
+| `--layout-library` | `60rem` | Saved-items list |
 | `--layout-wide` | `62rem` | Site header and footer |
-| `--layout-toolbar` | `76rem` | Print-preview control bar |
+| `--layout-toolbar` | `88rem` | Workspace and action band |
+| `--layout-inspector` | `17.5rem` | Inline format inspector |
+| `--layout-outline` | `14.5rem` | Wide song outline |
 | `--measure-prose` | `39rem` | Long-form copy inside a shell |
 | `--measure-panel` | `32rem` | Account panels and forms |
 
-- The single responsive breakpoint is `700px`. Below it, the header hides its
-  one-item nav, metadata grids and card grids collapse to one column, and the
-  preview control bar becomes a two-row grid.
-- The header keeps one height across pages. Every header item occupies
-  `--control-xs`; do not let one page's controls make the band taller.
-- Standalone controls target at least 24px; the back link and the search header
-  reserve `--control-touch` (44px). The remaining sub-24px inline links are an
-  open target-size gap recorded in the journal, not an approved exception.
+- Breakpoints follow content: metadata pairs collapse below 560px; supporting
+  prose arrangements below 700px; the format inspector becomes inline at
+  1100px; a persistent third-column song outline requires 1440px.
+- The header keeps one compact control row across normal pages. Every header
+  item occupies `--control-touch`; account creation belongs in the account flow,
+  not a competing homepage action.
+- Standalone working controls, disclosure summaries and secondary actions target
+  at least 44px (`--control-touch`); primary inputs/actions use 48px
+  (`--control-lg`). Never shrink controls on phones.
 - No page may scroll horizontally at 320px. The paper is wider than a phone by
-  design; the preview scales it with `--preview-scale` rather than clipping the
-  page.
+  design; Fit scales it to the stage through `--preview-scale`. Explicit zoom
+  scrolls only within the document stage, independently of printed type size.
 - Print output is letter, `@page { size: letter; margin: 0; }`.
 
 ## Components, layouts and patterns
@@ -300,6 +307,11 @@ Rules:
   preview shell.
 - [Patterns](design-system/PATTERNS.md): lyric entry, print preview, account
   access, saved library.
+
+The [workspace interaction specification](docs/plans/2026-10-26-002-mobile-workspace-interaction.md)
+defines draft lifetime, immutable revisions, navigation, failure recovery and
+phone/wide reference compositions. Revisions create independent sheets; they do
+not silently replace library items or songbook entries.
 
 Contract statuses follow the shared model:
 
@@ -354,11 +366,13 @@ bin/rails assets:precompile          # production asset path
 Browser surfaces worth checking after a visual change, at 390px and 1280px, in
 light and dark mode:
 
-- `/` — entry form, search, explainer, FAQ.
+- `/` — Find/Paste, review, recovered/invalid drafts and failed search.
 - `/print-lyrics-on-one-page` and `/print-a-songbook` — guide shell and prose.
 - `/session/new` — account shell, panel, fields, Google button.
-- A generated `/lyrics/:token` — control bar, paper, prompts, and the printed or
-  PDF result at all four size variants.
+- A generated `/lyrics/:token` — document stage, inspector, zoom, edit/revision,
+  measured page counts and PDF at every size/column combination.
+- A mixed-format `/songbooks/:token` — outline, current song, scoped/bulk changes,
+  save-failure retry and continuation pages.
 
 Contract checks:
 

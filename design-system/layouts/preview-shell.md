@@ -1,10 +1,9 @@
 ---
-sourcesHash: c0f8d0b8f5801b67f388928bec9cd277b81634d2659a99b6da70970ecdf01a9a
+sourcesHash: fb5d3a3d9e6ec84670ae408464cbee28f3cc822e00c7c30e88618b8b1757b2d7
 id: preview-shell
 description: >-
-  Own the print-preview page: a fixed control bar, the neutral stage, one or
-  more paper sheets with per-song formatting, and the optional offers that follow
-  them.
+  Arrange a document-led sheet or songbook workspace with a sticky action band,
+  fitted paper stage, responsive format inspector and optional song outline.
 status: discoverable
 sources:
   - app/assets/tailwind/application.css
@@ -14,9 +13,12 @@ sources:
   - app/views/shared/_sheet_mark.html.erb
   - app/javascript/controllers/preview_controller.js
   - app/javascript/controllers/layout_preference_controller.js
+  - app/javascript/controllers/workspace_controller.js
+  - app/views/shared/_preview_view_controls.html.erb
 tests:
   - test/system/organic_conversion_test.rb
   - test/system/songbook_layout_test.rb
+  - test/system/workspace_interaction_test.rb
 ---
 
 # Preview shell
@@ -36,136 +38,73 @@ tests:
 
 ## Public API
 
-```erb
-<div class="preview-shell"
-     data-controller="preview"
-     data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
-  <%= render "shared/flash" %>
-
-  <nav class="control-bar no-print" aria-label="...">
-    <div class="control-inner">
-      <div class="control-start">...</div>
-      <div class="control-groups">
-        <%# A sheet puts size and columns here; a songbook keeps only Print. %>
-        <%= render "shared/preview_controls" %>
-        <button type="button" class="button button-print" data-action="preview#print">...</button>
-      </div>
-    </div>
-  </nav>
-
-  <p class="page-summary no-print" data-preview-target="pageSummary" aria-live="polite"></p>
-  <p class="layout-status sr-only" role="status" aria-live="polite"
-     data-preview-target="layoutStatus"></p>
-  <%= render "shared/sheet_mark" %>
-
-  <section class="songbook-binder no-print" aria-labelledby="songbook-heading">
-    <div class="songbook-binder-head">
-      <h2 id="songbook-heading">This songbook</h2>
-      <p class="songbook-binder-count">3 songs</p>
-    </div>
-    <section class="songbook-format" id="songbook-format">
-      <div class="songbook-format-copy">...</div>
-      <div class="songbook-format-controls">
-        <%= render "shared/preview_controls", scope: "all" %>
-      </div>
-    </section>
-    <ol class="songbook-tracks">
-      <li class="songbook-track" data-preview-binder-song="...">
-        <a class="songbook-track-link" href="#song-...">...</a>
-        <%= button_to "Remove", "...", method: :delete %>
-      </li>
-    </ol>
-  </section>
-
-  <div class="paper-frame" data-preview-target="pageFrame">...</div>
-
-  <aside class="song-format-dock no-print" aria-label="Format the song you are reading">
-    <div class="song-format-dock-heading">
-      <p class="song-format-dock-title">...</p>
-      <a class="song-format-dock-all" href="#songbook-format">All songs</a>
-    </div>
-    <div class="song-format-dock-controls" role="group"
-         data-preview-target="songFormatGroup">
-      <%= render "shared/preview_controls", scope: "active" %>
-    </div>
-  </aside>
-</div>
-```
-
-- The page sets `content_for :body_class, "preview-body"` and
-  `content_for :hide_site_chrome, true`.
-- `.preview-shell` owns the top padding below the fixed bar and the stage
-  padding. The `.preview-body` background is `--elevation-preview`.
-- `.control-bar` is fixed, full width, and `no-print`. `.control-inner` uses
-  `--layout-toolbar` and `--control-md` actions.
-- `.control-start` holds the back link and, on a sheet, the add-to-songbook
-  action. `.control-groups` holds the segmented controls and the print action.
-  On a sheet the pair formats that sheet. A songbook's bar keeps only the print
-  action; its set-wide formatting lives in the binder.
-- `.page-summary` reports paper size, margins, and page count; the preview
-  controller updates it and it is `aria-live="polite"`.
-- `.layout-status` is a polite, visually hidden region. The controller fills it
-  only when a songbook layout save fails.
-- `.song-format-dock` is a fixed `no-print` bar for a songbook. It names the song
-  crossing the middle of the viewport and holds that song's size and columns
-  controls. The controller updates the title, the group label, and the pressed
-  options as the visitor scrolls and repaginates. Its `.song-format-dock-all`
-  link jumps to the binder's `#songbook-format` card.
-- The shell adds bottom padding while the dock is present so the last sheet can
-  scroll clear of it.
-- `.paper-frame` > `.paper-pages` holds the sheets. The controller owns
-  pagination, per-song layout, `--preview-scale`, and the frame height.
-- A songbook adds `.songbook-binder` before the paper. It is `no-print`, widens
-  past the paper on desktop, and holds the heading, set-wide `.songbook-format`
-  card, and `.songbook-tracks` as one card per song. Cards are links into the
-  set; they carry no formatting controls.
-- A card gets `.is-current` and `aria-current="location"` while its song is in
-  view. Its "Reading" label is hidden otherwise.
-- The forms that start a songbook carry the current size and columns from the
-  visitor's stored preference. `layout_preference_controller.js` fills their
-  hidden fields on connect and again on submit, so the sheet keeps the format it
-  was viewed in.
-- A songbook's shell carries `data-songbook-size`, `data-songbook-layout-url`,
-  and `data-layout-error`; each song source carries `data-preview-size`,
-  `data-preview-columns`, and `data-preview-layout-url`.
-- Offers, prompts, and the sheet mark follow the paper in the order the page
-  renders them.
+- Set `content_for :body_class, "preview-body"` and
+  `content_for :hide_site_chrome, true`. The workspace replaces normal site
+  chrome; it does not duplicate it.
+- `.preview-shell` binds `preview workspace`; resize/afterprint call preview
+  fitting, and window keydown calls `workspace#escape`.
+- `.control-bar.workspace-actions.no-print` is sticky. `.control-inner`
+  contains task navigation and one primary Print action. A sheet offers Edit
+  lyrics; a book offers Add another song. Format invokes the mobile inspector.
+- `.workspace-layout` contains `.workspace-stage` followed by
+  `.workspace-inspector`. A book adds `.workspace-layout-songbook` and a
+  `.workspace-outline` details region before the stage.
+- The stage owns `shared/preview_view_controls` (measured page count, inspection
+  zoom, browser-PDF explanation), sheet-mark template, and
+  `.paper-frame[data-preview-target="pageFrame"]` containing
+  `.paper-pages[data-preview-target="pages"]`.
+- The inspector has a labelled heading, visible Close action and formatting
+  fieldsets. Its `workspace` targets are `inspector`, `heading` and `trigger`.
+  `aria-controls` connects Format to the inspector; `aria-expanded` follows
+  visibility. The heading is focusable with `tabindex="-1"`.
+- `shared/preview_controls` without scope formats one sheet. A book places
+  `scope: "active"` in a named current-song group and `scope: "all"` in the
+  distinct `#songbook-format` section. Whole-book controls expose Mixed text.
+- Each book source carries token, size, columns and its layout PATCH URL.
+  `.songbook-track-link` targets that song's first paper; current location has
+  `aria-current="location"` and visible Reading text.
+- `.layout-save-feedback` is visible on failed persistence, with live status
+  and Retry saving. It sticks below the measured action band even while reading
+  continuation pages. Every failed dimension remains pending until confirmed;
+  a later success cannot erase an earlier failed change.
+- `.workspace-secondary.no-print` holds optional book, keep and feedback actions
+  after the document. Starting a book carries the sheet's current formatting
+  through the existing layout-preference controller.
 
 ## Composition
 
-- Exactly one print action. A sheet has one pair of segmented controls; a
-  songbook has one set-wide pair in the binder and one current-song pair in the
-  dock. Do not add a second action to the bar that competes with Print.
-- The sheet is the content; chrome is `no-print` and must not overlap the paper.
-- The shell owns the fixed-bar offset. A child must not add its own top padding
-  to clear the bar.
-- On a phone a sheet's control bar becomes a two-row grid. A songbook's bar has
-  only the add action and Print, so it stays one row and its shell top padding
-  shrinks with it. The paper is scaled rather than clipped, and the page must
-  not scroll horizontally.
-- A songbook may render many sheets. The binder order and the page order are
-  the same; the controller measures pages but does not reorder songs. A binder
-  card jumps to its song; the dock formats the song in view; the binder's format
-  card changes every song.
-- The binder is one column on a phone and two columns from the desktop
-  breakpoint. The dock is the always-reachable per-song control and must not
-  become a second bulk control. On a phone the dock wraps its heading above the
-  two controls.
-- The shell supports zero offers (a shared page) through all offers (a freshly
-  generated sheet). Visibility is server-owned.
+- The paper is the primary content. Exactly one filled Print action appears in
+  the action band; Save as PDF is explained as a browser print option.
+- At widths below 1100px the inspector is a nonmodal bottom panel, max 55dvh,
+  with safe-area spacing. It leaves preview visible and scrolls its own controls.
+  It has no backdrop and does not trap focus away from the preview.
+  Its heading and Close stay visible while its controls scroll.
+- At 1100px and wider the inspector becomes an inline sticky right-hand panel.
+  Its close/trigger controls are hidden; all settings stay reachable.
+- A book outline is a native disclosure until 1440px. At 1440px it opens as a
+  persistent left column; paper and inspector occupy the other two columns.
+- The stage has `min-width: 0` and owns horizontal inspection scrolling.
+  Fit scales to stage width; explicit zoom never widens the document body.
+  Magnification is independent of physical print dimensions and text size.
+- Paper count is Measuring until layout completes, then reports the measured
+  count. Formatting repaginates and preserves the current song's reading anchor.
+- Selecting a song closes the compact outline before scrolling to its first
+  page. Scrolling and repagination update the named formatting target.
+- Per-song changes affect only that entry. Whole-book changes affect only the
+  selected dimension, preserving intentionally mixed values in the other.
+- Remove reloads the book and remeasures remaining pages in entry order. Adding
+  keeps the book token throughout entry/search/select/preview.
+- All outline, inspector, action, view-control and status surfaces are no-print.
+  Print resets workspace grid, stage overflow, transform and frame height.
 
 ## Accessibility
 
-- The control bar is a `<nav>` with a visible label and native buttons.
-- The page summary is a polite live region; it must not be the only way to know
-  the page count. The paper itself remains readable.
-- Print hides chrome, so the printed document starts with the sheet's title.
-- The paper is not focusable; controls remain the only tab stops.
-- The dock's scrolling title is not a live region: scrolling through a set must
-  not announce every song. Its control group carries an `aria-label` that names
-  the current song when focus reaches it.
-- A binder card is a real link to the song's first sheet. The current card adds
-  `aria-current="location"` and a visible "Reading" label, so the state does not
-  depend on the accent edge alone.
-- `scrollbar-gutter: stable` is deliberate: it keeps the scaled paper from
-  changing width when the scrollbar appears.
+- Action bands and outlines have accessible names and native controls.
+- Format moves focus to the panel heading. Close and Escape dismiss the mobile
+  panel and return focus to Format. Desktop settings remain inline.
+- Working controls retain at least 44px targets; zoom select uses 16px text.
+- Count and save feedback announce politely; a save error remains visible.
+- Current song has both `aria-current` and text, never colour alone.
+- Printed pages preserve DOM/outline order, white paper and print ink in either
+  screen theme. No workspace controls or messages reach paper.
+- `scrollbar-gutter: stable` prevents fitting shifts as vertical scroll appears.

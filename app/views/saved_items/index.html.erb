@@ -6,7 +6,6 @@
 
 <div class="account-shell library-shell">
   <header class="library-heading">
-    <p class="eyebrow"><%= t("accounts.eyebrow") %></p>
     <h1><%= t("accounts.library.heading") %></h1>
     <p class="library-intro"><%= t("accounts.library.intro", limit: SavedItem::LIMIT) %></p>
 
@@ -14,17 +13,10 @@
       <p class="library-count">
         <%= t("accounts.library.count", count: capacity, limit: SavedItem::LIMIT) %>
       </p>
-      <div class="library-meter"
-           role="progressbar"
-           aria-label="<%= t("accounts.library.capacity_label") %>"
-           aria-valuemin="0"
-           aria-valuemax="<%= SavedItem::LIMIT %>"
-           aria-valuenow="<%= capacity %>">
-        <% SavedItem::LIMIT.times do |index| %>
-          <span class="<%= "is-filled" if index < capacity %>" aria-hidden="true"></span>
-        <% end %>
-      </div>
     </div>
+    <% if capacity >= SavedItem::LIMIT %>
+      <p class="library-full"><%= t("redesign_support.library.full", limit: SavedItem::LIMIT) %></p>
+    <% end %>
   </header>
 
   <%= render "shared/flash" %>
@@ -36,6 +28,9 @@
        data-analytics-page-response="Account Library Opened"
        data-analytics-response-key="<%= SecureRandom.hex(8) %>"></div>
 
+  <% if @saved_items.any? %>
+    <p class="library-removal-note" id="library-removal-note"><%= t("redesign_support.library.removal_note") %></p>
+  <% end %>
   <% if @saved_items.any? %>
     <ul class="library-grid">
       <% @saved_items.each do |saved_item| %>
@@ -52,12 +47,12 @@
 
           <div class="library-card-actions">
             <%= link_to t("accounts.library.open"), item_path, class: "library-open" %>
-            <%= button_to t("accounts.library.remove"),
+            <%= button_to t("redesign_support.library.remove"),
                   saved_item_path(saved_item),
                   method: :delete,
                   class: "button-text button-text-danger",
                   form: { class: "library-remove-form" },
-                  aria: { label: t("accounts.library.remove_label", title: saved_item_title(saved_item)) } %>
+                  aria: { label: t("accounts.library.remove_label", title: saved_item_title(saved_item)), describedby: "library-removal-note" } %>
           </div>
         </li>
       <% end %>

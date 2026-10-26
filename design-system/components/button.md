@@ -1,5 +1,5 @@
 ---
-sourcesHash: 5e2e93b6daa011c5bfc634bb2e9be4462a745e473b91eb79f18a4348f82f42be
+sourcesHash: efd4ae5e884ab3bd476e5d9e6d90fc3bf0b6799faf785b5e55cab45d51bc6ff0
 id: button
 description: >-
   Invoke one immediate action or styled navigation step through the shared
@@ -69,16 +69,17 @@ tests:
   hover it fills with `--ui-accent`. Use it once per surface.
 - `.button-secondary` uses a `--elevation-surface` fill and a
   `--border-default` edge. It is the normal partner to a primary action.
-- `.button-print` fills with `--ui-primary` at `--control-md` height. The print
-  control bar owns its placement.
+- `.button-print` fills with `--ui-primary` at the shared 44px control height.
+  The workspace action band owns its placement.
 - `.button-wide` stretches to the available width and separates its label from
-  a trailing glyph. The manual-entry submit uses it.
+  a trailing glyph when that composition needs one.
 - `.button-text` is the quiet action: no border or fill, `--text-meta`,
-  underline, `--content-secondary`, and a 24px minimum pointer target.
+  underline, `--content-secondary`, and a 44px minimum pointer target.
   `.button-text-danger` changes the hover colour to `--ui-danger`.
-- There is no size modifier. A compact context changes the minimum height in
-  its own layout rule (the prompts use `--control-sm`); it does not create a new
-  Button size.
+- There is no size modifier. Primary form actions use the 48px base; compact
+  working contexts may use the shared 44px control height, never less.
+- Labels wrap within their available width under enlarged text. Form actions use
+  `<button>` rather than nonwrapping submit inputs; never clip an action label.
 
 The label is consumer-supplied and should name the outcome in sentence case.
 Do not use a Button to toggle a setting; the control's pressed state would be
@@ -88,8 +89,8 @@ lost.
 
 - Hover changes colour or fill only. There is no movement, scale, or shadow.
 - Focus uses the global 3px opaque focus ring.
-- Disabled state is the native `disabled` attribute. The application's search
-  results use their own disabled/loading treatment and are not this component.
+- Disabled state is the native `disabled` attribute with reduced opacity and a
+  non-interactive cursor. Search results retain their explicit loading labels.
 - `.button-text` follows the same focus and disabled rules.
 - Turbo and form semantics stay with the caller; the component does not submit,
   confirm, or navigate on its own.

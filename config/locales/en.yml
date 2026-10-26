@@ -8,6 +8,17 @@ en:
       default_description: "Find lyrics by song or artist, edit every line, fit them into one or two columns, then print or save as PDF. Free with no account required."
       image_alt: "PrintLyrics - print lyrics for any song"
 
+  redesign_support:
+    account:
+      context: "Sign in or create an account to keep “%{title}”. You’ll return to it after saving. You can still print without an account."
+      cancel: "Cancel and return"
+    library:
+      remove: "Remove from library"
+      removal_note: "Removing an item only takes it out of your library. Its share link still works, and the usual 180-day retention window resumes."
+      full: "All %{limit} places are used. Remove an item from this list before saving another sheet or songbook."
+    feedback:
+      message_hint: "Add a note or a song title below. Either is enough."
+
   accounts:
     eyebrow: "Your account"
     created: "Account created. You can keep sheets and songbooks here."
@@ -118,9 +129,25 @@ en:
       wrong_lyrics: "The lyrics were wrong"
       idea: "An idea or a request"
 
+  redesign_entry:
+    modes: "Choose how to start"
+    find: "Find"
+    paste: "Paste"
+    review: "Review the words"
+    review_hint: "Edit every line before previewing. Separate verses with a blank line; title and artist are optional."
+    preview: "Preview sheet"
+    cancel: "Cancel"
+    saved: "Draft kept in this tab until you preview or cancel."
+    recovered: "Draft recovered in this tab. Review the words before previewing."
+    unavailable: "Draft recovery is unavailable in this browser. Keep this page open or copy your words before leaving."
+    leave: "Leave this edited draft? Preview creates a new sheet; Cancel discards the draft."
+    revision: "You are making a new sheet. The original link and anything saved in your library stay unchanged."
+    revision_book: "You are making a separate sheet. This songbook, its song and any library items stay unchanged."
+    transport_error: "The connection did not finish. Try again, or switch to Paste; your draft is still here."
+
   lyrics:
     status:
-      loaded: "Lyrics loaded. Review and edit them before generating your print page."
+      loaded: "Lyrics loaded. Review and edit them before previewing your sheet."
     errors:
       blank: "Please paste your lyrics"
       expired: "That lyric page expired or wasn't found"
@@ -129,7 +156,7 @@ en:
       status:
         one: "1 match found. Choose a song."
         other: "%{count} matches found. Choose a song."
-      empty: "No matches found. Check the spelling, or find the lyrics and paste them below."
+      empty: "No matches found. Check the spelling, or choose Paste to use lyrics you already have."
     new:
       seo:
         title: "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
@@ -145,20 +172,12 @@ en:
           - "Print or save as PDF"
           - "Collect lyric sheets into one songbook and print them as one job"
       heading: "Find, format, and print song lyrics"
-      intro: "Search by song or artist—no copying from another lyrics site. Review the words, fit them on the page, and print or save as PDF. Free, online, and no account required."
+      intro: "Find or paste the words, review your sheet, and print. No account required."
       songbook:
         context_html:
           one: "Adding to a songbook with %{count} song. %{view_link}"
           other: "Adding to a songbook with %{count} songs. %{view_link}"
         view: "View songbook"
-      benefits:
-        label: "What PrintLyrics does"
-        items:
-          - "Find the song"
-          - "Edit any line"
-          - "Fit one or two columns"
-          - "Print or save as PDF"
-          - "Nothing to install"
       search:
         heading: "Find song lyrics"
         provider: "via LRCLIB"
@@ -177,7 +196,6 @@ en:
           feedback: "Or tell me the song you wanted, and I'll look for it."
           query: "Song title or artist"
           submit: "Send it"
-      manual_divider: "or enter lyrics manually"
       form:
         title: "Song title"
         artist: "Artist"
@@ -191,7 +209,6 @@ en:
 
           [Chorus]
           ...
-        submit: "Generate print page"
       explainer:
         eyebrow: "From song to paper"
         heading: "A quicker way to make a readable lyric sheet"
@@ -241,7 +258,6 @@ en:
         description_without_artist: "A clean, print-friendly lyric sheet."
       controls:
         label: "Print page controls"
-        back: "Back"
         add_to_songbook: "Add another song"
         print: "Print"
       page_count:
@@ -275,7 +291,7 @@ en:
           body: "Browser and printer margins vary. Open print preview before printing and confirm that the final lines remain on the first sheet."
         print_settings:
           heading: "Keep print settings predictable"
-          body: "Start at 100% scale and use the correct paper size, usually US Letter or A4. Turn off browser headers and footers, then adjust margins only if the final lines still spill onto a second page."
+          body: "For PrintLyrics, choose US Letter at 100% scale. Turn off browser headers and footers, then inspect every page before printing. Long songs can continue onto another page; readability matters more than forcing a one-page fit."
       faq:
         eyebrow: "Common problems"
         heading: "One-page lyric printing questions"
@@ -311,22 +327,22 @@ en:
       steps:
         first_sheet:
           heading: "Make the first song's sheet"
-          body: "Search for a song or paste your own lyrics, then generate the print page. Set the font size and column count to what you can read comfortably, because the same layout applies to every song in the set."
+          body: "Search for a song or paste your own lyrics, then choose Preview sheet. Open Format to choose a readable text size and one or two columns."
         add_songs:
           heading: "Add the next song from that page"
           body: "Choose Add another song on a generated sheet and enter the next song. Each song joins the end of the set, so the order you add them in is the order they print in."
         gather:
           heading: "Or gather the sheets you already made"
-          body: "A second sheet generated in the same tab brings an offer to collect the sheets that tab already has. Accepting it puts them into one set in the order they were made, without entering any lyrics again."
+          body: "A second sheet made during the same visit brings an offer to collect the sheets you already made. Accepting puts them into one set in the order they were created, without entering any lyrics again."
         order:
           heading: "Check the order before printing"
-          body: "The list at the top of the songbook numbers every song in printing order. Moving a song means removing it and adding it again, so the set stays a simple ordered list."
+          body: "Open the song outline in the songbook to see every song in printing order. On a wide screen the outline stays beside the pages. Moving a song means removing it and adding it again."
         remove:
           heading: "Remove what does not belong"
           body: "Use the remove button beside a song to drop it from the set. The songs that remain close the gap and keep their order, and the removed sheet still has a page of its own."
         print_all:
           heading: "Print the set as one job"
-          body: "Print sends the whole set in a single job, one sheet per song. Set scale to 100%, turn off browser headers and footers, and check the page count in the preview before printing or saving as a PDF."
+          body: "Print sends the whole set in one job. Each song starts on a new page; long songs continue onto additional pages. Use US Letter at 100% scale, turn off browser headers and footers, and check print preview before printing or choosing Save as PDF."
       faq:
         eyebrow: "Common questions"
         heading: "Songbook printing questions"
@@ -339,10 +355,10 @@ en:
             body: "Yes. Every song opens a sheet of its own, so two titles never share a page, and a song that runs past one sheet continues onto a plain page."
           add_later:
             heading: "Can I add a song to a songbook later?"
-            body: "Yes. Open the songbook and choose Add a song, or use Add another song on any generated sheet. The new song joins the end of the set, and your chosen layout applies to it too."
+            body: "Yes. Open the songbook and choose Add a song. The new song joins the end of the set. Format each song independently, or use the clearly marked whole-book controls to change one formatting setting across the set."
           word:
             heading: "Can I make a songbook in Word instead?"
-            body: "You can, but a document editor leaves you managing page breaks and spacing so that each song starts on its own sheet. A songbook here does that already: every song keeps its sheet, the layout you chose applies to all of them, and the set prints as one job."
+            body: "You can, but a document editor leaves you managing page breaks and spacing so that each song starts on its own sheet. PrintLyrics handles those page breaks, lets you format songs independently, and prints the set as one job."
           account:
             heading: "Do I need an account, and how long does the songbook last?"
             body: "No account is required. A songbook lives behind an unlisted link and stays available for 180 days after its last visit; opening the set renews every song in it."
@@ -364,7 +380,7 @@ en:
         label: "Songbook controls"
         add_song: "Add a song"
         print: "Print all"
-      layout_error: "That formatting didn't save. Try again."
+      layout_error: "The preview changed, but some formatting hasn't saved. Retry saving before leaving this page."
       dock:
         label: "Format the song you are reading"
         eyebrow: "Formatting"
@@ -377,7 +393,7 @@ en:
           one: "%{count} song"
           other: "%{count} songs"
         whole: "All songs"
-        whole_hint: "Apply a size or column count to every song."
+        whole_hint: "Change this dimension for every song. Other formatting stays as it is."
       tracks:
         format_summary:
           one: "%{size} · %{count} column"
@@ -460,3 +476,26 @@ en:
             query:
               blank: "Enter a song title or artist"
               too_long: "Keep your search under 200 characters"
+
+  redesign_preview:
+    new_sheet: "New sheet"
+    edit: "Edit lyrics"
+    edit_song: "Edit lyrics as a new sheet"
+    format: "Format"
+    format_sheet: "Format sheet"
+    close: "Close"
+    sheet_preview: "Lyric sheet preview"
+    book_preview: "Songbook preview"
+    measuring: "Measuring pages…"
+    zoom: "Preview zoom"
+    fit: "Fit width"
+    zoom_hint: "Zoom changes your view, not the printed text."
+    pdf_hint: "To save a PDF, choose Print, then Save as PDF in your browser."
+    print_format_hint: "Text size and columns change the printed sheet."
+    revision_hint: "Editing creates a new sheet. This link and any saved original stay unchanged."
+    book_revision_hint: "Editing creates a separate sheet. This songbook and its saved songs stay unchanged."
+    retry: "Retry saving"
+    mixed: "Mixed"
+    one_column: "1 column"
+    two_columns: "2 columns"
+    format_summary: "%{size} · %{columns}"

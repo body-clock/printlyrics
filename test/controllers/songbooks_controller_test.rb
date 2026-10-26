@@ -17,6 +17,21 @@ class SongbooksControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "m", 1 ], layout_of(@second)
   end
 
+  test "a one-dimension song patch preserves its other dimension and neighbouring songs" do
+    @songbook.entries.find_by!(lyric: @first).update!(columns: 2)
+
+    patch update_songbook_song_path(@songbook, @first.token), params: { size: "l" }, as: :json
+
+    assert_response :no_content
+    assert_equal [ "l", 2 ], layout_of(@first)
+    assert_equal [ "m", 1 ], layout_of(@second)
+
+    patch update_songbook_song_path(@songbook, @first.token), params: { columns: 1 }, as: :json
+
+    assert_response :no_content
+    assert_equal [ "l", 1 ], layout_of(@first)
+  end
+
   test "updating the songbook applies one layout to every song" do
     patch songbook_path(@songbook), params: { size: "l", columns: 1 }, as: :json
 

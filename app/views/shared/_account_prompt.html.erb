@@ -21,7 +21,7 @@
     <%= button_to t("shared.account_prompt.#{surface}.save"),
           saved_items_path,
           params: { item_type: item.class.name, token: item.token },
-          class: "button button-primary" %>
+          class: "button button-secondary" %>
     <%= button_to t("shared.account_prompt.dismiss"),
           account_prompt_path,
           method: :delete,

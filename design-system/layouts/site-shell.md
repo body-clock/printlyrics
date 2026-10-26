@@ -1,5 +1,5 @@
 ---
-sourcesHash: 59e980adb8fdb64de6979090118cf427dbf734ca2cdef020c3dc91c69ec2cd79
+sourcesHash: e665f7947e117d44d91b7daa5ede322d7961af5a46213fd684e6ea7de0f71b43
 id: site-shell
 description: >-
   Frame a normal page with a skip link, the global site header and footer, one
@@ -50,14 +50,15 @@ The page supplies:
 - `content_for :hide_site_chrome` only for immersive pages;
 - its own first heading and page content.
 
-`.landing-shell` is the entry and feedback width (`--layout-landing`) and owns
-the top padding. `.entry-panel` is the content block inside it. A guide or
-account page uses its own shell (`--layout-reading`).
+`.landing-shell` owns entry width (`--layout-landing`) and top padding, with
+`.entry-panel` inside it. Feedback and account forms use account-shell with a
+single form panel; guides use guide-shell and the readable measure.
 
 ## Composition
 
 - The header and footer are required for every page that does not hide chrome.
-  Do not render a second copy of their links inside the page.
+  Do not duplicate navigation menus inside the page; contextual prose links may
+  explain a related printing step.
 - `<main>` is the only main landmark. A page does not add another `<main>`.
 - The page's `h1` is the first heading inside the main content. The shell does
   not supply a visible title.

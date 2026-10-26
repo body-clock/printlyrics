@@ -35,5 +35,5 @@
   - Contract: [contract](components/segmented-control.md)
 
 - **Site header**
-  - Description: Provide the site's single global navigation surface with the brand, a current-page-aware tool link, and the account controls.
+  - Description: Provide the site's single quiet global navigation surface with a home-linked brand and one account navigation region.
   - Contract: [contract](components/site-header.md)

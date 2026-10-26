@@ -8,10 +8,6 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_select "title", "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
     assert_select "meta[name='description'][content*='Find lyrics by song or artist']", 1
     assert_select "meta[name='description'][content*='save as PDF']", 1
-    assert_select "h1", "Find, format, and print song lyrics"
-    assert_select "main", /no copying from another lyrics site/i
-    assert_select "main", /one or two columns/i
-    assert_select "main", /save as PDF/i
     assert_select "section[aria-labelledby='why-printlyrics']", 1
     assert_select "section[aria-labelledby='common-questions'] details", minimum: 3
     # A contextual in-body link, not just the footer navigation.
@@ -23,12 +19,6 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     assert_equal true, application.fetch("isAccessibleForFree")
     assert_includes application.fetch("featureList"), "Search for lyrics by song title or artist"
     assert_includes application.fetch("featureList"), "Print or save as PDF"
-
-    # Query-shaped copy: the tool qualifiers people type, and the use cases they
-    # describe. Each one is answered by a feature the page already offers.
-    assert_select "main", /Nothing to install/i
-    assert_select "section[aria-labelledby='common-questions'] summary", text: /maker or generator/i
-    assert_select "main", /carol or hymn sheets/i
   end
 
   test "homepage offers the songbook guide for multi-song printing" do
@@ -113,7 +103,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-search-navigation]", count: 0
-    assert_select "header.site-header .site-nav a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "header.site-header .site-brand[href='#{root_path}']", count: 1
     assert_select "footer.site-footer .site-footer-nav" do
       assert_select "a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
       assert_select "a[href='#{feedback_path}']", text: /send feedback/i
@@ -123,7 +113,7 @@ class PrintingGuidesTest < ActionDispatch::IntegrationTest
     get print_a_songbook_path
 
     assert_response :success
-    assert_select "header.site-header .site-nav a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "header.site-header .site-brand[href='#{root_path}']", count: 1
     assert_select "footer.site-footer .site-footer-nav" do
       assert_select "a[href='#{print_lyrics_on_one_page_path}']", text: /one-page printing guide/i
       assert_select "a[href='#{feedback_path}']", text: /send feedback/i

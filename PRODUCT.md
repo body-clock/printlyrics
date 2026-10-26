@@ -6,11 +6,11 @@ product
 
 ## Users
 
-People who need clean, legible song lyrics on paper: musicians rehearsing, teachers preparing handouts, and listeners making personal reference sheets. They arrive with either copied lyrics or a supported source URL and expect to reach a useful print preview in one short flow.
+People who need clean, legible song lyrics on paper: musicians rehearsing, teachers preparing handouts, and listeners making personal reference sheets. They arrive with a song title or copied lyrics and expect to reach a useful print preview in one short flow.
 
 ## Product Purpose
 
-PrintLyrics turns pasted or extracted song lyrics into a durable, shareable, print-optimized page. Success means the preview is trustworthy, the printed result is readable, and users can adjust type size and columns without learning a layout tool. A page can also be extended into a songbook: an ordered set of pages that prints as one job, which is what a rehearsal, a class period, or a service needs. Both flows are documented on a short public guide: the homepage and those two guides are the only crawlable surfaces, and saved sheets and songbooks stay unlisted behind their tokens.
+PrintLyrics turns found or pasted lyrics into shareable, print-optimized sheets. Find and Paste are two focused entry modes; review puts words before optional metadata. The document-led workspace offers measured pages, a responsive format inspector, and inspection zoom independent of printed type. A sheet can become an ordered songbook that prints as one job. The homepage and two practical printing guides are the only crawlable surfaces; generated sheets, revisions and books stay unlisted behind tokens.
 
 ## Accounts
 
@@ -26,6 +26,19 @@ A saved page is still an unlisted token URL rather than an authorization system.
 The account controls what appears in the library; it does not make a shared link
 private. Saved pages stop expiring while they are kept, and removing one returns
 it to the anonymous retention window.
+
+## Editing and recovery
+
+Editing a generated sheet creates an independent revision, never a writable shared
+link. The old sheet, any library membership and songbook entry remain unchanged.
+The editor explains this before Preview sheet creates the new output.
+
+Drafts recover within their browser tab across mode switches, search failures,
+navigation and reload, separately for each entry context. Closing the tab ends
+recovery; unavailable browser storage is stated rather than hidden. Songbook
+formatting persists per entry on the server. Whole-book controls change only their
+selected dimension and show mixed values honestly. Failed saves remain visible
+and retryable.
 
 ## Brand Personality
 

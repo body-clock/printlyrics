@@ -25,7 +25,6 @@ class FeedbacksController < ApplicationController
     # Validation runs before the challenge so a half-filled form does not spend
     # the single-use token and make the visitor solve it a second time.
     unless @feedback.valid?
-      flash.now[:alert] = @feedback.errors.full_messages.to_sentence
       return render :new, status: :unprocessable_content
     end
 
@@ -40,7 +39,6 @@ class FeedbacksController < ApplicationController
       record_in_analytics(@feedback)
       redirect_back_or_to root_path, allow_other_host: false, notice: t("feedbacks.created")
     else
-      flash.now[:alert] = @feedback.errors.full_messages.to_sentence
       render :new, status: :unprocessable_content
     end
   end

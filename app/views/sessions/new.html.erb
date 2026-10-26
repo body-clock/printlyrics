@@ -10,6 +10,7 @@
   </header>
 
   <%= render "shared/flash" %>
+  <%= render "shared/account_context" %>
 
   <div class="account-panel">
     <% if google_sign_in_available? %>
@@ -17,21 +18,26 @@
       <p class="account-divider"><%= t("accounts.divider") %></p>
     <% end %>
 
+    <% if @sign_in_failed %>
+      <p class="form-errors" id="sign-in-error" role="alert"><%= t("accounts.login.failure") %></p>
+    <% end %>
+
     <%= form_with url: session_path, class: "account-form" do |form| %>
       <div class="field">
         <%= form.label :email_address, t("accounts.email") %>
-        <%= form.email_field :email_address, required: true, autocomplete: "username", value: params[:email_address] %>
+        <%= form.email_field :email_address, required: true, autocomplete: "username", value: params[:email_address], aria: { invalid: @sign_in_failed ? "true" : nil, describedby: @sign_in_failed ? "sign-in-error" : nil } %>
       </div>
       <div class="field">
         <%= form.label :password, t("accounts.password") %>
-        <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72 %>
+        <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72, aria: { invalid: @sign_in_failed ? "true" : nil, describedby: @sign_in_failed ? "sign-in-error" : nil } %>
       </div>
-      <%= form.submit t("accounts.login.submit"), class: "button button-secondary" %>
+      <%= form.button t("accounts.login.submit"), class: "button #{google_sign_in_available? ? "button-secondary" : "button-primary"}" %>
     <% end %>
   </div>
 
   <div class="account-links">
     <p><%= link_to t("accounts.forgot_password"), new_password_path %></p>
     <p><%= link_to t("accounts.register_link"), new_registration_path %></p>
+    <%= button_to t("redesign_support.account.cancel"), session_path, method: :delete, params: { cancel: true }, class: "button-text account-cancel" %>
   </div>
 </div>

@@ -1,15 +1,7 @@
-<%# The site's one navigation surface. Print previews hide it because their own
-    control bar already owns the top of the page. The current page is left out
-    of the nav rather than linked to itself. %>
 <header class="site-header no-print">
   <div class="site-header-inner">
     <%= link_to t("application.name"), root_path, class: "site-brand" %>
 
-    <% unless current_page?(root_path) %>
-      <nav class="site-nav" aria-label="<%= t("shared.site_header.navigation_label") %>">
-        <%= link_to t("shared.site_header.tool"), root_path %>
-      </nav>
-    <% end %>
 
     <nav class="site-account" aria-label="<%= t("shared.site_header.account_label") %>">
       <% if authenticated? %>
@@ -25,9 +17,6 @@
       <% else %>
         <% unless current_page?(new_session_path) %>
           <%= link_to t("shared.site_header.sign_in"), new_session_path %>
-        <% end %>
-        <% unless current_page?(new_registration_path) %>
-          <%= link_to t("shared.site_header.register"), new_registration_path, class: "site-account-register" %>
         <% end %>
       <% end %>
     </nav>

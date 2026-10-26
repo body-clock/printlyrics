@@ -10,7 +10,8 @@ export default class extends Controller {
     "busyLabel",
     "resultButton",
     "resultIdle",
-    "resultBusy"
+    "resultBusy",
+    "transportError"
   ]
 
   connect() {
@@ -24,6 +25,7 @@ export default class extends Controller {
   }
 
   start(event) {
+    this.transportErrorTarget.hidden = true
     event.currentTarget.setAttribute("aria-busy", "true")
     this.idleLabelTarget.hidden = true
     this.busyLabelTarget.hidden = false
@@ -34,10 +36,15 @@ export default class extends Controller {
     event.currentTarget.setAttribute("aria-busy", "false")
     this.idleLabelTarget.hidden = false
     this.busyLabelTarget.hidden = true
+    if (!event.detail.fetchResponse) {
+      this.transportErrorTarget.hidden = false
+      if (this.hasPanelTarget) this.panelTarget.hidden = false
+    }
   }
 
   selecting(event) {
     const form = event.currentTarget
+    this.transportErrorTarget.hidden = true
     const button = form.querySelector('[data-lyric-search-target~="resultButton"]')
 
     this.selectionStartedAt = performance.now()
@@ -52,6 +59,7 @@ export default class extends Controller {
   selected(event) {
     if (event.detail.success) return
 
+    if (!event.detail.fetchResponse) this.transportErrorTarget.hidden = false
     this.resetResultState(event.currentTarget)
   }
 
@@ -80,20 +88,6 @@ export default class extends Controller {
     this.queryTarget.focus()
   }
 
-  // A search that found nothing is not the end of the task: the manual form is
-  // on this page and already carries the query. The panel's action points at the
-  // lyrics box, and the anchor scrolls there; focusing it means the words a
-  // visitor already has can go straight in.
-  continueManually(event) {
-    const field = document.getElementById(event.currentTarget.hash.slice(1))
-    field?.focus()
-  }
-
-  dismissFromOutside(event) {
-    if (!this.hasPanelTarget || this.panelTarget.hidden || this.element.contains(event.target)) return
-
-    this.hideResults()
-  }
 
   hideResults() {
     if (this.hasPanelTarget) this.panelTarget.hidden = true

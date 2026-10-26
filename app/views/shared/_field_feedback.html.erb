@@ -1,0 +1,3 @@
+<% if record.errors[attribute].any? %>
+  <p class="field-error" id="<%= "#{record.model_name.param_key}_#{attribute}_error" %>"><%= record.errors.full_messages_for(attribute).to_sentence %></p>
+<% end %>

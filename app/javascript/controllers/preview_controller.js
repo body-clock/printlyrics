@@ -7,7 +7,7 @@ const COLUMNS_KEY = "printlyrics-columns"
 const SIZES = ["s", "m", "l", "xl"]
 
 export default class extends Controller {
-  static targets = ["pageFrame", "pages", "pageSummary", "layoutStatus", "songFormatTitle", "songFormatGroup"]
+  static targets = ["pageFrame", "pages", "pageSummary", "layoutStatus", "saveFeedback", "retry", "songFormatTitle", "songFormatGroup", "revisionLink", "zoom"]
 
   connect() {
     this.settings = new SettingsStore()
@@ -17,8 +17,12 @@ export default class extends Controller {
       columns: this.settings.get(COLUMNS_KEY, "1") === "2" ? "2" : "1"
     }
     this.saveQueue = Promise.resolve()
+    this.pendingLayouts = new Map()
+    this.layoutVersion = 0
     this.activeSongToken = null
     this.scrollFrame = null
+    this.renderFrame = null
+    this.zoom = "fit"
 
     this.songs = this.songSources()
     // Read before the first render replaces the sources with the pages it
@@ -32,13 +36,17 @@ export default class extends Controller {
     window.addEventListener("resize", this.onScroll, { passive: true })
 
     this.refreshAllControls()
-    this.renderPages()
+    this.requestRenderPages()
+    this.resizeObserver = new ResizeObserver(() => this.fitPagePreview())
+    this.resizeObserver.observe(this.pageFrameTarget.parentElement)
   }
 
   disconnect() {
     window.removeEventListener("scroll", this.onScroll)
     window.removeEventListener("resize", this.onScroll)
     if (this.scrollFrame) window.cancelAnimationFrame(this.scrollFrame)
+    if (this.renderFrame) window.cancelAnimationFrame(this.renderFrame)
+    this.resizeObserver?.disconnect()
   }
 
   // The markup carries one source per song. A songbook source also carries the
@@ -76,26 +84,18 @@ export default class extends Controller {
     const value = event.currentTarget.dataset.previewValue
     const scope = control.dataset.previewLayoutScope
 
-    if (scope === "active") {
-      const activeSong = this.songFor(this.activeSongToken)
-      if (!activeSong) return
-
-      activeSong[kind] = value
-      this.refreshAllControls()
-      this.renderPages()
-      this.saveSongLayout(activeSong)
-    } else if (scope === "all") {
-      this.songs.forEach((entry) => { entry[kind] = value })
-      this.refreshAllControls()
-      this.renderPages()
-      this.saveAllLayouts(kind, value)
+    const affected = scope === "active" ? [this.songFor(this.activeSongToken)].filter(Boolean) : this.songs
+    affected.forEach((song) => { song[kind] = value })
+    if (scope) {
+      affected.forEach((song) => this.markLayoutPending(song, kind, value))
+      this.queueLayoutSave()
     } else {
       this.defaults[kind] = value
       this.settings.set(kind === "size" ? SIZE_KEY : COLUMNS_KEY, value)
-      this.songs.forEach((entry) => { entry[kind] = value })
-      this.refreshAllControls()
-      this.renderPages()
     }
+    this.refreshAllControls()
+    this.refreshRevisionLink()
+    this.requestRenderPages()
   }
 
   print() {
@@ -122,27 +122,41 @@ export default class extends Controller {
     return this.songs.find((song) => song.token === token)
   }
 
-  saveSongLayout(song) {
-    this.queueLayoutSave(song.layoutUrl, { size: song.size, columns: song.columns })
+  // Track unsaved dimensions, not just the last request. A later successful
+  // columns change must never conceal an earlier failed size change.
+  markLayoutPending(song, kind, value) {
+    const pending = this.pendingLayouts.get(song.token) || {}
+    pending[kind] = { value, version: ++this.layoutVersion }
+    this.pendingLayouts.set(song.token, pending)
   }
 
-  // A bulk control changes one dimension. Sending the other dimension too
-  // would flatten a set that deliberately mixes it (all one size, some two
-  // columns), so only the chosen dimension travels.
-  saveAllLayouts(kind, value) {
-    this.queueLayoutSave(this.element.dataset.songbookLayoutUrl, { [kind]: value })
+  retryLayouts() {
+    this.queueLayoutSave()
   }
 
-  // Saves run in the order the visitor made them, so a quick sequence of
-  // changes cannot land out of order. A failed save leaves the preview alone
-  // and says so rather than claiming a format it could not keep.
-  queueLayoutSave(url, layout) {
-    if (!url || !layout) return
+  queueLayoutSave() {
+    this.saveQueue = this.saveQueue.then(async () => {
+      if (this.hasRetryTarget) this.retryTarget.disabled = true
+      const snapshots = [...this.pendingLayouts].map(([token, dimensions]) => [token, { ...dimensions }])
+      for (const [token, dimensions] of snapshots) {
+        const song = this.songFor(token)
+        if (!song) continue
 
-    this.saveQueue = this.saveQueue
-      .then(() => this.persistLayout(url, layout))
-      .then(() => this.reportLayoutStatus(""))
-      .catch(() => this.reportLayoutStatus(this.element.dataset.layoutError || ""))
+        const layout = Object.fromEntries(Object.entries(dimensions).map(([kind, change]) => [kind, change.value]))
+        try {
+          await this.persistLayout(song.layoutUrl, layout)
+          const pending = this.pendingLayouts.get(token)
+          for (const [kind, change] of Object.entries(dimensions)) {
+            if (pending?.[kind]?.version === change.version) delete pending[kind]
+          }
+          if (pending && Object.keys(pending).length === 0) this.pendingLayouts.delete(token)
+        } catch {
+          // Keep every failed dimension for the next change or explicit retry.
+        }
+      }
+      this.reportLayoutStatus(this.pendingLayouts.size > 0 ? this.element.dataset.layoutError : "")
+      if (this.hasRetryTarget) this.retryTarget.disabled = false
+    })
   }
 
   async persistLayout(url, layout) {
@@ -162,20 +176,39 @@ export default class extends Controller {
   }
 
   reportLayoutStatus(message) {
-    if (this.hasLayoutStatusTarget) this.layoutStatusTarget.textContent = message
+    if (this.hasLayoutStatusTarget) this.layoutStatusTarget.textContent = message || ""
+    if (this.hasSaveFeedbackTarget) this.saveFeedbackTarget.hidden = !message
+  }
+
+  requestRenderPages() {
+    this.pagesTarget.setAttribute("aria-busy", "true")
+    this.pageSummaryTarget.textContent = this.pageSummaryTarget.dataset.measuringLabel
+    if (this.renderFrame) window.cancelAnimationFrame(this.renderFrame)
+    this.renderFrame = window.requestAnimationFrame(() => {
+      this.renderFrame = null
+      this.renderPages()
+    })
   }
 
   renderPages() {
+    const anchor = this.activeSongToken && document.getElementById(`song-${this.activeSongToken}`)
+    const anchorTop = anchor?.getBoundingClientRect().top
     this.pagesTarget.replaceChildren()
-
     this.songs.forEach((song) => this.renderSong(song))
 
     const count = this.pagesTarget.querySelectorAll(".paper").length
     this.pageSummaryTarget.textContent = count === 1 ?
       this.pageSummaryTarget.dataset.onePageLabel :
       this.pageSummaryTarget.dataset.manyPagesLabel.replace("%{count}", count)
+    this.pagesTarget.setAttribute("aria-busy", "false")
     this.fitPagePreview()
+    if (anchorTop !== undefined) {
+      const replacement = document.getElementById(`song-${this.activeSongToken}`)
+      if (replacement) window.scrollBy(0, replacement.getBoundingClientRect().top - anchorTop)
+    }
     this.updateActiveSong()
+    this.refreshRevisionLink()
+    this.refreshBinder()
   }
 
   // Every song opens a sheet in its own saved size and column count, so a set
@@ -288,9 +321,20 @@ export default class extends Controller {
     })
   }
 
-  // The dock follows the sheet under the fixed control bar rather than the
-  // scroll position of the track list above it. When the visitor is above the
-  // paper, the first song is the one they are about to read.
+  selectSong(event) {
+    const token = event.currentTarget.closest("[data-preview-binder-song]")?.dataset.previewBinderSong
+    const paper = token && document.getElementById(`song-${token}`)
+    if (!paper) return
+
+    event.preventDefault()
+    // Close a compact outline before measuring the page's scroll destination.
+    const outline = event.currentTarget.closest("details")
+    if (outline && !window.matchMedia("(min-width: 1440px)").matches) outline.open = false
+    paper.scrollIntoView({ block: "start", behavior: "instant" })
+    this.setActiveSong(token)
+  }
+
+  // Reading position follows the paper, never the outline's own scroll.
   updateActiveSong() {
     if (!this.hasSongFormatTitleTarget) return
 
@@ -304,12 +348,15 @@ export default class extends Controller {
       else break
     }
 
-    const token = current.dataset.previewSongToken
-    if (token === this.activeSongToken) return
+    this.setActiveSong(current.dataset.previewSongToken)
+  }
 
-    this.activeSongToken = token
+  setActiveSong(token) {
+    if (token === this.activeSongToken) return
     const song = this.songFor(token)
     if (!song) return
+
+    this.activeSongToken = token
 
     this.songFormatTitleTarget.textContent = song.title
     if (this.hasSongFormatGroupTarget) {
@@ -320,6 +367,7 @@ export default class extends Controller {
     }
     this.refreshActiveControls()
     this.refreshBinder()
+    this.refreshRevisionLink()
   }
 
   // The binder is an index, so the card for the song in view says so without
@@ -338,6 +386,12 @@ export default class extends Controller {
 
       const status = card.querySelector("[data-preview-binder-status]")
       if (status) status.hidden = !isCurrent
+      const song = this.songFor(card.dataset.previewBinderSong)
+      const format = card.querySelector("[data-preview-binder-format]")
+      if (song && format) {
+        const columns = song.columns === "2" ? format.dataset.twoColumnsLabel : format.dataset.oneColumnLabel
+        format.textContent = format.dataset.formatTemplate.replace("%{size}", song.size.toUpperCase()).replace("%{columns}", columns)
+      }
     })
   }
 
@@ -379,6 +433,8 @@ export default class extends Controller {
   }
 
   refreshControl(control, activeValue) {
+    const mixed = control.querySelector("[data-preview-mixed]")
+    if (mixed) mixed.hidden = activeValue !== null
     control.querySelectorAll("button[data-preview-value]").forEach((button) => {
       const isActive = button.dataset.previewValue === String(activeValue)
       button.classList.toggle("is-active", isActive)
@@ -386,19 +442,37 @@ export default class extends Controller {
     })
   }
 
+  refreshRevisionLink() {
+    if (!this.hasRevisionLinkTarget) return
+
+    const song = this.songFor(this.activeSongToken) || this.songs[0]
+    if (!song) return
+
+    const url = new URL(this.revisionLinkTarget.href)
+    if (song.token) url.searchParams.set("revision", song.token)
+    url.searchParams.set("size", song.size)
+    url.searchParams.set("columns", song.columns)
+    this.revisionLinkTarget.href = url.toString()
+  }
+
+  setZoom(event) {
+    this.zoom = event.currentTarget.value
+    this.fitPagePreview()
+    this.updateActiveSong()
+  }
+
   fitPagePreview() {
     if (window.matchMedia("print").matches) return
 
-    if (!window.matchMedia("(max-width: 700px)").matches) {
-      this.pagesTarget.style.removeProperty("--preview-scale")
-      this.pageFrameTarget.style.removeProperty("height")
-      return
-    }
-
     const page = this.pagesTarget.firstElementChild
     if (!page) return
-    const scale = Math.min(1, this.pageFrameTarget.clientWidth / page.offsetWidth)
+
+    const stage = this.pageFrameTarget.parentElement
+    const style = window.getComputedStyle(stage)
+    const available = stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+    const scale = this.zoom === "fit" ? Math.min(1, available / page.offsetWidth) : Number(this.zoom) / 100
     this.pagesTarget.style.setProperty("--preview-scale", scale)
+    this.pageFrameTarget.style.width = `${page.offsetWidth * scale}px`
     this.pageFrameTarget.style.height = `${this.pagesTarget.scrollHeight * scale}px`
   }
 

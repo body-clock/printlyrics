@@ -1,9 +1,9 @@
 ---
-sourcesHash: 5e5515ad089be3bf57706e94b9c0d9e78cfd342778d2c6d128a5967b54935a78
+sourcesHash: d9370eb8cf105a34159407b6a4a2d1b24d820eafd1ec89e16cbfd1d4a09d6954
 id: account-shell
 description: >-
-  Arrange a narrow account page with one heading, a single bordered panel for
-  one form, and the secondary account links below it.
+  Arrange a narrow account or feedback task with one heading, a single bordered
+  form panel, and secondary account links when relevant.
 status: discoverable
 sources:
   - app/assets/tailwind/application.css
@@ -13,6 +13,8 @@ sources:
   - app/views/passwords/edit.html.erb
   - app/views/shared/_google_sign_in.html.erb
   - app/views/shared/_form_errors.html.erb
+  - app/views/feedbacks/new.html.erb
+  - app/views/shared/_account_context.html.erb
 tests:
   - test/integration/accounts_flow_test.rb
 ---
@@ -22,13 +24,13 @@ tests:
 ## When to use
 
 - Sign in, registration, password reset request, and password change.
-- Any future single-form account task that fits the same reading width.
+- Feedback or another single-form task that fits the same reading width.
 
 ## When not to use
 
-- The library, which is a grid of saved things. It reuses `.account-shell` only
-  as a width base through `.library-shell` and uses the saved-library pattern.
-- The entry page or feedback form. Use the site shell's `.landing-shell`.
+- The library uses `.account-shell.library-shell` only as a width base and
+  composes the saved-library list rather than a form panel.
+- The entry page uses its dedicated workspace shell.
 - A settings page with several independent panels. The shell supports one
   panel; multiple panels need a layout decision.
 
@@ -61,11 +63,14 @@ tests:
 - `.account-panel` is bounded by `--measure-panel`, has a
   `--border-default` edge, `--radius-md`, `--elevation-surface`, and `--space-6`
   padding.
-- `.account-form` is a single-column grid; its submit is
-  `.button-secondary` except the Google action, which is the panel's one filled
-  button.
+- `.account-form` is a single-column grid. Its submit is secondary when a
+  configured Google action is the panel's primary route; without Google, email
+  is primary. Reset/feedback forms have one primary submit.
 - `.account-divider` separates the Google route from the email route.
 - `.account-links` holds the reset and alternate-flow links below the panel.
+- `.account-context` explains the pending item's save-and-return detour above
+  the panel. `.account-cancel` is a visible, minimum-44px action in the account
+  links region; it does not abandon the pending item silently.
 
 ## Composition
 
@@ -77,8 +82,8 @@ tests:
 - The heading, panel, and links share the same left edge. Do not centre the
   panel independently.
 - The form owns its fields and labels; the shell does not add field spacing.
-- Below `700px` the shell narrows, the heading display resolves to its 2rem
-  floor, and the panel padding drops to `--space-5`.
+- The shell stays a readable column at every width. Phone padding reduces
+  without reducing action height, 16px input text, or label/error readability.
 
 ## Accessibility
 

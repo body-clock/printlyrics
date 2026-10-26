@@ -5,7 +5,6 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
-    assert_select "h1", "Find, format, and print song lyrics"
     assert_select "title", "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
     assert_select "meta[name='application-name'][content='PrintLyrics']", 1
     assert_select "meta[name='description'][content*='Find lyrics by song or artist']"
@@ -36,7 +35,6 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "script[type='application/ld+json']", /WebApplication/
     assert_select "script[type='application/ld+json']", /UtilitiesApplication/
     assert_select "script[type='application/ld+json']", /\"price\":\"0\"/
-    assert_select ".intro p", /no copying from another lyrics site/i
     assert_select ".site-footer .app-version[aria-label='PrintLyrics version #{app_version}']", "v#{app_version}"
     assert_select "main", /No account/
     assert_select "script[data-website-id][data-auto-track='false']", count: 1
@@ -249,10 +247,17 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_select "textarea[name='lyric[lyrics]']", /Love, rising/
     assert_select "input[name='lyric[source_url]']", count: 0
-    # Retrying the same verified metadata can only fail again, so the form
-    # drops the token and offers manual entry instead.
-    assert_select "input[type='hidden'][name='catalog_token']", count: 0
-    assert_select "[role='alert']", /couldn't be saved/
+    # The rejected source must not make the next manual preview fail again.
+    assert_difference "Lyric.count", 1 do
+      assert_no_difference "Song.count" do
+        post lyrics_path, params: {
+          catalog_token: css_select("input[name='catalog_token']").first&.[]("value"),
+          lyric: { title: "Display title", artist: "Display artist", lyrics: "Love, rising" }
+        }
+      end
+    end
+    assert_redirected_to lyric_path(Lyric.last)
+    assert_nil Lyric.last.source_url
   end
 
   test "sourced submission does not round trip a source URL through the form" do
@@ -482,6 +487,44 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_equal "application/xml", response.media_type
     assert_not_includes response.body, lyric_url(lyric)
     assert_includes response.body, root_url
+  end
+
+  test "a revision creates a separate sheet without replacing saved or songbook membership" do
+    original = Lyric.create!(title: "Original", artist: "Singer", lyrics: "Original words")
+    book = Songbook.start_with(original)
+    book.entries.first.update!(size: "xl", columns: 2)
+    user = User.create!(email_address: "revision@example.test", password: "long-password")
+    saved = SavedItem.add(user: user, item: original)
+
+    get root_path(revision: original.token, songbook: book.token, size: "xl", columns: 2)
+    assert_response :success
+    assert_select "meta[name='robots'][content='noindex, nofollow']"
+    assert_select "textarea[name='lyric[lyrics]']", "Original words"
+
+    assert_difference "Lyric.count", 1 do
+      assert_no_difference [ "SavedItem.count", "SongbookEntry.count" ] do
+        post lyrics_path, params: {
+          revision: original.token, songbook: book.token,
+          lyric: { title: "Revised", artist: "Singer", lyrics: "Revised words" }
+        }
+      end
+    end
+    revision = Lyric.last
+    assert_redirected_to lyric_path(revision)
+    assert_equal "Original words", original.reload.lyrics
+    assert_equal original, saved.reload.item
+    assert_equal [ [ original.id, "xl", 2 ] ], book.entries.reload.map { |entry| [ entry.lyric_id, entry.size, entry.columns ] }
+    assert_not_equal original.token, revision.token
+  end
+
+  test "expired revisions cannot be copied" do
+    original = Lyric.create!(lyrics: "Expired words", expires_at: 1.minute.ago)
+    assert_no_difference "Lyric.count" do
+      get root_path(revision: original.token)
+      assert_redirected_to root_path
+      post lyrics_path, params: { revision: original.token, lyric: { lyrics: "New words" } }
+      assert_redirected_to root_path
+    end
   end
 
   private

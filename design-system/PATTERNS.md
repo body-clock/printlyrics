@@ -7,7 +7,7 @@
   - Contract: [contract](patterns/account-access.md)
 
 - **Lyric entry**
-  - Description: Let a visitor find a song by search or paste lyrics manually, then generate a print sheet, with search failure never removing the manual path.
+  - Description: Find or paste lyrics, review a recoverable draft, and create an independent print sheet or immutable revision without requiring an account.
   - Contract: [contract](patterns/lyric-entry.md)
 
 - **Print preview**

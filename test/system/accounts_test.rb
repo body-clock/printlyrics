@@ -3,7 +3,8 @@ require "application_system_test_case"
 class AccountsTest < ApplicationSystemTestCase
   test "a visitor creates an account, saves a sheet, opens the library, and removes it" do
     visit root_path
-    click_link "Create account"
+    click_link "Sign in"
+    click_link "Create a free account"
 
     fill_in "user_email_address", with: "browser@example.test"
     fill_in "user_password", with: "long-password"
@@ -11,16 +12,16 @@ class AccountsTest < ApplicationSystemTestCase
     click_button "Create account"
 
     assert_text "Account created"
-    assert_text "browser@example.test"
 
     within(".site-header") { click_link "Your library" }
     assert_text "Your library"
     assert_text "0 of 10 saved"
 
     visit root_path
+    click_button "Paste"
     fill_in "Song title", with: "Saved Song"
     fill_in "Lyrics", with: "A line kept for later"
-    click_button "Generate print page"
+    click_button "Preview sheet"
 
     assert_text "Saved Song"
     click_button "Save to your library"
@@ -33,7 +34,7 @@ class AccountsTest < ApplicationSystemTestCase
     assert_text "1 of 10 saved"
     assert_text "Saved Song"
 
-    click_button "Remove"
+    click_button "Remove from library"
     assert_text "0 of 10 saved"
     assert_text "Keep your first sheet"
   end

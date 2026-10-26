@@ -1,5 +1,5 @@
 ---
-sourcesHash: 5b91f2547063c2c5f40f734d03bef68059216d03b69397010e993a9dda49d366
+sourcesHash: c0fbd34ca0dd3ace5152bfd5f3de1e3a3f5df3fe4892de2d55f09717fc72f9cf
 id: paper-sheet
 description: >-
   Render one letter-size, print-first lyric sheet with a title, optional artist,
@@ -15,6 +15,7 @@ sources:
 tests:
   - test/system/organic_conversion_test.rb
   - test/system/songbook_layout_test.rb
+  - test/system/workspace_interaction_test.rb
   - test/models/sheet_mark_test.rb
 ---
 
@@ -60,7 +61,7 @@ tests:
   `--stanza-gap`. There is no other supported size.
 - `.is-unpaginated` lets the sheet grow past one page on screen until the
   preview controller measures and paginates it. The controller owns page
-  splitting and the `--preview-scale` used on phones.
+  splitting and the screen-only `--preview-scale` at every viewport width.
 - `.lyrics` is the stanza container. `.cols-2` selects two columns; the
   controller and print layout own the rest.
 - `.stanza` preserves whitespace and avoids breaking inside a stanza where the
@@ -85,6 +86,9 @@ tests:
 - Each songbook entry carries its own size and column count. A song's
   continuation pages keep that entry's format, and changing one entry never
   restyles another.
+- Fit width scales the screen sheet to its stage. Explicit zoom changes only
+  screen magnification, not physical dimensions or printed typography. Print
+  resets transform, frame height, workspace grid and stage overflow.
 
 ## Accessibility
 

@@ -30,7 +30,7 @@
     <%= button_to t("shared.songbook_prompt.action"),
           songbooks_path,
           params: { lyric_tokens: visit.sheets, size: "m", columns: 1 },
-          class: "button button-primary button-songbook",
+          class: "button button-secondary button-songbook",
           form: { data: { turbo_frame: "_top", controller: "layout-preference" } } %>
 
     <%# The answer settles the offer for the rest of the visit, and the visit is
@@ -38,7 +38,7 @@
     <%= button_to t("shared.songbook_prompt.dismiss"),
           songbook_offer_path,
           method: :delete,
-          class: "songbook-prompt-dismiss",
+          class: "button-text",
           form: { data: { turbo_frame: "_top", analytics_submit: "Songbook Offer Dismissed" } } %>
   </div>
 <% end %>

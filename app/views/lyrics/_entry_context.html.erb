@@ -1,0 +1,4 @@
+<%= hidden_field_tag :songbook, @songbook.token, id: nil if @songbook %>
+<%= hidden_field_tag :revision, @revision.token, id: nil if @revision %>
+<%= hidden_field_tag :size, @entry_size, id: nil if @entry_size %>
+<%= hidden_field_tag :columns, @entry_columns, id: nil if @entry_columns %>

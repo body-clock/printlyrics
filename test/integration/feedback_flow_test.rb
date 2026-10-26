@@ -82,7 +82,7 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
   test "the page is reachable from the site navigation, without linking to itself" do
     get feedback_path
 
-    assert_select "header.site-header a[href='#{root_path}']", text: /print song lyrics/i
+    assert_select "header.site-header .site-brand[href='#{root_path}']", count: 1
     assert_select "footer.site-footer a[href='#{print_a_songbook_path}']", text: /songbook printing guide/i
     assert_select "footer.site-footer a[href='#{feedback_path}']", count: 0
   end
@@ -158,7 +158,21 @@ class FeedbackFlowTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_content
-    assert_select ".flash-error", /Add a note or a song title/
+    assert_select ".form-errors[role=alert]"
+    assert_empty client.tokens
+  end
+
+  test "invalid reply email keeps feedback and associates the field error" do
+    client = verify_with(true) do
+      post feedback_path, params: {
+        feedback: { message: "Keep my note", contact_email: "not-an-email", surface: "feedback_page" }
+      }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "textarea[name='feedback[message]']", "Keep my note"
+    assert_select "#feedback_contact_email[value='not-an-email'][aria-invalid=true][aria-describedby='feedback_contact_email_hint feedback_contact_email_error']"
+    assert_select "#feedback_contact_email_error"
     assert_empty client.tokens
   end
 

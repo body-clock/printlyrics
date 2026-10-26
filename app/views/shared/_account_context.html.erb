@@ -1,0 +1,3 @@
+<% if item = pending_save_item %>
+  <p class="account-context"><%= t("redesign_support.account.context", title: item.is_a?(Songbook) ? saved_songbook_title(item) : lyric_title(item)) %></p>
+<% end %>

@@ -1,5 +1,5 @@
 ---
-sourcesHash: 4afeb3e04e2a67ba59d535eadc0556153f1dcd6df5ab1726bcff14480561a36a
+sourcesHash: cbc7458abd70c617d55404569eb03b7079de9f0055aa8ed3a90219f34828f917
 id: inline-offer
 description: >-
   Offer one optional next step beneath the page's main result, such as keeping a
@@ -47,14 +47,15 @@ Four partials with distinct anatomy and one shared visual role:
 <%= render "shared/feedback_prompt", page_key: @generated_page_key %>
 ```
 
-- **Account offer** (`.account-prompt`): title, body, a primary save action,
+- **Account offer** (`.account-prompt`): title, body, a secondary save action,
   and a `.button-text` dismiss. `surface` is required and is either `sheet` or
-  `entry`; it labels the analytics property and selects the copy.
+  `songbook`; it labels analytics and selects copy. Saving takes an optional
+  account detour and returns to the item.
 - **Library offer** (`.library-prompt`): a one-line signed-in save, a
   "already saved" line, or a "library is full" line. The save action is
   secondary. No dismiss is needed because the visitor already has an account.
 - **Songbook offer** (`.songbook-prompt`): one message with `role="status"`, a
-  primary "Make a songbook" action, and a compact dismiss button. It is
+  secondary "Make a songbook" action, and a quiet dismiss button. It is
   server-gated by `visit.offer_pending?`; `surface` is required.
 - **Feedback line** (`.feedback-prompt`): one line of copy and a link to the
   feedback page. It only renders when `page_key` is present.
@@ -67,9 +68,8 @@ the result (sheet width on the preview, full width on the entry panel).
 - An offer never auto-dismisses and never steals focus.
 - Dismiss sends a request; the visit stores the answer, so the offer disappears
   on the next server render for the rest of the visit.
-- The songbook offer's dismiss is a compact bordered control
-  (`.songbook-prompt-dismiss`) rather than a bare text action, because it sits
-  beside a primary action in a narrow strip.
+- All offer actions are secondary to the delivered task, especially Print.
+  Dismiss controls remain quiet but provide at least 44px touch targets.
 - A prompt is not interactive until its server condition is true. Do not hide
   or reveal it with client-side state.
 - On a phone the sheet-width prompts shrink to the viewport; the entry prompt is

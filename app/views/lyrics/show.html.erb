@@ -32,79 +32,80 @@
 <% end %>
 
 <div class="preview-shell"
-     data-controller="preview"
-     data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
+     data-controller="preview workspace"
+     data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview keydown@window->workspace#escape">
   <%= render "shared/flash" %>
 
-  <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
+  <nav class="control-bar workspace-actions no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
       <div class="control-start">
-        <%= link_to root_path, class: "back-link" do %>
+        <%= link_to root_path(revision: @lyric.token), class: "back-link", data: { preview_target: "revisionLink" } do %>
           <span aria-hidden="true">←</span>
-          <span><%= t(".controls.back") %></span>
-        <% end %>
-
-        <%= button_to songbooks_path,
-              params: { lyric_token: @lyric.token, then: "add_song", size: "m", columns: 1 },
-              class: "button button-secondary button-add-song",
-              form: { data: { controller: "layout-preference" } } do %>
-          <span aria-hidden="true">+</span>
-          <span><%= t(".controls.add_to_songbook") %></span>
+          <span><%= t("redesign_preview.edit") %></span>
         <% end %>
       </div>
-
       <div class="control-groups">
-        <%= render "shared/preview_controls" %>
-
+        <button type="button" class="button button-secondary workspace-format-trigger"
+                data-workspace-target="trigger" data-action="workspace#toggleInspector"
+                aria-controls="workspace-inspector" aria-expanded="false"><%= t("redesign_preview.format") %></button>
         <button type="button" class="button button-print" data-action="preview#print">
-          <span aria-hidden="true">↗</span>
           <span><%= t(".controls.print") %></span>
         </button>
       </div>
     </div>
   </nav>
 
-  <%# A sheet that was just generated is one of the two moments a visit can
-      become a set; the other is the entry panel it returns to. %>
-  <%= render "shared/songbook_prompt", surface: "sheet" if @generated_page_key %>
-
-  <p class="page-summary no-print"
-     data-preview-target="pageSummary"
-     data-one-page-label="<%= t(".page_count.one") %>"
-     data-many-pages-label="<%= t(".page_count.other") %>"
-     aria-live="polite"></p>
-
-  <%= render "shared/sheet_mark" %>
-
-  <div class="paper-frame" data-preview-target="pageFrame">
-    <div class="paper-pages" data-preview-target="pages">
-      <article class="paper size-m is-unpaginated" data-preview-target="page" data-preview-page data-preview-song>
-        <header class="lyric-header">
-          <h1><%= display_title %></h1>
-          <% if display_artist %>
-            <p><%= display_artist %></p>
-          <% end %>
-        </header>
-
-        <div class="lyrics">
-          <% @lyric.stanzas.each do |stanza| %>
-            <section class="stanza"><%= stanza %></section>
-          <% end %>
+  <div class="workspace-layout">
+    <section class="workspace-stage" aria-label="<%= t("redesign_preview.sheet_preview") %>">
+      <%= render "shared/preview_view_controls" %>
+      <%= render "shared/sheet_mark" %>
+      <div class="paper-frame" data-preview-target="pageFrame">
+        <div class="paper-pages" data-preview-target="pages" aria-busy="true">
+          <article class="paper size-m is-unpaginated" data-preview-target="page" data-preview-page data-preview-song>
+            <header class="lyric-header">
+              <h1><%= display_title %></h1>
+              <% if display_artist %>
+                <p><%= display_artist %></p>
+              <% end %>
+            </header>
+            <div class="lyrics">
+              <% @lyric.stanzas.each do |stanza| %>
+                <section class="stanza"><%= stanza %></section>
+              <% end %>
+            </div>
+          </article>
         </div>
-      </article>
-    </div>
+      </div>
+    </section>
+
+    <aside id="workspace-inspector" class="workspace-inspector no-print"
+           data-workspace-target="inspector" aria-labelledby="workspace-inspector-heading" hidden>
+      <div class="workspace-inspector-heading">
+        <h2 id="workspace-inspector-heading" tabindex="-1" data-workspace-target="heading"><%= t("redesign_preview.format_sheet") %></h2>
+        <button type="button" class="button button-secondary workspace-inspector-close"
+                data-action="workspace#closeInspector"><%= t("redesign_preview.close") %></button>
+      </div>
+      <p class="workspace-hint"><%= t("redesign_preview.print_format_hint") %></p>
+      <%= render "shared/preview_controls" %>
+      <p class="workspace-hint"><%= t("redesign_preview.revision_hint") %></p>
+    </aside>
   </div>
 
-  <%# A signed-in visitor sees the shelf action; a signed-out one is asked only
-      when this visit made the sheet. A shared page gets neither. %>
-  <% if authenticated? %>
-    <%= render "shared/library_prompt", item: @lyric %>
-  <% elsif @account_prompt %>
-    <%= render "shared/account_prompt", item: @lyric, surface: "sheet" %>
-  <% end %>
-
-  <%# Under the paper rather than over it: the lyrics come first, and the visitor
-      who has just read a bad page is the one with something to say. %>
-  <%= render "shared/feedback_prompt", page_key: @generated_page_key %>
-
+  <div class="workspace-secondary no-print">
+    <%= link_to t("redesign_preview.new_sheet"), root_path, class: "button-text" %>
+    <%= button_to songbooks_path,
+          params: { lyric_token: @lyric.token, then: "add_song", size: "m", columns: 1 },
+          class: "button button-secondary button-add-song",
+          form: { data: { controller: "layout-preference" } } do %>
+      <span aria-hidden="true">+</span>
+      <span><%= t(".controls.add_to_songbook") %></span>
+    <% end %>
+    <%= render "shared/songbook_prompt", surface: "sheet" if @generated_page_key %>
+    <% if authenticated? %>
+      <%= render "shared/library_prompt", item: @lyric %>
+    <% elsif @account_prompt %>
+      <%= render "shared/account_prompt", item: @lyric, surface: "sheet" %>
+    <% end %>
+    <%= render "shared/feedback_prompt", page_key: @generated_page_key %>
+  </div>
 </div>

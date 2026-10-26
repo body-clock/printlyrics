@@ -3,6 +3,23 @@ require "test_helper"
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   driven_by :selenium, using: :headless_chrome, screen_size: [ 1200, 900 ]
 
+  setup do
+    page.current_window.resize_to(1200, 900)
+  end
+
+  def fill_in_entry(label, with:)
+    click_button "Paste" unless has_selector?("#entry-panel-paste", visible: true)
+    fill_in label, with: with
+  end
+
+  def open_format
+    click_button "Format", exact: true if has_button?("Format", exact: true)
+  end
+
+  def open_outline
+    find(".workspace-outline summary").click unless page.evaluate_script("document.querySelector('.workspace-outline').open")
+  end
+
   # Turbo and the preview controller legitimately replace the document shortly
   # after a load. Chrome reports a node caught in that replacement as an
   # unclassified UnknownError instead of StaleElementReferenceError, so

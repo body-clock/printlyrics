@@ -7,7 +7,7 @@ const TOKEN_PATHS = /^\/(lyrics|songbooks)\/[^/]+\/?$/
 
 // A share token is the only way to reach someone's saved page, so no reported
 // location may carry a real one. Paths become the synthetic `:token` form, and
-// the songbook context on the entry form keeps its parameter without its value.
+// songbook and revision contexts keep their parameters without token values.
 // Every payload reports its location through here.
 export function analyticsUrl(href = window.location.href) {
   const url = new URL(href)
@@ -16,8 +16,10 @@ export function analyticsUrl(href = window.location.href) {
   if (tokenPath) {
     url.pathname = `/${tokenPath[1]}/:token`
     url.search = ""
-  } else if (url.searchParams.has("songbook")) {
-    url.searchParams.set("songbook", ":token")
+  } else {
+    for (const key of ["songbook", "revision"]) {
+      if (url.searchParams.has(key)) url.searchParams.set(key, ":token")
+    }
   }
 
   url.hash = ""

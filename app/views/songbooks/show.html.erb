@@ -19,145 +19,143 @@
 <% end %>
 
 <div class="preview-shell"
-     data-controller="preview"
+     data-controller="preview workspace"
      data-songbook-size="<%= @songbook.entries.size %>"
+     data-songbook-token="<%= @songbook.token %>"
      data-songbook-layout-url="<%= songbook_path(@songbook) %>"
      data-layout-error="<%= t(".layout_error") %>"
-     data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
+     data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview keydown@window->workspace#escape">
   <%= render "shared/flash" %>
 
-  <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
+  <nav class="control-bar workspace-actions no-print" aria-label="<%= t(".controls.label") %>">
     <div class="control-inner">
       <%= link_to root_path(songbook: @songbook.token), class: "back-link" do %>
         <span aria-hidden="true">+</span>
         <span><%= t(".controls.add_song") %></span>
       <% end %>
-
       <div class="control-groups">
-        <button type="button" class="button button-print" data-action="preview#print">
-          <span aria-hidden="true">↗</span>
-          <span><%= t(".controls.print") %></span>
-        </button>
+        <button type="button" class="button button-secondary workspace-format-trigger"
+                data-workspace-target="trigger" data-action="workspace#toggleInspector"
+                aria-controls="workspace-inspector" aria-expanded="false"><%= t("redesign_preview.format") %></button>
+        <button type="button" class="button button-print" data-action="preview#print"><%= t(".controls.print") %></button>
       </div>
     </div>
   </nav>
 
-  <p class="page-summary no-print"
-     data-preview-target="pageSummary"
-     data-one-page-label="<%= t(".page_count.one") %>"
-     data-many-pages-label="<%= t(".page_count.other") %>"
-     aria-live="polite"></p>
+  <div class="layout-save-feedback no-print" data-preview-target="saveFeedback" hidden>
+    <p class="layout-status" role="status" aria-live="polite" data-preview-target="layoutStatus"></p>
+    <button type="button" class="button button-secondary" data-preview-target="retry"
+            data-action="preview#retryLayouts"><%= t("redesign_preview.retry") %></button>
+  </div>
 
-  <p class="layout-status sr-only"
-     role="status"
-     aria-live="polite"
-     data-preview-target="layoutStatus"></p>
+  <div class="workspace-layout workspace-layout-songbook">
+    <details class="workspace-outline songbook-binder no-print" data-workspace-target="outline">
+      <summary id="songbook-heading"><%= t(".binder.heading") %> · <%= t(".binder.count", count: @songbook.entries.size) %></summary>
+      <nav aria-labelledby="songbook-heading">
+        <ol class="songbook-tracks">
+          <% @songbook.entries.each_with_index do |entry, index| %>
+            <% song_title = lyric_title(entry.lyric) %>
+            <li class="songbook-track" data-preview-binder-song="<%= entry.lyric.token %>">
+              <a class="songbook-track-link" href="#song-<%= entry.lyric.token %>"
+                 data-action="preview#selectSong workspace#navigateOutline">
+                <span class="songbook-track-number" aria-hidden="true"><%= index + 1 %></span>
+                <span class="songbook-track-copy">
+                  <span class="songbook-track-title"><%= song_title %></span>
+                  <span class="songbook-track-meta">
+                    <% if entry.lyric.artist.present? %>
+                      <span class="songbook-track-artist"><%= entry.lyric.artist %></span>
+                    <% end %>
+                    <span class="songbook-track-format" data-preview-binder-format
+                          data-format-template="<%= t("redesign_preview.format_summary") %>"
+                          data-one-column-label="<%= t("redesign_preview.one_column") %>"
+                          data-two-columns-label="<%= t("redesign_preview.two_columns") %>"><%= t(".tracks.format_summary", size: entry.size.upcase, count: entry.columns) %></span>
+                    <span class="songbook-track-current" data-preview-binder-status hidden><%= t(".tracks.reading") %></span>
+                  </span>
+                </span>
+              </a>
+              <%= button_to t(".tracks.remove"),
+                    songbook_song_path(@songbook, entry.lyric.token),
+                    method: :delete,
+                    class: "songbook-track-remove",
+                    aria: { label: t(".tracks.remove_label", title: song_title) } %>
+            </li>
+          <% end %>
+        </ol>
+      </nav>
+    </details>
 
-  <%= render "shared/sheet_mark" %>
-
-  <section class="songbook-binder no-print" aria-labelledby="songbook-heading">
-    <div class="songbook-binder-head">
-      <h2 id="songbook-heading"><%= t(".binder.heading") %></h2>
-      <p class="songbook-binder-count"><%= t(".binder.count", count: @songbook.entries.size) %></p>
-    </div>
-
-    <section class="songbook-format" id="songbook-format" aria-labelledby="songbook-format-heading">
-      <div class="songbook-format-copy">
-        <h3 id="songbook-format-heading"><%= t(".binder.whole") %></h3>
-        <p><%= t(".binder.whole_hint") %></p>
-      </div>
-      <div class="songbook-format-controls">
-        <%= render "shared/preview_controls",
-              size: first_entry&.size || "m",
-              columns: first_entry&.columns || 1,
-              scope: "all" %>
+    <section class="workspace-stage" aria-label="<%= t("redesign_preview.book_preview") %>">
+      <%= render "shared/preview_view_controls" %>
+      <%= render "shared/sheet_mark" %>
+      <div class="paper-frame" data-preview-target="pageFrame">
+        <div class="paper-pages" data-preview-target="pages" aria-busy="true">
+          <% @songbook.entries.each do |entry| %>
+            <article class="paper size-<%= entry.size %> is-unpaginated"
+                     id="song-<%= entry.lyric.token %>"
+                     data-preview-page data-preview-song
+                     data-preview-song-token="<%= entry.lyric.token %>"
+                     data-preview-size="<%= entry.size %>"
+                     data-preview-columns="<%= entry.columns %>"
+                     data-preview-layout-url="<%= update_songbook_song_path(@songbook, entry.lyric.token) %>">
+              <header class="lyric-header">
+                <h1><%= lyric_title(entry.lyric) %></h1>
+                <% if entry.lyric.artist.present? %>
+                  <p><%= entry.lyric.artist %></p>
+                <% end %>
+              </header>
+              <div class="lyrics">
+                <% entry.lyric.stanzas.each do |stanza| %>
+                  <section class="stanza"><%= stanza %></section>
+                <% end %>
+              </div>
+            </article>
+          <% end %>
+        </div>
       </div>
     </section>
 
-    <ol class="songbook-tracks">
-      <% @songbook.entries.each_with_index do |entry, index| %>
-        <% song_title = lyric_title(entry.lyric) %>
-        <li class="songbook-track" data-preview-binder-song="<%= entry.lyric.token %>">
-          <a class="songbook-track-link" href="#song-<%= entry.lyric.token %>">
-            <span class="songbook-track-number" aria-hidden="true"><%= index + 1 %></span>
-            <span class="songbook-track-copy">
-              <span class="songbook-track-title"><%= song_title %></span>
-              <span class="songbook-track-meta">
-                <% if entry.lyric.artist.present? %>
-                  <span class="songbook-track-artist"><%= entry.lyric.artist %></span>
-                <% end %>
-                <span class="songbook-track-format"><%= t(".tracks.format_summary", size: entry.size.upcase, count: entry.columns) %></span>
-                <span class="songbook-track-current" data-preview-binder-status hidden><%= t(".tracks.reading") %></span>
-              </span>
-            </span>
-          </a>
-          <%= button_to t(".tracks.remove"),
-                songbook_song_path(@songbook, entry.lyric.token),
-                method: :delete,
-                class: "songbook-track-remove",
-                aria: { label: t(".tracks.remove_label", title: song_title) } %>
-        </li>
-      <% end %>
-    </ol>
-  </section>
-
-  <div class="paper-frame" data-preview-target="pageFrame">
-    <div class="paper-pages" data-preview-target="pages">
-      <% @songbook.entries.each do |entry| %>
-        <article class="paper size-<%= entry.size %> is-unpaginated"
-                 id="song-<%= entry.lyric.token %>"
-                 data-preview-page
-                 data-preview-song
-                 data-preview-song-token="<%= entry.lyric.token %>"
-                 data-preview-size="<%= entry.size %>"
-                 data-preview-columns="<%= entry.columns %>"
-                 data-preview-layout-url="<%= update_songbook_song_path(@songbook, entry.lyric.token) %>">
-          <header class="lyric-header">
-            <h1><%= lyric_title(entry.lyric) %></h1>
-            <% if entry.lyric.artist.present? %>
-              <p><%= entry.lyric.artist %></p>
-            <% end %>
-          </header>
-
-          <div class="lyrics">
-            <% entry.lyric.stanzas.each do |stanza| %>
-              <section class="stanza"><%= stanza %></section>
-            <% end %>
+    <aside id="workspace-inspector" class="workspace-inspector no-print"
+           data-workspace-target="inspector" aria-labelledby="workspace-inspector-heading" hidden>
+      <div class="workspace-inspector-heading">
+        <h2 id="workspace-inspector-heading" tabindex="-1" data-workspace-target="heading"><%= t("redesign_preview.format") %></h2>
+        <button type="button" class="button button-secondary workspace-inspector-close"
+                data-action="workspace#closeInspector"><%= t("redesign_preview.close") %></button>
+      </div>
+      <% if first_entry %>
+        <section class="song-format-dock" aria-label="<%= t(".dock.label") %>">
+          <h3 class="song-format-dock-title">
+            <span class="song-format-dock-eyebrow"><%= t(".dock.eyebrow") %></span>
+            <span data-preview-target="songFormatTitle"><%= lyric_title(first_entry.lyric) %></span>
+          </h3>
+          <div class="song-format-dock-controls" role="group"
+               aria-label="<%= t(".dock.format", title: lyric_title(first_entry.lyric)) %>"
+               data-preview-target="songFormatGroup"
+               data-preview-label-template="<%= t(".dock.format", title: "%{title}") %>">
+            <%= render "shared/preview_controls", size: first_entry.size, columns: first_entry.columns, scope: "active" %>
           </div>
-        </article>
+          <%= link_to t("redesign_preview.edit_song"),
+                root_path(revision: first_entry.lyric.token, songbook: @songbook.token, size: first_entry.size, columns: first_entry.columns),
+                class: "workspace-revision-link", data: { preview_target: "revisionLink" } %>
+          <p class="workspace-hint"><%= t("redesign_preview.book_revision_hint") %></p>
+          <a class="song-format-dock-all" href="#songbook-format"><%= t(".dock.all_songs") %></a>
+        </section>
       <% end %>
-    </div>
+
+      <section class="songbook-format" id="songbook-format" aria-labelledby="songbook-format-heading">
+        <h3 id="songbook-format-heading"><%= t(".binder.whole") %></h3>
+        <p class="workspace-hint"><%= t(".binder.whole_hint") %></p>
+        <div class="songbook-format-controls">
+          <%= render "shared/preview_controls", size: first_entry&.size || "m", columns: first_entry&.columns || 1, scope: "all" %>
+        </div>
+      </section>
+    </aside>
   </div>
 
-  <%# Formatting belongs with the sheet being read. The binder is an index and
-      the dock follows the current song, so neither one has to be found again
-      after scrolling. %>
-  <% if first_entry %>
-    <aside class="song-format-dock no-print" aria-label="<%= t(".dock.label") %>">
-      <div class="song-format-dock-heading">
-        <p class="song-format-dock-title">
-          <span class="song-format-dock-eyebrow"><%= t(".dock.eyebrow") %></span>
-          <span data-preview-target="songFormatTitle"><%= lyric_title(first_entry.lyric) %></span>
-        </p>
-        <a class="song-format-dock-all" href="#songbook-format"
-           aria-label="<%= t(".dock.all_songs_label") %>"><%= t(".dock.all_songs") %></a>
-      </div>
-      <div class="song-format-dock-controls"
-           role="group"
-           aria-label="<%= t(".dock.format", title: lyric_title(first_entry.lyric)) %>"
-           data-preview-target="songFormatGroup"
-           data-preview-label-template="<%= t(".dock.format", title: "%{title}") %>">
-        <%= render "shared/preview_controls",
-              size: first_entry.size,
-              columns: first_entry.columns,
-              scope: "active" %>
-      </div>
-    </aside>
-  <% end %>
-
-  <% if authenticated? %>
-    <%= render "shared/library_prompt", item: @songbook %>
-  <% elsif @account_prompt %>
-    <%= render "shared/account_prompt", item: @songbook, surface: "songbook" %>
-  <% end %>
+  <div class="workspace-secondary no-print">
+    <% if authenticated? %>
+      <%= render "shared/library_prompt", item: @songbook %>
+    <% elsif @account_prompt %>
+      <%= render "shared/account_prompt", item: @songbook, surface: "songbook" %>
+    <% end %>
+  </div>
 </div>

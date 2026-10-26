@@ -39,11 +39,29 @@ LRCLIB is unavailable. A rate limit or overload answer ends the search ladder at
 once rather than spending the visitor's remaining wait on attempts the source
 would refuse.
 
+Find and Paste preserve their inputs while switching. Review puts the words first;
+**Preview sheet** persists a new output. Drafts recover across navigation/reload
+inside the current tab, separately for new sheets, revisions and book additions.
+Closing the tab ends recovery. If storage is unavailable, editing still works and
+the recovery limitation is visible.
+
+**Edit lyrics** creates an independent revision: the original link, library item
+and songbook entry never change. Save the new sheet separately if it should join
+the library. The workspace's Fit/zoom controls affect inspection only; Format
+changes printed size/columns. **Print** opens the browser dialog, including its
+Save as PDF option.
+
 ## Songbooks
 
 A generated page can be extended into a songbook: an ordered, token-addressed set
 of lyric sheets that prints as one job. A songbook keeps the generated-page
 contract — unlisted link, no account, and excluded from indexing.
+
+The song outline navigates to each song's first page. Format names the current
+song and separates its settings from whole-book controls. Mixed values are
+explicit; changing all text sizes preserves deliberately different column counts.
+Layout changes persist per entry; visible save failures offer Retry saving and
+retain every unsaved dimension until confirmed.
 
 ## Accounts
 

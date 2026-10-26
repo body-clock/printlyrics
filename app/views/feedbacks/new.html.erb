@@ -1,22 +1,19 @@
-<%
-  # A place to say what the counts cannot: the feedback page is a plain form, is
-  # not a crawlable surface, and is linked from the shared resource navigation.
-%>
 <% content_for :title, t(".seo.title") %>
 <% content_for :description, t(".seo.description") %>
 <% content_for :canonical_url, feedback_url %>
 <% content_for :robots, "noindex, nofollow" %>
 
-<div class="landing-shell">
-  <section class="entry-panel" aria-labelledby="page-heading">
-    <div class="intro">
-      <h1 id="page-heading"><%= t(".heading") %></h1>
-      <p><%= t(".intro") %></p>
-    </div>
+<div class="account-shell feedback-shell">
+  <header class="account-heading">
+    <h1 id="page-heading"><%= t(".heading") %></h1>
+    <p><%= t(".intro") %></p>
+  </header>
 
-    <%= render "shared/flash" %>
+  <%= render "shared/flash" %>
 
-    <%= form_with model: @feedback, url: feedback_path, method: :post, data: { turbo: false }, class: "feedback-form" do |form| %>
+  <section class="account-panel" aria-labelledby="page-heading">
+    <%= render "shared/form_errors", errors: @feedback.errors, id: "feedback_form_errors" %>
+    <%= form_with model: @feedback, url: feedback_path, method: :post, data: { turbo: false }, aria: { describedby: @feedback.errors.any? ? "feedback_form_errors" : nil }, class: "feedback-form" do |form| %>
       <div class="field">
         <div class="field-label-row">
           <%= form.label :reason, t(".reason") %>
@@ -27,7 +24,9 @@
 
       <div class="field">
         <%= form.label :message, t(".message") %>
-        <%= form.text_area :message, rows: 6, maxlength: Feedback::MAX_MESSAGE_LENGTH %>
+        <%= form.text_area :message, rows: 6, maxlength: Feedback::MAX_MESSAGE_LENGTH, **field_feedback_attributes(@feedback, :message, hint: "feedback_message_hint") %>
+        <p class="field-hint" id="feedback_message_hint"><%= t("redesign_support.feedback.message_hint") %></p>
+        <%= render "shared/field_feedback", record: @feedback, attribute: :message %>
       </div>
 
       <div class="field">
@@ -35,15 +34,15 @@
           <%= form.label :query, t(".query") %>
           <span><%= t(".optional") %></span>
         </div>
-        <%= form.text_field :query, maxlength: Feedback::MAX_QUERY_LENGTH, autocomplete: "off" %>
+        <%= form.text_field :query, maxlength: Feedback::MAX_QUERY_LENGTH, autocomplete: "off", **field_feedback_attributes(@feedback, :query) %>
+        <%= render "shared/field_feedback", record: @feedback, attribute: :query %>
       </div>
 
       <div class="field">
-        <div class="field-label-row">
-          <%= form.label :contact_email, t(".contact_email") %>
-          <span><%= t(".contact_email_note") %></span>
-        </div>
-        <%= form.email_field :contact_email, maxlength: 200, autocomplete: "email" %>
+        <%= form.label :contact_email, t(".contact_email") %>
+        <p class="field-hint" id="feedback_contact_email_hint"><%= t(".contact_email_note") %></p>
+        <%= form.email_field :contact_email, maxlength: 200, autocomplete: "email", **field_feedback_attributes(@feedback, :contact_email, hint: "feedback_contact_email_hint") %>
+        <%= render "shared/field_feedback", record: @feedback, attribute: :contact_email %>
       </div>
 
       <%= form.hidden_field :surface %>

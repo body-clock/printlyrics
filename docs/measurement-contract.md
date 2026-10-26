@@ -175,8 +175,9 @@ No tracker payload carries lyrics, song titles, artists, albums, source IDs,
 share tokens, or the query a visitor searched with. Reported locations, titles,
 and referrers pass through `analyticsUrl`, `analyticsTitle`, and
 `analyticsReferrer` in `app/javascript/lib/analytics.js`, which replace a saved
-page's path and title with their synthetic forms and leave external referrers
-alone.
+page's path and title with their synthetic forms. Entry-page `songbook` and
+`revision` query values are both redacted to `:token`, including same-origin
+referrers. External referrers remain unchanged.
 
 One payload is the deliberate exception, and it is the only one sent from the
 server: a stored feedback submission. `Feedback Submitted` carries the song the

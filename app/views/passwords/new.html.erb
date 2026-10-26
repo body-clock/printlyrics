@@ -10,6 +10,7 @@
   </header>
 
   <%= render "shared/flash" %>
+  <%= render "shared/account_context" %>
 
   <div class="account-panel">
     <%= form_with url: passwords_path, class: "account-form" do |form| %>
@@ -17,11 +18,12 @@
         <%= form.label :email_address, t("accounts.email") %>
         <%= form.email_field :email_address, required: true, autocomplete: "email", value: params[:email_address] %>
       </div>
-      <%= form.submit t("accounts.password_reset.email_submit"), class: "button button-secondary" %>
+      <%= form.button t("accounts.password_reset.email_submit"), class: "button button-primary" %>
     <% end %>
   </div>
 
   <div class="account-links">
     <p><%= link_to t("accounts.login_link_short"), new_session_path %></p>
+    <%= button_to t("redesign_support.account.cancel"), session_path, method: :delete, params: { cancel: true }, class: "button-text account-cancel" %>
   </div>
 </div>

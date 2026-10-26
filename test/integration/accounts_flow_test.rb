@@ -5,9 +5,8 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
-    assert_select "h1", "Find, format, and print song lyrics"
     assert_select ".site-header a[href='#{new_session_path}']"
-    assert_select ".site-header a[href='#{new_registration_path}']"
+    assert_select ".site-header a[href='#{new_registration_path}']", count: 0
   end
 
   test "registration creates an account, starts a session, and opens the library" do
@@ -35,8 +34,6 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Your library"
     assert_select ".library-count", "0 of 10 saved"
-    assert_select ".library-meter span", count: 10
-    assert_select ".library-meter span.is-filled", count: 0
     assert_select ".site-account-email", user.email_address
     assert_select "[data-analytics-page-response='Account Library Opened']", 1
   end
@@ -55,6 +52,8 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_select ".form-errors", /too short/i
     assert_select "input[name='user[email_address]'][value='short@example.test']"
+    assert_select "#user_password[aria-invalid='true'][aria-describedby='user_password_hint user_password_error']"
+    assert_select "#user_password_error"
   end
 
   test "email sign-in ignores case and spaces, and a wrong password does not sign in" do
@@ -77,9 +76,9 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
 
     post session_path, params: { email_address: user.email_address, password: "wrong-password" }
-    assert_redirected_to new_session_path
-    follow_redirect!
-    assert_select "[role=alert]", /didn't match/
+    assert_response :unprocessable_content
+    assert_select "[role=alert]#sign-in-error"
+    assert_select "input[name=email_address][value='#{user.email_address}'][aria-describedby='sign-in-error']"
   end
 
   test "a reset link sets a new password and invalidates the old sessions" do
@@ -137,10 +136,11 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     get library_path
     assert_response :success
     assert_select ".library-count", "1 of 10 saved"
-    assert_select ".library-meter span.is-filled", count: 1
     assert_select ".library-card .library-kind", "Lyric sheet"
     assert_select ".library-card h2 a[href='#{lyric_path(lyric)}']", /Saved Song/
 
+    assert_select ".library-remove-form button[aria-describedby='library-removal-note']"
+    assert_select "#library-removal-note"
     saved_item = user.saved_items.sole
     delete saved_item_path(saved_item)
 
@@ -189,6 +189,7 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     assert_not_nil eleventh.reload.expires_at
     follow_redirect!
     assert_select "[role=alert]", /used all 10 spots/
+    assert_select ".library-full"
   end
 
   test "saving while signed out finishes after registration and returns to the page" do
@@ -214,6 +215,66 @@ class AccountsFlowTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_select "[role=status]", /Saved\. You can open it here any time/
     assert_select ".library-prompt", /Saved in/
+  end
+
+  test "pending save survives failed registration and sign-in with an explicit return" do
+    user = create_user
+    lyric = Lyric.create!(lyrics: "Keep these words", title: "Current task")
+    post saved_items_path, params: { item_type: "Lyric", token: lyric.token }
+
+    get new_registration_path
+    assert_select ".account-context", /Current task/
+    assert_select ".account-cancel"
+
+    assert_no_difference("User.count") do
+      post registrations_path, params: {
+        user: { email_address: "new@example.test", password: "short", password_confirmation: "short" }
+      }
+    end
+    assert_response :unprocessable_content
+    assert_equal lyric.token, session[:pending_save]["token"]
+    assert_select ".account-context", /Current task/
+    assert_select "#user_password[aria-invalid=true]"
+
+    post session_path, params: { email_address: user.email_address, password: "incorrect" }
+    assert_response :unprocessable_content
+    assert_equal lyric.token, session[:pending_save]["token"]
+    assert_select "input[name=email_address][value='#{user.email_address}']"
+    assert_select ".account-context", /Current task/
+
+    post session_path, params: { email_address: user.email_address, password: "long-password" }
+    assert_redirected_to lyric_path(lyric)
+    assert user.saved?(lyric)
+    assert_nil session[:pending_save]
+  end
+
+  test "cancel returns to a pending songbook without saving it or retaining the save intent" do
+    book = Songbook.start_with(Lyric.create!(lyrics: "A line", title: "Unchanged book"))
+    post saved_items_path, params: { item_type: "Songbook", token: book.token }
+    get new_password_path
+    assert_select ".account-context", /Unchanged book/
+
+    delete session_path, params: { cancel: true }
+    assert_redirected_to songbook_path(book)
+    assert_nil session[:pending_save]
+    assert_nil session[:return_to_after_authenticating]
+    assert_equal 0, SavedItem.count
+
+    user = create_user
+    sign_in(user)
+    assert_not user.saved?(book)
+  end
+
+  test "cancel from password recovery does not sign out an existing account" do
+    user = create_user
+    sign_in(user)
+    get new_password_path
+    delete session_path, params: { cancel: true }
+
+    assert_redirected_to root_path
+    get library_path
+    assert_response :success
+    assert_equal 1, user.sessions.count
   end
 
   test "an expired page cannot be saved and an unknown item type is refused" do

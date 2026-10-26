@@ -109,6 +109,25 @@ module ApplicationHelper
     t("accounts.password_hint", count: User::PASSWORD_MINIMUM_LENGTH)
   end
 
+  def pending_save_item
+    return @pending_save_item if defined?(@pending_save_item)
+
+    pending = session[PendingSave::SESSION_KEY]
+    @pending_save_item = if pending.is_a?(Hash)
+      SavedItem.item_class(pending["item_type"])&.active&.find_by(token: pending["token"])
+    end
+  end
+
+  def field_feedback_attributes(record, attribute, hint: nil)
+    error_id = "#{record.model_name.param_key}_#{attribute}_error" if record.errors[attribute].any?
+    {
+      aria: {
+        invalid: record.errors[attribute].any? ? "true" : nil,
+        describedby: [ hint, error_id ].compact.join(" ").presence
+      }
+    }
+  end
+
   # A songbook has no title of its own. The library names it by its first song,
   # which is what the owner recognizes, and says how many sheets sit behind it.
   def saved_songbook_title(songbook)

@@ -1,5 +1,5 @@
 ---
-sourcesHash: 719cc781a5d0bad3dfd9ec6d051675c046e283c83d112e67cae084255030007f
+sourcesHash: 4f32e09f5836accd1b2a5ee50093140bc42249433f34f6d0d01f245ac71a8678
 id: field
 description: >-
   Pair one label with one text, email, password, search, select, or textarea
@@ -13,6 +13,8 @@ sources:
   - app/views/passwords/new.html.erb
   - app/views/passwords/edit.html.erb
   - app/views/feedbacks/new.html.erb
+  - app/helpers/application_helper.rb
+  - app/views/shared/_field_feedback.html.erb
 tests:
   - test/integration/accounts_flow_test.rb
   - test/integration/feedback_flow_test.rb
@@ -38,8 +40,8 @@ tests:
   definition list.
 - For a group of mutually exclusive display options that change a preview. Use
   [Segmented control](segmented-control.md).
-- For validation messages. Use [Form errors](form-errors.md) and keep the field
-  labels intact.
+- For a whole-form error summary alone. Use [Form errors](form-errors.md)
+  alongside associated field feedback, not instead of a label.
 
 ## Public API
 
@@ -61,7 +63,7 @@ tests:
 - The wrapper `.field` owns a `--space-2` vertical gap and the full width.
 - `.field input`, `.field select`, and `.field textarea` share a
   `--border-control` edge, `--radius-sm`, `--elevation-surface` fill, and
-  `--control-lg` height for single-line controls.
+  `--control-lg` height for single-line controls and 16px input text.
 - A textarea keeps the serif family and `--leading-body`; its minimum height is
   component-owned (the lyrics box is tall, the feedback note is shorter).
 - Placeholder text uses `--content-placeholder`; it never replaces a label.
@@ -69,15 +71,21 @@ tests:
   Hover uses `--border-control-hover`.
 - The consumer supplies the input type, name, value, autocomplete, and
   required/maxlength constraints from the form's domain rules.
+- For record-backed validation, pass `field_feedback_attributes(record,
+  attribute, hint: optional_hint_id)` to the control and render
+  `shared/field_feedback` with the same record and attribute. The helper owns
+  `aria-invalid` and associated error IDs; hint IDs join `aria-describedby`.
+- `.field-hint` is secondary advisory text; `.field-error` is an associated,
+  textual error. Neither relies on colour alone.
 
 ## Behaviour and states
 
 - Empty, filled, hover, focus, disabled, and read-only are native states.
 - The placeholder disappears when the field is filled; no floating label is
   used.
-- The field does not render its own error text. A failed form renders the
-  page-level error summary and the field returns with its submitted value where
-  the controller does so.
+- A failed form retains submitted values, exposes `aria-invalid` on rejected
+  controls, and associates `.field-error` through `aria-describedby`.
+  A page-level summary may announce the complete error set.
 - There is no inline success state.
 
 ## Accessibility
@@ -89,5 +97,6 @@ tests:
   when a native `required` attribute can express it.
 - The control edge meets 3:1 against the surrounding surface through
   `--border-control`; do not restyle a field with `--border-default`.
-- Errors are announced by [Form errors](form-errors.md); the consumer must keep
-  the summary near the form and must not clear a field to hide an error.
+- Errors are announced by [Form errors](form-errors.md) and associated with the
+  affected control. Keep the summary near the form; never clear a field to hide
+  an error. A hint cannot replace an error or a label.
