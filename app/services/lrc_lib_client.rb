@@ -30,11 +30,20 @@ class LrcLibClient
   # the visitor gets the fallback instead of a spinner.
   RETRY_BUDGET_SECONDS = 8.0
 
+  # LRCLIB is a shared community source, and a song site's traffic repeats: the
+  # same title, the same miss, the same song picked again. An answer it already
+  # gave is kept for the next visitor, so a repeat costs the source nothing and
+  # a cached song still works while the source is unavailable. An empty answer
+  # is kept only long enough to absorb a retry, never to hide a new record.
+  CACHE_TTL = 1.hour
+  EMPTY_CACHE_TTL = 5.minutes
+
   DEFAULT_CLOCK = -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) }
 
-  def initialize(connection: nil, sleeper: nil, clock: nil)
+  def initialize(connection: nil, sleeper: nil, clock: nil, cache: nil)
     @sleeper = sleeper || ->(seconds) { sleep(seconds) }
     @clock = clock || DEFAULT_CLOCK
+    @cache = cache || Rails.cache
     @connection = connection || Faraday.new(
       url: "https://lrclib.net",
       headers: {
@@ -55,28 +64,57 @@ class LrcLibClient
   # request to the time the caller has left, so a hung source cannot outlast the
   # ladder's own budget.
   def search(query, retries: true, timeout: nil)
-    build_results(request_json("/api/search", { q: query }, retries: retries, timeout: timeout))
+    params = { q: query }
+    cached_results(params) do
+      build_results(request_json("/api/search", params, retries: retries, timeout: timeout))
+    end
   end
 
   # LRCLIB matches a separated title and artist more precisely than one keyword
   # string, so a query the visitor already split is asked this way.
   def search_by_fields(track_name:, artist_name:, retries: true, timeout: nil)
-    build_results(
-      request_json("/api/search", { track_name: track_name, artist_name: artist_name }, retries: retries, timeout: timeout)
-    )
+    params = { track_name: track_name, artist_name: artist_name }
+    cached_results(params) do
+      build_results(request_json("/api/search", params, retries: retries, timeout: timeout))
+    end
   end
 
   def find(id)
     id = Integer(id, exception: false)
     raise NotFoundError unless id&.positive?
 
-    result = build_result(request_json("/api/get/#{id}", not_found: true))
-    raise NotFoundError unless result&.printable?
+    cached_result(id) do
+      result = build_result(request_json("/api/get/#{id}", not_found: true))
+      raise NotFoundError unless result&.printable?
 
-    result
+      result
+    end
   end
 
   private
+
+  # A query is hashed so the cache keyspace never holds what the visitor typed,
+  # and only an answer the source gave is kept: a timeout or an outage is asked
+  # again rather than remembered.
+  def cached_results(params)
+    key = [ "lrc_lib", "search", ActiveSupport::Digest.hexdigest(JSON.generate(params)) ]
+    stored = @cache.read(key)
+    return stored.map { |attributes| LrcLibResult.new(**attributes) } if stored
+
+    results = yield
+    @cache.write(key, results.map(&:cache_attributes), expires_in: results.empty? ? EMPTY_CACHE_TTL : CACHE_TTL)
+    results
+  end
+
+  def cached_result(id)
+    key = [ "lrc_lib", "find", id ]
+    stored = @cache.read(key)
+    return LrcLibResult.new(**stored) if stored
+
+    result = yield
+    @cache.write(key, result.cache_attributes(lyrics: true), expires_in: CACHE_TTL)
+    result
+  end
 
   def build_results(rows)
     unless rows.is_a?(Array)
@@ -85,11 +123,13 @@ class LrcLibClient
 
     # Every printable candidate is kept: the source's order is not a relevance
     # order, so the caller scores the whole set before it takes the handful it
-    # shows.
+    # shows. Only its metadata leaves this method; the lyrics follow by id when
+    # the visitor picks a row.
     rows
       .filter_map { |row| build_result(row) }
       .select(&:printable?)
       .uniq(&:deduplication_key)
+      .map(&:metadata_only)
   end
 
   def request_json(path, params = {}, not_found: false, retries: true, timeout: nil)

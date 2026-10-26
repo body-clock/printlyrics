@@ -74,6 +74,30 @@ class LrcLibResult
     [ artist, title, album ].map { |value| value.to_s.downcase.squish }
   end
 
+  # What the cache keeps for this row. A search row carries only the metadata
+  # the results list shows and the selection token needs: its lyric text is
+  # fetched by id when the visitor picks it, so a cached query costs kilobytes
+  # instead of the tens of kilobytes the source sends.
+  def cache_attributes(lyrics: false)
+    {
+      id: id,
+      title: title,
+      artist: artist,
+      album: album,
+      duration: duration,
+      plain_lyrics: lyrics ? plain_lyrics : nil,
+      synced_lyrics: lyrics ? synced_lyrics : nil,
+      instrumental: instrumental
+    }
+  end
+
+  # A search row is a choice, not a sheet: the caller shows its metadata and
+  # fetches the lyrics by id when the visitor picks it. Dropping the text keeps
+  # a search row small, and leaves a fresh row and a cached one the same shape.
+  def metadata_only
+    self.class.new(**cache_attributes)
+  end
+
   private
 
   def parse_synced_lyrics
