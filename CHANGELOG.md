@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.19.1](https://github.com/body-clock/printlyrics/compare/v1.19.0...v1.19.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **search:** keep repeats off LRCLIB and stop on its refusals ([#139](https://github.com/body-clock/printlyrics/issues/139)) ([c2ae4e0](https://github.com/body-clock/printlyrics/commit/c2ae4e0352560bcb9d4f632578c6b612ab6f26f1))
+* **search:** report LRCLIB outages without opening faults ([#138](https://github.com/body-clock/printlyrics/issues/138)) ([3bd723e](https://github.com/body-clock/printlyrics/commit/3bd723e947d2d06fa28ea51e427eea0473df8d62))
+* **search:** retry overloaded LRCLIB calls within the visitor budget ([#144](https://github.com/body-clock/printlyrics/issues/144)) ([3fb1036](https://github.com/body-clock/printlyrics/commit/3fb10363861d1754b063a9f61d03336543bb77fc))
+
+
+### Miscellaneous
+
+* **deps:** bump honeybadger from 6.9.3 to 6.10.0 ([#143](https://github.com/body-clock/printlyrics/issues/143)) ([0783c19](https://github.com/body-clock/printlyrics/commit/0783c19ee33b1e2fb87ddabda75d63cd8551a79f))
+* **deps:** bump omniauth from 2.1.4 to 2.3.1 ([#142](https://github.com/body-clock/printlyrics/issues/142)) ([b0d5b27](https://github.com/body-clock/printlyrics/commit/b0d5b2761225262a9e7d684ba4470477ec097ef4))
+* **deps:** bump sqlite3 from 2.10.0 to 2.10.1 ([#141](https://github.com/body-clock/printlyrics/issues/141)) ([af20306](https://github.com/body-clock/printlyrics/commit/af20306d23c5e10b5a16803a903b782672e97b58))
+* **deps:** update net-ssh to 7.3.8 ([#145](https://github.com/body-clock/printlyrics/issues/145)) ([33ffd1d](https://github.com/body-clock/printlyrics/commit/33ffd1df96c68d952f0c9bc3b985f085bd79d840))
+
 ## [1.19.0](https://github.com/body-clock/printlyrics/compare/v1.18.1...v1.19.0) (2026-10-24)
 
 
