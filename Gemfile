@@ -20,14 +20,14 @@ gem "tailwindcss-rails"
 # Search LRCLIB
 gem "faraday"
 
-gem "honeybadger", "~> 6.9"
+gem "honeybadger", "~> 6.10"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1"
 
 # Optional accounts. Google is the first sign-in route; email and password are
 # the fallback for visitors who do not want to use it.
-gem "omniauth", "~> 2.1"
+gem "omniauth", "~> 2.3"
 gem "omniauth-google-oauth2", "~> 1.2"
 gem "omniauth-rails_csrf_protection", "~> 2.0"
 
