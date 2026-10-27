@@ -324,6 +324,45 @@ class LyricsFlowTest < ActionDispatch::IntegrationTest
     assert_select "#song-search-results [role='alert']", /Song search is temporarily unavailable/
   end
 
+  test "a transient source overload is retried and the search still answers" do
+    calls = 0
+    rows = [ {
+      id: 7,
+      trackName: "Spica",
+      artistName: "Somebody",
+      albumName: "Some Album",
+      duration: 214.0,
+      plainLyrics: "A printable line",
+      syncedLyrics: nil,
+      instrumental: false
+    } ]
+    stubs = Faraday::Adapter::Test::Stubs.new
+    stubs.get("/api/search") do
+      calls += 1
+      if calls == 1
+        [ 503, { "Content-Type" => "application/json" },
+          JSON.generate(name: "ServerOverloaded", message: "The server is busy, please retry in a moment") ]
+      else
+        [ 200, { "Content-Type" => "application/json" }, JSON.generate(rows) ]
+      end
+    end
+    connection = Faraday.new(url: "https://lrclib.net") { |faraday| faraday.adapter(:test, stubs) }
+    client = LrcLibClient.new(
+      connection: connection,
+      cache: ActiveSupport::Cache::MemoryStore.new,
+      sleeper: ->(_seconds) { },
+      jitter: ->(seconds) { seconds }
+    )
+
+    with_lrc_lib_client(client) do
+      post search_lyrics_path, params: { query: "spica" }
+    end
+
+    assert_response :success
+    assert_select "#song-search-results [role='status']", /1 match/
+    assert_equal 2, calls
+  end
+
   test "an expected source outage reaches Insights instead of opening a fault" do
     client = Object.new
     client.define_singleton_method(:search) do |_, **|

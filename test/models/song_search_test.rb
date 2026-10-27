@@ -112,6 +112,23 @@ class SongSearchTest < ActiveSupport::TestCase
     assert timeouts.all? { |timeout| timeout.positive? && timeout <= SongSearch::DEADLINE_SECONDS }
   end
 
+  test "lets the client retry a busy source within the ladder's budget" do
+    calls = []
+    client = Object.new
+    client.define_singleton_method(:search) do |query, **options|
+      calls << [ query, options ]
+      []
+    end
+
+    search = SongSearch.new(query: "the kiss")
+    assert search.perform(client: client)
+
+    query, options = calls.first
+    assert_equal "the kiss", query
+    assert_equal true, options[:retries]
+    assert_operator options[:timeout], :>, 0
+  end
+
   test "climbs the whole ladder while the budget lasts" do
     calls = []
 

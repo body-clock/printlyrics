@@ -213,12 +213,134 @@ class LrcLibClientTest < ActiveSupport::TestCase
       LrcLibClient.new(
         connection: connection,
         sleeper: ->(seconds) { waits << seconds },
-        clock: clock
+        clock: clock,
+        jitter: ->(seconds) { seconds }
       ).search("the kiss")
     end
 
     assert_equal [ LrcLibClient::DEFAULT_RETRY_WAIT ], waits
     assert_equal 2, error.attempts
+  end
+
+  test "retries a connection failure and answers on the next try" do
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        raise Faraday::ConnectionFailed, "connection reset" if calls == 1
+
+        [ 200, json_headers, JSON.generate([ result(id: 1, title: "The Kiss") ]) ]
+      end
+    end
+    waits = []
+
+    results = LrcLibClient.new(
+      connection: connection,
+      sleeper: ->(seconds) { waits << seconds },
+      jitter: ->(seconds) { seconds }
+    ).search("the kiss")
+
+    assert_equal [ 1 ], results.map(&:id)
+    assert_equal 2, calls
+    assert_equal [ LrcLibClient::DEFAULT_RETRY_WAIT ], waits
+  end
+
+  test "backs off between retries so the source can recover" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 503, json_headers, "{}" ] }
+    end
+    waits = []
+
+    assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(
+        connection: connection,
+        sleeper: ->(seconds) { waits << seconds },
+        clock: -> { 0.0 },
+        jitter: ->(seconds) { seconds }
+      ).search("the kiss")
+    end
+
+    assert_equal [ LrcLibClient::DEFAULT_RETRY_WAIT, LrcLibClient::DEFAULT_RETRY_WAIT * 2 ], waits
+  end
+
+  test "spreads retry waits with jitter below the backoff" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 503, json_headers, "{}" ] }
+    end
+    waits = []
+
+    assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(
+        connection: connection,
+        sleeper: ->(seconds) { waits << seconds },
+        clock: -> { 0.0 },
+        jitter: ->(seconds) { seconds / 2 }
+      ).search("the kiss")
+    end
+
+    assert_equal [ LrcLibClient::DEFAULT_RETRY_WAIT / 2, LrcLibClient::DEFAULT_RETRY_WAIT ], waits
+  end
+
+  test "the default jitter stays below the backoff and above half of it" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 503, json_headers, "{}" ] }
+    end
+    waits = []
+
+    assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(
+        connection: connection,
+        sleeper: ->(seconds) { waits << seconds },
+        clock: -> { 0.0 }
+      ).search("the kiss")
+    end
+
+    first, second = waits
+    assert_operator first, :>=, LrcLibClient::DEFAULT_RETRY_WAIT / 2
+    assert_operator first, :<, LrcLibClient::DEFAULT_RETRY_WAIT
+    assert_operator second, :>=, LrcLibClient::DEFAULT_RETRY_WAIT
+    assert_operator second, :<, LrcLibClient::DEFAULT_RETRY_WAIT * 2
+  end
+
+  test "a caller's timeout is the budget for retries as well" do
+    calls = 0
+    timeouts = []
+    connection = connection_with do |stub|
+      stub.get("/api/search") do |env|
+        calls += 1
+        timeouts << env.request.timeout
+        [ 503, json_headers, "{}" ]
+      end
+    end
+    waits = []
+    times = [ 0.0, 0.6 ]
+    clock = -> { times.shift || 0.6 }
+
+    error = assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(
+        connection: connection,
+        sleeper: ->(seconds) { waits << seconds },
+        clock: clock,
+        jitter: ->(seconds) { seconds }
+      ).search("the kiss", timeout: 1.0)
+    end
+
+    assert_equal 1, calls
+    assert_equal [ 1.0 ], timeouts
+    assert_empty waits
+    assert_equal 1, error.attempts
+  end
+
+  test "a server error the client does not retry still reads as unavailable" do
+    connection = connection_with do |stub|
+      stub.get("/api/search") { [ 507, json_headers, "{}" ] }
+    end
+
+    error = assert_raises(LrcLibClient::ServiceError) do
+      LrcLibClient.new(connection: connection).search("the kiss", retries: false)
+    end
+
+    assert_predicate error, :source_unavailable?
   end
 
   test "search by fields asks the title and artist separately" do
@@ -347,6 +469,94 @@ class LrcLibClientTest < ActiveSupport::TestCase
     end
 
     assert_equal 2, calls
+  end
+
+  test "serves the last answered search when the source is down after the cache expires" do
+    cache = ActiveSupport::Cache::MemoryStore.new
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        if calls == 1
+          [ 200, json_headers, JSON.generate([ result(id: 1, title: "The Kiss") ]) ]
+        else
+          [ 503, json_headers, "{}" ]
+        end
+      end
+    end
+    client = LrcLibClient.new(
+      connection: connection,
+      cache: cache,
+      sleeper: ->(_seconds) { },
+      jitter: ->(seconds) { seconds }
+    )
+
+    first = client.search("the kiss")
+    travel(LrcLibClient::CACHE_TTL + 1.minute) do
+      second = client.search("the kiss")
+
+      assert_equal first.map(&:id), second.map(&:id)
+      assert_equal "The Kiss", second.first.title
+    end
+
+    assert_operator calls, :>=, 2
+  end
+
+  test "serves the last answered selection when the source is down after the cache expires" do
+    cache = ActiveSupport::Cache::MemoryStore.new
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/get/42") do
+        calls += 1
+        if calls == 1
+          [ 200, json_headers, JSON.generate(result(id: 42, title: "The Kiss")) ]
+        else
+          [ 503, json_headers, "{}" ]
+        end
+      end
+    end
+    client = LrcLibClient.new(
+      connection: connection,
+      cache: cache,
+      sleeper: ->(_seconds) { },
+      jitter: ->(seconds) { seconds }
+    )
+
+    first = client.find(42)
+    travel(LrcLibClient::CACHE_TTL + 1.minute) do
+      cached = client.find(42)
+
+      assert_equal first.id, cached.id
+      assert_equal "Love, rising from the mists", cached.lyrics
+    end
+
+    assert_operator calls, :>=, 2
+  end
+
+  test "does not serve an empty answer as stale" do
+    cache = ActiveSupport::Cache::MemoryStore.new
+    calls = 0
+    connection = connection_with do |stub|
+      stub.get("/api/search") do
+        calls += 1
+        if calls == 1
+          [ 200, json_headers, "[]" ]
+        else
+          [ 503, json_headers, "{}" ]
+        end
+      end
+    end
+    client = LrcLibClient.new(
+      connection: connection,
+      cache: cache,
+      sleeper: ->(_seconds) { },
+      jitter: ->(seconds) { seconds }
+    )
+
+    assert_empty client.search("a song nobody wrote")
+    travel(LrcLibClient::EMPTY_CACHE_TTL + 1.minute) do
+      assert_raises(LrcLibClient::ServiceError) { client.search("a song nobody wrote") }
+    end
   end
 
   private
