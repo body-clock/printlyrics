@@ -34,10 +34,17 @@ Song search uses the public LRCLIB API. Selecting a result fills the editable
 form without creating a database record. A record is persisted only after the
 user generates the print page. Answered searches and selections are cached for
 an hour (an empty answer for five minutes), so a repeated query or a song picked
-again does not reach the source twice, and a cached song still works while
-LRCLIB is unavailable. A rate limit or overload answer ends the search ladder at
-once rather than spending the visitor's remaining wait on attempts the source
-would refuse.
+again does not reach the source twice. A stale copy of every answered query and
+selection is kept for a week and served when LRCLIB is unavailable, so a
+repeated search still works during an outage.
+
+A busy source is retried with jittered backoff inside the visitor's search
+budget: a 429, 500, 502, 503, or 504 answer and a transport failure get up to
+three attempts, honoring `Retry-After` when LRCLIB sends it. Once those
+attempts are spent, a rate limit or overload answer ends the search ladder
+rather than asking every alternative the source would also refuse. A malformed
+payload or any other status the client does not expect is not retried and is
+reported as a handled error.
 
 ## Songbooks
 

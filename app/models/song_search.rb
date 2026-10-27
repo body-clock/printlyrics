@@ -61,12 +61,13 @@ class SongSearch
       break if index.positive? && remaining <= 0
 
       begin
-        # No attempt is retried here. The ladder is a list of alternatives, so
-        # a busy source is better answered by asking the next one than by
-        # spending the visitor's wait on the same query again. An answer with a
-        # status is about the source rather than this query — a rate limit, an
-        # edge error, its overload refusal — so the next attempt would meet it
-        # too; only a timeout, which is about the request, still tries on.
+        # The client retries a busy source within the time this rung has left,
+        # with backoff and jitter, so a transient overload still answers the
+        # visitor's precise query. An answer with a status is about the source
+        # rather than this query — a rate limit, an edge error, its overload
+        # refusal — so once the client's attempts are spent the next rung would
+        # meet the same refusal and the ladder ends. A timeout or connection
+        # failure is about the request, so the ladder still tries on.
         rows = request(client, attempt, remaining: remaining)
       rescue LrcLibClient::ServiceError => error
         raise if LrcLibClient::RETRYABLE_STATUSES.include?(error.status)
@@ -104,9 +105,9 @@ class SongSearch
 
     case attempt.kind
     when :fields
-      client.search_by_fields(**attempt.params, retries: false, timeout: timeout)
+      client.search_by_fields(**attempt.params, retries: true, timeout: timeout)
     else
-      client.search(attempt.params[:q], retries: false, timeout: timeout)
+      client.search(attempt.params[:q], retries: true, timeout: timeout)
     end
   end
 end
