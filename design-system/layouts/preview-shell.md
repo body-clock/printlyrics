@@ -1,5 +1,5 @@
 ---
-sourcesHash: fb5d3a3d9e6ec84670ae408464cbee28f3cc822e00c7c30e88618b8b1757b2d7
+sourcesHash: 7fe85b01a9bd17b787142af6851ee057b1c93db68f72530490eae54580e9e1cb
 id: preview-shell
 description: >-
   Arrange a document-led sheet or songbook workspace with a sticky action band,
@@ -45,21 +45,29 @@ tests:
   fitting, and window keydown calls `workspace#escape`.
 - `.control-bar.workspace-actions.no-print` is sticky. `.control-inner`
   contains task navigation and one primary Print action. A sheet offers Edit
-  lyrics; a book offers Add another song. Format invokes the mobile inspector.
-- `.workspace-layout` contains `.workspace-stage` followed by
-  `.workspace-inspector`. A book adds `.workspace-layout-songbook` and a
-  `.workspace-outline` details region before the stage.
+  sheet; a book offers Add another song. The Format trigger names its target
+  ("Format sheet" or "Format song"); on a book its accessible name includes the
+  song in view.
+- `.workspace-layout` contains `.workspace-stage`, the
+  `.workspace-secondary` actions, and `.workspace-inspector`. A book adds
+  `.workspace-layout-songbook` and a `.workspace-outline` details region before
+  the stage.
 - The stage owns `shared/preview_view_controls` (measured page count, inspection
   zoom, browser-PDF explanation), sheet-mark template, and
   `.paper-frame[data-preview-target="pageFrame"]` containing
-  `.paper-pages[data-preview-target="pages"]`.
+  `.paper-pages[data-preview-target="pages"]`. The strip is as wide as the paper
+  and centered with it, not as wide as the stage.
 - The inspector has a labelled heading, visible Close action and formatting
   fieldsets. Its `workspace` targets are `inspector`, `heading` and `trigger`.
   `aria-controls` connects Format to the inspector; `aria-expanded` follows
-  visibility. The heading is focusable with `tabindex="-1"`.
+  visibility. The heading is focusable with `tabindex="-1"`. A book's current-song
+  group carries the `Edit this song` revision action, named after the song in
+  view; its whole-book controls sit in a collapsed `All songs` disclosure, not a
+  second heading and jump link.
 - `shared/preview_controls` without scope formats one sheet. A book places
   `scope: "active"` in a named current-song group and `scope: "all"` in the
-  distinct `#songbook-format` section. Whole-book controls expose Mixed text.
+  distinct, collapsed `All songs` disclosure. Whole-book controls expose Mixed
+  text when the set disagrees.
 - Each book source carries token, size, columns and its layout PATCH URL.
   `.songbook-track-link` targets that song's first paper; current location has
   `aria-current="location"` and visible Reading text.
@@ -67,20 +75,23 @@ tests:
   and Retry saving. It sticks below the measured action band even while reading
   continuation pages. Every failed dimension remains pending until confirmed;
   a later success cannot erase an earlier failed change.
-- `.workspace-secondary.no-print` holds optional book, keep and feedback actions
-  after the document. Starting a book carries the sheet's current formatting
-  through the existing layout-preference controller.
+- `.workspace-secondary.no-print` is a row of the workspace grid directly under
+  the stage, sharing the paper's column rather than centering in the shell.
+  Starting a book carries the sheet's current formatting through the existing
+  layout-preference controller.
 
 ## Composition
 
 - The paper is the primary content. Exactly one filled Print action appears in
   the action band; Save as PDF is explained as a browser print option.
-- At widths below 1100px the inspector is a nonmodal bottom panel, max 55dvh,
+- At widths below 1100px the inspector is a nonmodal bottom panel, max 70dvh,
   with safe-area spacing. It leaves preview visible and scrolls its own controls.
   It has no backdrop and does not trap focus away from the preview.
-  Its heading and Close stay visible while its controls scroll.
+  Its heading and Close stay visible while its controls scroll. Fit is the only
+  inspection scale at this width; the zoom select and its hint are hidden.
 - At 1100px and wider the inspector becomes an inline sticky right-hand panel.
-  Its close/trigger controls are hidden; all settings stay reachable.
+  Its close/trigger controls are hidden; all settings, including explicit
+  inspection zoom, stay reachable.
 - A book outline is a native disclosure until 1440px. At 1440px it opens as a
   persistent left column; paper and inspector occupy the other two columns.
 - The stage has `min-width: 0` and owns horizontal inspection scrolling.
@@ -89,7 +100,8 @@ tests:
 - Paper count is Measuring until layout completes, then reports the measured
   count. Formatting repaginates and preserves the current song's reading anchor.
 - Selecting a song closes the compact outline before scrolling to its first
-  page. Scrolling and repagination update the named formatting target.
+  page. Scrolling and repagination update the named formatting target, the
+  Format trigger's accessible name and the `Edit this song` link.
 - Per-song changes affect only that entry. Whole-book changes affect only the
   selected dimension, preserving intentionally mixed values in the other.
 - Remove reloads the book and remeasures remaining pages in entry order. Adding
@@ -102,7 +114,9 @@ tests:
 - Action bands and outlines have accessible names and native controls.
 - Format moves focus to the panel heading. Close and Escape dismiss the mobile
   panel and return focus to Format. Desktop settings remain inline.
-- Working controls retain at least 44px targets; zoom select uses 16px text.
+- Working controls retain at least 44px targets; the wide-screen zoom select
+  uses 16px text. The Format trigger names its surface, and a book's accessible
+  name carries the current song.
 - Count and save feedback announce politely; a save error remains visible.
 - Current song has both `aria-current` and text, never colour alone.
 - Printed pages preserve DOM/outline order, white paper and print ink in either

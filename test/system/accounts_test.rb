@@ -18,7 +18,7 @@ class AccountsTest < ApplicationSystemTestCase
     assert_text "0 of 10 saved"
 
     visit root_path
-    click_button "Paste"
+    click_button "Edit"
     fill_in "Song title", with: "Saved Song"
     fill_in "Lyrics", with: "A line kept for later"
     click_button "Preview sheet"

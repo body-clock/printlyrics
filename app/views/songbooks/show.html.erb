@@ -36,7 +36,9 @@
       <div class="control-groups">
         <button type="button" class="button button-secondary workspace-format-trigger"
                 data-workspace-target="trigger" data-action="workspace#toggleInspector"
-                aria-controls="workspace-inspector" aria-expanded="false"><%= t("redesign_preview.format") %></button>
+                data-preview-target="formatTrigger"
+                data-format-label-template="<%= t("redesign_preview.format_named", title: "%{title}") %>"
+                aria-controls="workspace-inspector" aria-expanded="false"><%= t("redesign_preview.format_song") %></button>
         <button type="button" class="button button-print" data-action="preview#print"><%= t(".controls.print") %></button>
       </div>
     </div>
@@ -114,10 +116,18 @@
       </div>
     </section>
 
+    <div class="workspace-secondary no-print">
+      <% if authenticated? %>
+        <%= render "shared/library_prompt", item: @songbook %>
+      <% elsif @account_prompt %>
+        <%= render "shared/account_prompt", item: @songbook, surface: "songbook" %>
+      <% end %>
+    </div>
+
     <aside id="workspace-inspector" class="workspace-inspector no-print"
            data-workspace-target="inspector" aria-labelledby="workspace-inspector-heading" hidden>
       <div class="workspace-inspector-heading">
-        <h2 id="workspace-inspector-heading" tabindex="-1" data-workspace-target="heading"><%= t("redesign_preview.format") %></h2>
+        <h2 id="workspace-inspector-heading" tabindex="-1" data-workspace-target="heading"><%= t("redesign_preview.format_song") %></h2>
         <button type="button" class="button button-secondary workspace-inspector-close"
                 data-action="workspace#closeInspector"><%= t("redesign_preview.close") %></button>
       </div>
@@ -136,26 +146,16 @@
           <%= link_to t("redesign_preview.edit_song"),
                 root_path(revision: first_entry.lyric.token, songbook: @songbook.token, size: first_entry.size, columns: first_entry.columns),
                 class: "workspace-revision-link", data: { preview_target: "revisionLink" } %>
-          <p class="workspace-hint"><%= t("redesign_preview.book_revision_hint") %></p>
-          <a class="song-format-dock-all" href="#songbook-format"><%= t(".dock.all_songs") %></a>
         </section>
       <% end %>
 
-      <section class="songbook-format" id="songbook-format" aria-labelledby="songbook-format-heading">
-        <h3 id="songbook-format-heading"><%= t(".binder.whole") %></h3>
+      <details class="songbook-format" id="songbook-format">
+        <summary><%= t(".binder.whole") %></summary>
         <p class="workspace-hint"><%= t(".binder.whole_hint") %></p>
         <div class="songbook-format-controls">
           <%= render "shared/preview_controls", size: first_entry&.size || "m", columns: first_entry&.columns || 1, scope: "all" %>
         </div>
-      </section>
+      </details>
     </aside>
-  </div>
-
-  <div class="workspace-secondary no-print">
-    <% if authenticated? %>
-      <%= render "shared/library_prompt", item: @songbook %>
-    <% elsif @account_prompt %>
-      <%= render "shared/account_prompt", item: @songbook, surface: "songbook" %>
-    <% end %>
   </div>
 </div>

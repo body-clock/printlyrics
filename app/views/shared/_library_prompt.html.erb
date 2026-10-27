@@ -3,13 +3,13 @@
   saved things without asking the visitor to make an account they already have.
 %>
 <% if current_user.saved?(item) %>
-  <p class="library-prompt no-print">
-    <%= t("shared.library_prompt.saved_html", library_link: link_to(t("shared.library_prompt.library_link"), library_path)) %>
-  </p>
+  <div class="library-prompt no-print">
+    <p><%= t("shared.library_prompt.saved_html", library_link: link_to(t("shared.library_prompt.library_link"), library_path)) %></p>
+  </div>
 <% elsif current_user.library_full? %>
-  <p class="library-prompt no-print">
-    <%= t("shared.library_prompt.full_html", library_link: link_to(t("shared.library_prompt.library_link"), library_path)) %>
-  </p>
+  <div class="library-prompt no-print">
+    <p><%= t("shared.library_prompt.full_html", library_link: link_to(t("shared.library_prompt.library_link"), library_path)) %></p>
+  </div>
 <% else %>
   <div class="library-prompt no-print">
     <p><%= t("shared.library_prompt.signed_in") %></p>

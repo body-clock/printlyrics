@@ -1,5 +1,5 @@
 ---
-sourcesHash: cbc7458abd70c617d55404569eb03b7079de9f0055aa8ed3a90219f34828f917
+sourcesHash: 0c2a21ce83b57076bd691ce9f2dbf93c48aff7c643303a1bc024b96735dfd245
 id: inline-offer
 description: >-
   Offer one optional next step beneath the page's main result, such as keeping a
@@ -66,6 +66,8 @@ the result (sheet width on the preview, full width on the entry panel).
 ## Behaviour and states
 
 - An offer never auto-dismisses and never steals focus.
+- The offer keeps a full layout step from the row it follows; it never shares
+  an edge with the form row, search field, or paper it refers to.
 - Dismiss sends a request; the visit stores the answer, so the offer disappears
   on the next server render for the rest of the visit.
 - All offer actions are secondary to the delivered task, especially Print.

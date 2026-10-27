@@ -1,5 +1,5 @@
 ---
-sourcesHash: c0fbd34ca0dd3ace5152bfd5f3de1e3a3f5df3fe4892de2d55f09717fc72f9cf
+sourcesHash: f9e6f0e356f96b769f28856760218b743b444b5b7a8200dfc40c61426bf5f34a
 id: paper-sheet
 description: >-
   Render one letter-size, print-first lyric sheet with a title, optional artist,

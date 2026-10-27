@@ -249,9 +249,12 @@ shadows exist. Do not invent a fourth.
 
 - One transition duration: `--motion-fast` (160ms) with `ease-out`, and only for
   colour, border, or background.
+- A native disclosure and the mobile format panel may fade their revealed
+  content in over `--motion-fast`. Height, position, and the paper never animate,
+  and nothing else enters with motion.
 - The search spinner uses `--motion-spin` (700ms, linear).
 - Respect `prefers-reduced-motion: reduce`; it is handled globally.
-- Do not animate layout, position, or the paper. No entrance animations.
+- Do not animate layout, position, or the paper. No other entrance animations.
 
 ### Print
 

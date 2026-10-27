@@ -1,5 +1,5 @@
 ---
-sourcesHash: e665f7947e117d44d91b7daa5ede322d7961af5a46213fd684e6ea7de0f71b43
+sourcesHash: 4e3e43e06cab2e0ea7112bcffd54fff7a7bc2d1e92c148e0128d976bfd2d9630
 id: site-shell
 description: >-
   Frame a normal page with a skip link, the global site header and footer, one

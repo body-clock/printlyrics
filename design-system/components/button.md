@@ -1,5 +1,5 @@
 ---
-sourcesHash: efd4ae5e884ab3bd476e5d9e6d90fc3bf0b6799faf785b5e55cab45d51bc6ff0
+sourcesHash: 6ba23db5c530303446be83165ce42c287e7b1245d1ba61de92950c0991bfc263
 id: button
 description: >-
   Invoke one immediate action or styled navigation step through the shared
@@ -69,8 +69,9 @@ tests:
   hover it fills with `--ui-accent`. Use it once per surface.
 - `.button-secondary` uses a `--elevation-surface` fill and a
   `--border-default` edge. It is the normal partner to a primary action.
-- `.button-print` fills with `--ui-primary` at the shared 44px control height.
-  The workspace action band owns its placement.
+- `.button-print` fills with `--ui-primary` at the primary 48px control height
+  (`--control-lg`). It is the action band's primary action and sits level with
+  the outlined Format control beside it.
 - `.button-wide` stretches to the available width and separates its label from
   a trailing glyph when that composition needs one.
 - `.button-text` is the quiet action: no border or fill, `--text-meta`,

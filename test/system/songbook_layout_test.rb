@@ -62,11 +62,14 @@ class SongbookLayoutTest < ApplicationSystemTestCase
     assert_selector ".song-format-dock-title", text: "First Song"
     open_outline
     assert_selector ".songbook-track.is-current", text: "First Song"
-    assert_selector ".song-format-dock-all[href='#songbook-format']"
+    assert_selector "#songbook-format summary", text: "All songs"
+    refute page.evaluate_script("document.querySelector('#songbook-format').open")
+    assert_selector ".workspace-revision-link[href*='revision=#{first.token}']"
 
     scroll_to_song(second)
     assert_selector ".song-format-dock-title", text: "Second Song"
     assert_selector ".songbook-track.is-current", text: "Second Song"
+    assert_selector ".workspace-revision-link[href*='revision=#{second.token}']"
 
     within(".song-format-dock") do
       find("[data-preview-layout='size'] [data-preview-value='l']").click
@@ -95,6 +98,33 @@ class SongbookLayoutTest < ApplicationSystemTestCase
     end
   end
 
+  test "the format trigger names the current song" do
+    _first, second, songbook = songbook_with_two_songs
+    page.current_window.resize_to(390, 844)
+
+    visit songbook_path(songbook)
+    assert_no_selector "[data-preview-page].is-unpaginated"
+
+    trigger = find(".workspace-format-trigger")
+    assert_equal "Format song", trigger.text
+    assert_equal "Format First Song", trigger["aria-label"]
+
+    scroll_to_song(second)
+    assert_selector ".workspace-format-trigger[aria-label='Format Second Song']"
+
+    trigger.click
+    assert_selector ".workspace-inspector", visible: true
+    assert_selector ".song-format-dock-title", text: "Second Song"
+    assert_selector ".workspace-revision-link[href*='revision=#{second.token}']", text: "Edit this song"
+    panel_heights = page.evaluate_script(<<~JS)
+      (() => {
+        const panel = document.querySelector(".workspace-inspector")
+        return { client: panel.clientHeight, scroll: panel.scrollHeight }
+      })()
+    JS
+    assert_operator panel_heights.fetch("scroll"), :<=, panel_heights.fetch("client") + 1
+  end
+
   test "the binder card jumps to its song" do
     _first, second, songbook = songbook_with_two_songs
 
@@ -117,6 +147,7 @@ class SongbookLayoutTest < ApplicationSystemTestCase
 
     visit songbook_path(songbook)
     wait_for_preview_render
+    open_bulk_format
 
     within("#songbook-format") do
       find("[data-preview-layout='size'] [data-preview-value='s']").click
@@ -137,6 +168,7 @@ class SongbookLayoutTest < ApplicationSystemTestCase
 
     visit songbook_path(songbook)
     wait_for_preview_render
+    open_bulk_format
 
     within("#songbook-format") do
       find("[data-preview-layout='size'] [data-preview-value='s']").click
@@ -150,6 +182,7 @@ class SongbookLayoutTest < ApplicationSystemTestCase
 
     visit songbook_path(songbook)
     wait_for_preview_render
+    open_bulk_format
 
     assert_selector ".paper.size-s .lyrics.cols-2", count: 2
     within("#songbook-format") do
@@ -173,6 +206,11 @@ class SongbookLayoutTest < ApplicationSystemTestCase
   def wait_for_preview_render
     assert_no_selector "[data-preview-page].is-unpaginated"
     open_format
+  end
+
+  def open_bulk_format
+    summary = find("#songbook-format summary")
+    summary.click unless page.evaluate_script("document.querySelector('#songbook-format').open")
   end
 
   def scroll_to_song(lyric)

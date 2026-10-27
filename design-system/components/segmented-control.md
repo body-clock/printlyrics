@@ -1,5 +1,5 @@
 ---
-sourcesHash: 89596080353b4ec1583decf8522c05d2df7e322d1cac3a8cc17ba53021c5414d
+sourcesHash: 5408d97359dd49fec86b04406daaf8268053a2aa26661badee3fd008b77e6f0c
 id: segmented-control
 description: >-
   Let the visitor choose one value from a small fixed set of display options

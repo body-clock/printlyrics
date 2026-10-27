@@ -498,6 +498,21 @@ textarea:focus-visible {
   position: relative;
 }
 
+.entry-paste-shortcut {
+  margin: var(--space-3) 0 0;
+  color: var(--content-secondary);
+  font-size: var(--text-meta);
+}
+
+.entry-paste-shortcut a {
+  display: inline-flex;
+  min-height: var(--control-touch);
+  align-items: center;
+  color: var(--ui-accent);
+  font-weight: var(--weight-bold);
+  text-underline-offset: 0.2em;
+}
+
 .search-submit {
   min-width: 7.2rem;
 }
@@ -693,6 +708,21 @@ textarea:focus-visible {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Revealed content fades in place. Height and position never animate, so a
+   disclosure cannot push or clip the controls it reveals. */
+@keyframes reveal {
+  from {
+    opacity: 0;
+  }
+}
+
+.workspace-outline[open] .songbook-tracks,
+.songbook-format[open] > .workspace-hint,
+.songbook-format[open] .songbook-format-controls,
+.workspace-inspector[data-open="true"] {
+  animation: reveal var(--motion-fast) ease-out;
 }
 
 .grow {
@@ -1480,6 +1510,8 @@ textarea:focus-visible {
 .flash {
   position: fixed;
   z-index: 50;
+  /* About 20px below the 61px site header. The preview's taller action band
+     (69px) uses the value below to keep the same gap. */
   top: 5.25rem;
   left: 50%;
   display: flex;
@@ -1546,6 +1578,7 @@ textarea:focus-visible {
 /* The preview's own control bar owns the top of the page, and the site header
    is not rendered there, so its notices sit just below that bar. */
 .preview-body .flash {
+  /* The preview action band is eight pixels taller than the site header. */
   top: 5.5rem;
 }
 
@@ -1606,7 +1639,7 @@ html:has(body.preview-body) {
   bottom: 0;
   left: 0;
   display: none;
-  max-height: 55dvh;
+  max-height: 70dvh;
   overflow-y: auto;
   border-top: 1px solid var(--border-strong);
   padding: var(--space-4) var(--space-5) max(var(--space-5), env(safe-area-inset-bottom));
@@ -1616,7 +1649,7 @@ html:has(body.preview-body) {
 
 .workspace-inspector[data-open="true"] {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .workspace-inspector-heading {
@@ -1656,11 +1689,15 @@ html:has(body.preview-body) {
 
 .workspace-view-controls {
   display: flex;
+  width: min(100%, var(--sheet-width));
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
-  margin-bottom: var(--space-4);
+  /* The strip belongs to the document column, not the whole stage: the paper is
+     centered in the stage, and a full-width strip would put the page count and
+     zoom outside the sheet's edges on wide screens. */
+  margin: 0 auto var(--space-4);
   color: var(--content-secondary);
   font-size: var(--text-meta);
 }
@@ -1694,15 +1731,33 @@ html:has(body.preview-body) {
   color: var(--content-secondary);
   font-size: var(--text-meta);
 }
+
+/* The secondary actions are a row of the workspace grid, so they share the
+   paper's column instead of centering in the shell (which would push them half
+   an inspector to the right). The grid gap owns their separation. */
 .workspace-secondary {
   display: grid;
   width: min(100%, var(--sheet-width));
   gap: var(--space-4);
-  margin: var(--space-6) auto 0;
+  margin: 0 auto;
 }
 
 .workspace-secondary > form {
   margin: 0;
+}
+
+/* Links in the stack keep their 44px target but not a full-row hit area. */
+.workspace-secondary > .button-text {
+  justify-self: start;
+}
+
+/* Prompts carry their own page-level margins. Inside the stack the container's
+   gap is the rhythm, so those margins would double every seam. */
+.workspace-secondary > .account-prompt,
+.workspace-secondary > .library-prompt,
+.workspace-secondary > .songbook-prompt,
+.workspace-secondary > .feedback-prompt {
+  margin-block: 0;
 }
 
 .song-format-dock,
@@ -1721,10 +1776,10 @@ html:has(body.preview-body) {
   font-size: var(--text-meta);
 }
 
-.workspace-revision-link,
-.song-format-dock-all {
+.workspace-revision-link {
   display: inline-flex;
   min-height: var(--control-touch);
+  justify-self: start;
   align-items: center;
   color: var(--ui-accent);
   font-size: var(--text-label);
@@ -1752,6 +1807,23 @@ select:focus-visible {
   padding-block: var(--space-2);
   cursor: pointer;
   font-weight: var(--weight-bold);
+  list-style: none;
+}
+
+.workspace-outline summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary,
+.workspace-outline summary,
+.songbook-format > summary {
+  transition: color var(--motion-fast) ease-out;
+}
+
+.faq summary:hover,
+.workspace-outline summary:hover,
+.songbook-format > summary:hover {
+  color: var(--ui-accent);
 }
 
 .workspace-outline summary::after {
@@ -1790,8 +1862,38 @@ select:focus-visible {
     gap: var(--space-8);
   }
 
+  /* Explicit rows keep the inspector beside the stage while the secondary
+     actions sit under the paper in the same column. */
+  .workspace-layout > .workspace-stage {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .workspace-layout > .workspace-secondary {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .workspace-layout > .workspace-inspector {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
   .workspace-layout-songbook .workspace-outline {
+    grid-row: 1;
     grid-column: 1 / -1;
+  }
+
+  .workspace-layout-songbook > .workspace-stage {
+    grid-row: 2;
+  }
+
+  .workspace-layout-songbook > .workspace-secondary {
+    grid-row: 3;
+  }
+
+  .workspace-layout-songbook > .workspace-inspector {
+    grid-row: 2;
   }
 
   .workspace-inspector {
@@ -1799,7 +1901,7 @@ select:focus-visible {
     top: 5.25rem;
     display: grid;
     max-height: calc(100dvh - 6rem);
-    gap: var(--space-5);
+    gap: var(--space-4);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     padding: var(--space-5);
@@ -1818,12 +1920,28 @@ select:focus-visible {
     gap: var(--space-6);
   }
 
-  .workspace-layout-songbook .workspace-outline {
+  .workspace-layout-songbook > .workspace-outline {
     position: sticky;
     top: 5.25rem;
-    grid-column: auto;
+    grid-row: 1;
+    grid-column: 1;
     max-height: calc(100dvh - 6rem);
     overflow-y: auto;
+  }
+
+  .workspace-layout-songbook > .workspace-stage {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .workspace-layout-songbook > .workspace-secondary {
+    grid-row: 2;
+    grid-column: 2;
+  }
+
+  .workspace-layout-songbook > .workspace-inspector {
+    grid-row: 1;
+    grid-column: 3;
   }
 
   .workspace-outline summary::after {
@@ -1896,7 +2014,7 @@ select:focus-visible {
 }
 
 .button-print {
-  min-height: var(--control-md);
+  min-height: var(--control-lg);
   background: var(--ui-primary);
   color: var(--ui-on-primary);
 }
@@ -1923,17 +2041,42 @@ select:focus-visible {
 
 
 .songbook-format {
-  display: grid;
-  gap: var(--space-3);
   border-top: 1px solid var(--border-default);
-  padding-top: var(--space-5);
-  scroll-margin-top: 6rem;
+  padding-top: var(--space-3);
 }
 
+.songbook-format > summary {
+  display: flex;
+  min-height: var(--control-touch);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  cursor: pointer;
+  font-size: var(--text-label);
+  font-weight: var(--weight-bold);
+  list-style: none;
+}
+
+.songbook-format > summary::-webkit-details-marker {
+  display: none;
+}
+
+.songbook-format > summary::after {
+  content: "+";
+}
+
+.songbook-format[open] > summary::after {
+  content: "−";
+}
+
+.songbook-format > .workspace-hint {
+  margin-top: var(--space-2);
+}
 
 .songbook-format-controls {
   display: grid;
   gap: var(--space-4);
+  margin-top: var(--space-3);
 }
 
 .songbook-tracks {
@@ -1981,7 +2124,7 @@ select:focus-visible {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: var(--space-0-5);
 }
 
 .songbook-track-number {
@@ -2104,6 +2247,13 @@ select:focus-visible {
    preview shell's fixed paper width. */
 .songbook-prompt-landing {
   width: 100%;
+}
+
+/* The offer follows the active entry panel, whose last row is a form action or
+   the search field. Without its own separation the bordered offer reads as part
+   of that form. */
+.entry-panel > .songbook-prompt {
+  margin-top: var(--space-6);
 }
 
 .songbook-prompt-message {
@@ -2254,6 +2404,15 @@ select:focus-visible {
   letter-spacing: var(--tracking-brand);
 }
 
+@media screen and (max-width: 1099px) {
+  /* Fit is the only useful inspection scale on a phone: every explicit value
+     pans the paper inside the stage. Keep the measured count and PDF hint. */
+  .workspace-zoom,
+  .workspace-zoom-hint {
+    display: none;
+  }
+}
+
 @media screen and (max-width: 700px) {
   .landing-shell,
   .account-shell {
@@ -2380,6 +2539,8 @@ select:focus-visible {
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 
   .search-spinner {

@@ -271,6 +271,17 @@
             </section>
           <% end %>
         </div>
+
+        <%# The textarea lives on the Edit tab, so the resting Find panel keeps a
+            one-tap way to reach it. A search that answered or missed already
+            offers its own paths, so the shortcut stays out of their way. %>
+        <% unless search_feedback %>
+          <p class="entry-paste-shortcut">
+            <%= t("redesign_entry.paste_shortcut_html",
+                  link: link_to(t("redesign_entry.paste_shortcut_link"), "#lyric_lyrics",
+                    data: { action: "lyric-entry#paste" })) %>
+          </p>
+        <% end %>
       </div>
 
       <div id="entry-panel-paste" class="entry-mode-panel" role="tabpanel"

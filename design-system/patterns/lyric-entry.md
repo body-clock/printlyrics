@@ -1,5 +1,5 @@
 ---
-sourcesHash: 6ef1b1e925c2287078b8e035abfe468edb7362a0171a6268fe45bb2d21a2d0ba
+sourcesHash: 7b987f2271c54e7275ea2dafe571e79672161a39d0361f58c52ae0f03522385e
 id: lyric-entry
 description: >-
   Find or paste lyrics, review a recoverable draft, and create an independent
@@ -38,8 +38,9 @@ tests:
 Required regions, in order:
 
 1. **Intro** — one compact `h1` and explanatory paragraph.
-2. **Entry modes** — `.entry-modes` tablist, Find/Paste tabs and associated
-   panels. Find contains labelled search and normal-flow results.
+2. **Entry modes** — `.entry-modes` tablist, Find/Edit tabs and associated
+   panels. Find contains labelled search, normal-flow results, and a one-tap
+   paste shortcut; Edit contains the words-first textarea and review fields.
 3. **Review words** — Paste panel contains words-first textarea, associated
    feedback, optional title/artist below, and Preview sheet with Cancel.
 4. **Recovery status** — announces tab-scoped draft recovery or unavailable
@@ -56,13 +57,17 @@ Optional regions:
   lookup and an anchor to the manual textarea, and offers a feedback form.
 - **Songbook offer** — the inline offer for a visit holding more than one sheet.
 
-The explainer and FAQ follow the entry panel and are part of the page, not the
-task.
+- The explainer and FAQ follow the entry panel and are part of the page, not the
+  task. The songbook offer follows the active panel with the same step of space
+  the tab row uses; it is not part of the form it sits under.
 
 ## Composition
 
 - Both modes remain reachable during search, no matches and provider failure.
-  Only the active panel is visible; switching never clears either input.
+  Only the active panel is visible; switching never clears either input. The
+  resting Find panel offers "Have the words already? Paste them.", which opens
+  Edit and focuses the lyrics field; a search that answered or missed uses its
+  own paths instead.
 - Results stay inside `lyric_entry` in normal document flow at every width.
   They never overlay the editor or require horizontal body scrolling.
 - Selecting a result fills the form; it does not create a record. A record is

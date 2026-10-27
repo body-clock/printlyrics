@@ -7,7 +7,7 @@ const COLUMNS_KEY = "printlyrics-columns"
 const SIZES = ["s", "m", "l", "xl"]
 
 export default class extends Controller {
-  static targets = ["pageFrame", "pages", "pageSummary", "layoutStatus", "saveFeedback", "retry", "songFormatTitle", "songFormatGroup", "revisionLink", "zoom"]
+  static targets = ["pageFrame", "pages", "pageSummary", "layoutStatus", "saveFeedback", "retry", "songFormatTitle", "songFormatGroup", "revisionLink", "zoom", "formatTrigger"]
 
   connect() {
     this.settings = new SettingsStore()
@@ -23,6 +23,10 @@ export default class extends Controller {
     this.scrollFrame = null
     this.renderFrame = null
     this.zoom = "fit"
+    // Below the inline-inspector breakpoint Fit is the only inspection scale.
+    // A preference chosen on a wide screen must not leave the phone panning.
+    this.compactPreview = window.matchMedia("(max-width: 1099px)")
+    if (this.compactPreview.matches) this.zoom = "fit"
 
     this.songs = this.songSources()
     // Read before the first render replaces the sources with the pages it
@@ -32,8 +36,15 @@ export default class extends Controller {
     this.mark = this.element.querySelector("template[data-preview-mark]")?.content.firstElementChild.cloneNode(true)
 
     this.onScroll = this.onScroll.bind(this)
+    this.onCompactPreview = () => {
+      if (!this.compactPreview.matches || this.zoom === "fit") return
+      this.zoom = "fit"
+      if (this.hasZoomTarget) this.zoomTarget.value = "fit"
+      this.fitPagePreview()
+    }
     window.addEventListener("scroll", this.onScroll, { passive: true })
     window.addEventListener("resize", this.onScroll, { passive: true })
+    this.compactPreview.addEventListener("change", this.onCompactPreview)
 
     this.refreshAllControls()
     this.requestRenderPages()
@@ -44,6 +55,7 @@ export default class extends Controller {
   disconnect() {
     window.removeEventListener("scroll", this.onScroll)
     window.removeEventListener("resize", this.onScroll)
+    this.compactPreview?.removeEventListener("change", this.onCompactPreview)
     if (this.scrollFrame) window.cancelAnimationFrame(this.scrollFrame)
     if (this.renderFrame) window.cancelAnimationFrame(this.renderFrame)
     this.resizeObserver?.disconnect()
@@ -368,6 +380,7 @@ export default class extends Controller {
     this.refreshActiveControls()
     this.refreshBinder()
     this.refreshRevisionLink()
+    this.refreshFormatTrigger()
   }
 
   // The binder is an index, so the card for the song in view says so without
@@ -409,6 +422,7 @@ export default class extends Controller {
   refreshAllControls() {
     this.refreshBulkControls()
     this.refreshActiveControls()
+    this.refreshFormatTrigger()
   }
 
   refreshBulkControls() {
@@ -440,6 +454,18 @@ export default class extends Controller {
       button.classList.toggle("is-active", isActive)
       button.setAttribute("aria-pressed", isActive)
     })
+  }
+
+  // The visible label names the surface ("Format song"), while the accessible
+  // name names the document the panel will change. It follows the song in view.
+  refreshFormatTrigger() {
+    if (!this.hasFormatTriggerTarget) return
+
+    const template = this.formatTriggerTarget.dataset.formatLabelTemplate
+    if (!template) return
+
+    const song = this.songFor(this.activeSongToken) || this.songs[0]
+    if (song?.title) this.formatTriggerTarget.setAttribute("aria-label", template.replace("%{title}", song.title))
   }
 
   refreshRevisionLink() {

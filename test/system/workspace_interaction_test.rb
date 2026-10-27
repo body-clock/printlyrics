@@ -8,7 +8,7 @@ class WorkspaceInteractionTest < ApplicationSystemTestCase
     click_button "Preview sheet"
     assert_selector ".paper", text: "Completed draft"
     click_link "New sheet"
-    click_button "Paste", exact: true
+    click_button "Edit", exact: true
     assert_field "lyric_lyrics", with: ""
     assert_field "lyric_title", with: ""
     click_button "Find", exact: true
@@ -32,7 +32,7 @@ class WorkspaceInteractionTest < ApplicationSystemTestCase
       assert_no_difference "Lyric.count" do
         click_button "Search"
         assert_selector "#song-search-results [role='alert']"
-        click_button "Paste", exact: true
+        click_button "Edit", exact: true
         assert_field "lyric_lyrics", with: "Words kept through failure\n\nAnother verse"
         assert_field "lyric_title", with: "Draft title"
       end
@@ -49,7 +49,10 @@ class WorkspaceInteractionTest < ApplicationSystemTestCase
     page.current_window.resize_to(320, 780)
     visit lyric_path(lyric)
     assert_no_selector ".paper.is-unpaginated"
-    click_button "Format", exact: true
+    assert_button "Format sheet"
+    find(".workspace-format-trigger").click
+    assert_no_selector ".workspace-zoom", visible: true
+    assert_no_selector "#preview-zoom-hint", visible: true
     find("[data-preview-layout='size'] [data-preview-value='xl']").click
     assert_selector ".paper.size-xl"
     find("[data-preview-layout='columns'] [data-preview-value='2']").click
@@ -70,6 +73,10 @@ class WorkspaceInteractionTest < ApplicationSystemTestCase
     assert_no_selector ".workspace-inspector"
 
     geometry = page.evaluate_script("[...document.querySelectorAll('.paper')].map(p => [p.offsetWidth, p.offsetHeight, getComputedStyle(p.querySelector('.lyrics')).fontSize])")
+
+    # Inspection zoom is a wide-screen tool; selecting it must still change only
+    # the screen scale, never the paper or its type.
+    page.current_window.resize_to(1280, 900)
     select "125%", from: "Preview zoom"
     assert_equal geometry, page.evaluate_script("[...document.querySelectorAll('.paper')].map(p => [p.offsetWidth, p.offsetHeight, getComputedStyle(p.querySelector('.lyrics')).fontSize])")
     assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, page.evaluate_script("innerWidth")
@@ -80,6 +87,14 @@ class WorkspaceInteractionTest < ApplicationSystemTestCase
     ensure
       page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "screen")
     end
+  end
+
+  test "the find panel reaches the paste form without opening the tab" do
+    visit root_path
+    click_link "Paste them"
+    assert_selector "#entry-tab-paste[aria-selected='true']", text: "Edit"
+    assert_selector "#entry-panel-paste", visible: true
+    assert_equal "lyric_lyrics", page.evaluate_script("document.activeElement.id")
   end
 
   test "retry saves every failed formatting dimension without flattening neighbouring songs" do

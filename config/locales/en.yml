@@ -132,9 +132,11 @@ en:
   redesign_entry:
     modes: "Choose how to start"
     find: "Find"
-    paste: "Paste"
+    paste: "Edit"
     review: "Review the words"
     review_hint: "Edit every line before previewing. Separate verses with a blank line; title and artist are optional."
+    paste_shortcut_html: "Have the words already? %{link}."
+    paste_shortcut_link: "Paste them"
     preview: "Preview sheet"
     cancel: "Cancel"
     saved: "Draft kept in this tab until you preview or cancel."
@@ -143,7 +145,7 @@ en:
     leave: "Leave this edited draft? Preview creates a new sheet; Cancel discards the draft."
     revision: "You are making a new sheet. The original link and anything saved in your library stay unchanged."
     revision_book: "You are making a separate sheet. This songbook, its song and any library items stay unchanged."
-    transport_error: "The connection did not finish. Try again, or switch to Paste; your draft is still here."
+    transport_error: "The connection did not finish. Try again, or switch to Edit; your draft is still here."
 
   lyrics:
     status:
@@ -156,7 +158,7 @@ en:
       status:
         one: "1 match found. Choose a song."
         other: "%{count} matches found. Choose a song."
-      empty: "No matches found. Check the spelling, or choose Paste to use lyrics you already have."
+      empty: "No matches found. Check the spelling, or choose Edit to use lyrics you already have."
     new:
       seo:
         title: "Printable Song Lyrics - Find, Edit & Print | PrintLyrics"
@@ -383,10 +385,8 @@ en:
       layout_error: "The preview changed, but some formatting hasn't saved. Retry saving before leaving this page."
       dock:
         label: "Format the song you are reading"
-        eyebrow: "Formatting"
+        eyebrow: "This song"
         format: "Format for %{title}"
-        all_songs: "All songs"
-        all_songs_label: "Format all songs"
       binder:
         heading: "This songbook"
         count:
@@ -408,8 +408,8 @@ en:
   songs:
     errors:
       unavailable: "That song is no longer available"
-      service: "Song search is temporarily unavailable. You can still paste lyrics below."
-      load_service: "Those lyrics didn't load just now. Try again, or paste them below."
+      service: "Song search is temporarily unavailable. You can still paste lyrics on the Edit tab."
+      load_service: "Those lyrics didn't load just now. Try again, or paste them on the Edit tab."
 
   shared:
     site_header:
@@ -479,10 +479,11 @@ en:
 
   redesign_preview:
     new_sheet: "New sheet"
-    edit: "Edit lyrics"
-    edit_song: "Edit lyrics as a new sheet"
-    format: "Format"
+    edit: "Edit sheet"
+    edit_song: "Edit this song"
     format_sheet: "Format sheet"
+    format_song: "Format song"
+    format_named: "Format %{title}"
     close: "Close"
     sheet_preview: "Lyric sheet preview"
     book_preview: "Songbook preview"
@@ -492,8 +493,6 @@ en:
     zoom_hint: "Zoom changes your view, not the printed text."
     pdf_hint: "To save a PDF, choose Print, then Save as PDF in your browser."
     print_format_hint: "Text size and columns change the printed sheet."
-    revision_hint: "Editing creates a new sheet. This link and any saved original stay unchanged."
-    book_revision_hint: "Editing creates a separate sheet. This songbook and its saved songs stay unchanged."
     retry: "Retry saving"
     mixed: "Mixed"
     one_column: "1 column"

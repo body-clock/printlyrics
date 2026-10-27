@@ -1,5 +1,5 @@
 ---
-sourcesHash: e1a239927cfbfad9711269d81393ee67748ccd1cc4cf154f8f044ce2a51a72ce
+sourcesHash: 1ecac465f747ad65ca2fba91b09b75769feb38da6b36364d5db3867d391857a9
 id: print-preview
 description: >-
   Let a visitor review a generated sheet or songbook, adjust lyric size and
@@ -38,12 +38,13 @@ tests:
 
 Required regions:
 
-1. **Action band** — Edit lyrics for a sheet or Add another song for a book,
-   responsive Format trigger and primary Print.
-2. **Document stage** — measured count, Fit/explicit inspection zoom, browser
-   Save as PDF guidance, and one or more physical paper sheets.
-3. **Inspector** — responsive single-sheet settings or explicitly separated
-   named-song and whole-book groups.
+1. **Action band** — Edit sheet for a sheet or Add another song for a book,
+   responsive Format trigger named for its target and primary Print.
+2. **Document stage** — measured count, Fit inspection scale (explicit zoom on
+   wide screens), browser Save as PDF guidance, and one or more physical paper
+   sheets.
+3. **Inspector** — responsive single-sheet settings, or a named current-song
+   group and a collapsed whole-book `All songs` disclosure.
 4. **Failure feedback** — visible retryable layout-save error when needed.
 
 Optional regions:
@@ -58,8 +59,9 @@ Every region except the paper is `no-print`.
 ## Composition
 
 - A single sheet has one pair of size/column fieldsets in the inspector. A book
-  has one named current-song pair and one distinct whole-book pair. Both use
-  segmented-control; the outline contains no formatting controls.
+  has one named current-song pair and one whole-book pair inside a collapsed
+  `All songs` disclosure. Both use segmented-control; the outline contains no
+  formatting controls.
 - The print action is the bar's only filled action. Do not add "Save PDF" beside
   it; the print dialog provides it.
 - Size and column changes apply immediately and repaginate through the preview
@@ -76,8 +78,9 @@ Every region except the paper is `no-print`.
 - Mixed whole-book values leave options unselected and display Mixed text.
 - The mobile inspector is a compact nonmodal bottom panel; Close/Escape restore
   the invoking control. Desktop settings are inline beside the paper.
-- Fit and zoom change inspection only. Explicit zoom scrolls inside the stage,
-  never the body, and never changes print type size.
+- Fit changes inspection on every width. Explicit zoom exists only at 1100px
+  and wider, scrolls inside the stage, never the body, and never changes print
+  type size.
 - Failed saves remain visible and retryable. Pending changes are tracked per
   entry and dimension; a newer success must not conceal an older failed update.
 - Starting a songbook from a sheet carries that sheet's current size and column
@@ -87,15 +90,18 @@ Every region except the paper is `no-print`.
 - Offers appear after the paper; their server conditions decide visibility.
 - The page summary is updated by the controller after measurement; it is not a
   static string.
-- Edit lyrics creates an independent revision. The original shared sheet and its
-  library/book membership never change; the editor explains this before preview.
+- Edit sheet (a sheet) or Edit this song (in a book's current-song group)
+  creates an independent revision, including title and artist. The original
+  shared sheet and its library/book membership never change; the editor explains
+  this before preview.
 
 ## Verification
 
 Static:
 
 - All workspace chrome is no-print and the paper remains white in dark mode.
-- Inspector settings identify their target; whole-book Mixed is visible.
+- Inspector settings identify their target; the Format trigger names the sheet
+  or the song in view; whole-book Mixed is visible when the disclosure is open.
 - Every song source has its persisted size/columns and first-page anchor.
 
 Behavioural:

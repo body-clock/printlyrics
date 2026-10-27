@@ -47,7 +47,7 @@
       <div class="control-groups">
         <button type="button" class="button button-secondary workspace-format-trigger"
                 data-workspace-target="trigger" data-action="workspace#toggleInspector"
-                aria-controls="workspace-inspector" aria-expanded="false"><%= t("redesign_preview.format") %></button>
+                aria-controls="workspace-inspector" aria-expanded="false"><%= t("redesign_preview.format_sheet") %></button>
         <button type="button" class="button button-print" data-action="preview#print">
           <span><%= t(".controls.print") %></span>
         </button>
@@ -78,6 +78,24 @@
       </div>
     </section>
 
+    <div class="workspace-secondary no-print">
+      <%= link_to t("redesign_preview.new_sheet"), root_path, class: "button-text" %>
+      <%= button_to songbooks_path,
+            params: { lyric_token: @lyric.token, then: "add_song", size: "m", columns: 1 },
+            class: "button button-secondary button-add-song",
+            form: { data: { controller: "layout-preference" } } do %>
+        <span aria-hidden="true">+</span>
+        <span><%= t(".controls.add_to_songbook") %></span>
+      <% end %>
+      <%= render "shared/songbook_prompt", surface: "sheet" if @generated_page_key %>
+      <% if authenticated? %>
+        <%= render "shared/library_prompt", item: @lyric %>
+      <% elsif @account_prompt %>
+        <%= render "shared/account_prompt", item: @lyric, surface: "sheet" %>
+      <% end %>
+      <%= render "shared/feedback_prompt", page_key: @generated_page_key %>
+    </div>
+
     <aside id="workspace-inspector" class="workspace-inspector no-print"
            data-workspace-target="inspector" aria-labelledby="workspace-inspector-heading" hidden>
       <div class="workspace-inspector-heading">
@@ -87,25 +105,6 @@
       </div>
       <p class="workspace-hint"><%= t("redesign_preview.print_format_hint") %></p>
       <%= render "shared/preview_controls" %>
-      <p class="workspace-hint"><%= t("redesign_preview.revision_hint") %></p>
     </aside>
-  </div>
-
-  <div class="workspace-secondary no-print">
-    <%= link_to t("redesign_preview.new_sheet"), root_path, class: "button-text" %>
-    <%= button_to songbooks_path,
-          params: { lyric_token: @lyric.token, then: "add_song", size: "m", columns: 1 },
-          class: "button button-secondary button-add-song",
-          form: { data: { controller: "layout-preference" } } do %>
-      <span aria-hidden="true">+</span>
-      <span><%= t(".controls.add_to_songbook") %></span>
-    <% end %>
-    <%= render "shared/songbook_prompt", surface: "sheet" if @generated_page_key %>
-    <% if authenticated? %>
-      <%= render "shared/library_prompt", item: @lyric %>
-    <% elsif @account_prompt %>
-      <%= render "shared/account_prompt", item: @lyric, surface: "sheet" %>
-    <% end %>
-    <%= render "shared/feedback_prompt", page_key: @generated_page_key %>
   </div>
 </div>

@@ -8,12 +8,12 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   end
 
   def fill_in_entry(label, with:)
-    click_button "Paste" unless has_selector?("#entry-panel-paste", visible: true)
+    click_button "Edit" unless has_selector?("#entry-panel-paste", visible: true)
     fill_in label, with: with
   end
 
   def open_format
-    click_button "Format", exact: true if has_button?("Format", exact: true)
+    find(".workspace-format-trigger").click if has_css?(".workspace-format-trigger", visible: true)
   end
 
   def open_outline
