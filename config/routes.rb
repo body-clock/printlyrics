@@ -20,6 +20,15 @@ Rails.application.routes.draw do
   root "lyrics#new"
   get "print-lyrics-on-one-page", to: "printing_guides#one_page", as: :print_lyrics_on_one_page
   get "print-a-songbook", to: "printing_guides#songbook", as: :print_a_songbook
+
+  # Markdown twins of the crawlable pages, per the llmstxt.org ".md" convention.
+  # The same actions negotiate Accept: text/markdown on the HTML URL; these give
+  # headless clients a direct path that never depends on the Accept header.
+  get "index.md", to: "lyrics#new", defaults: { format: :md }
+  get "print-lyrics-on-one-page.md", to: "printing_guides#one_page", defaults: { format: :md }
+  get "print-a-songbook.md", to: "printing_guides#songbook", defaults: { format: :md }
+  get "llms-full.txt", to: redirect("/index.md")
+
   get "lyrics", to: redirect("/")
   resources :lyrics, only: %i[create show], param: :token do
     collection do

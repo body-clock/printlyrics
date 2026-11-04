@@ -1,0 +1,29 @@
+# <%== t(".heading") %>
+
+> <%== t(".seo.description") %>
+
+<%== t(".introduction") %>
+
+## <%== t(".answer.heading") %>
+
+<%== markdownify(t(".answer.body_html", tool_link: link_to(t(".answer.tool_link"), root_url))) %>
+
+<% %i[first_sheet add_songs gather order remove print_all].each do |step| %>
+## <%== t(".steps.#{step}.heading") %>
+
+<%== t(".steps.#{step}.body") %>
+
+<% end %>
+## <%== t(".faq.heading") %>
+
+<% %i[count own_sheet add_later word account].each do |question| %>
+### <%== t(".faq.questions.#{question}.heading") %>
+
+<%== t(".faq.questions.#{question}.body") %>
+
+<% end %>
+## <%== t(".callout.heading") %>
+
+<%== t(".callout.body") %>
+
+[<%== t(".callout.link") %>](<%== root_url %>)

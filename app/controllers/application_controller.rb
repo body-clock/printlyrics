@@ -52,4 +52,22 @@ class ApplicationController < ActionController::Base
     session[:created_songbook_origin] = origin
     session[:created_songbook_size] = songbook.entries.size
   end
+
+  # The crawlable pages also publish a Markdown twin, which coding agents reach
+  # two ways: a direct /path.md URL, or Accept: text/markdown negotiation on the
+  # HTML URL. This advertises the twin and keeps the representations distinct.
+  #   @markdown_url  feeds the <link rel="alternate"> the HTML layout prints
+  #   Link header    reaches headless clients that never parse the body
+  #   Vary: Accept   lets caches key HTML and Markdown apart
+  def expose_markdown_twin(html_path:, markdown_path: "#{html_path}.md")
+    @markdown_url = request.base_url + markdown_path
+    vary = response.headers["Vary"].to_s.split(",").map(&:strip).reject(&:empty?)
+    response.headers["Vary"] = (vary + [ "Accept" ]).uniq.join(", ")
+    response.headers["Link"] =
+      if request.format.md?
+        %(<#{html_path}>; rel="alternate"; type="text/html")
+      else
+        %(<#{markdown_path}>; rel="alternate"; type="text/markdown")
+      end
+  end
 end
