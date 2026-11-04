@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.20.0](https://github.com/body-clock/printlyrics/compare/v1.19.1...v1.20.0) (2026-11-04)
+
+
+### Features
+
+* **markdown:** serve Markdown twins to LLM agents ([#152](https://github.com/body-clock/printlyrics/issues/152)) ([76694e7](https://github.com/body-clock/printlyrics/commit/76694e72af223470d55bdd02f182b31c0c348d63))
+
+
+### Miscellaneous
+
+* **deps:** bump bootsnap, honeybadger, selenium-webdriver, tailwindcss-rails ([#155](https://github.com/body-clock/printlyrics/issues/155)) ([a2c9170](https://github.com/body-clock/printlyrics/commit/a2c9170a2b3b4fb30cc45837699fe310032a6f5a))
+* **deps:** bump faraday from 2.15.0 to 2.15.1 ([#147](https://github.com/body-clock/printlyrics/issues/147)) ([051a318](https://github.com/body-clock/printlyrics/commit/051a318ad548c5dc6fab5dc00bca5e612cb673f7))
+* **deps:** patch vulnerable Rails and transitive gems ([#153](https://github.com/body-clock/printlyrics/issues/153)) ([d631446](https://github.com/body-clock/printlyrics/commit/d63144638a080b48590c42699770db1c326f12be))
+
 ## [1.19.1](https://github.com/body-clock/printlyrics/compare/v1.19.0...v1.19.1) (2026-10-27)
 
 
