@@ -1,0 +1,12 @@
+# PrintLyrics
+
+> Find lyrics by song or artist, edit every line, fit them into one or two columns, then print or save a clean lyric sheet or songbook as a PDF. Free, online, and no account required.
+
+## Guides
+
+- [Print lyrics on one page](https://printlyrics.app/print-lyrics-on-one-page.md): Fit song lyrics on one page using two columns, readable font sizing, print settings, and preview.
+- [Make a songbook of lyric sheets](https://printlyrics.app/print-a-songbook.md): Gather lyric sheets into one songbook and print every song as a single job.
+
+## The tool
+
+- [PrintLyrics](https://printlyrics.app/index.md): Search or paste lyrics, review every word, fit the page, and print or save as PDF.

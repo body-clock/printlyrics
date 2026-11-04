@@ -1,0 +1,38 @@
+# <%== t(".heading") %>
+
+> <%== t(".seo.description") %>
+
+<%== t(".intro") %>
+
+## <%== t(".benefits.label") %>
+
+<% t(".benefits.items").each do |benefit| %>
+- <%== benefit %>
+<% end %>
+
+## <%== t(".explainer.heading") %>
+
+<%== t(".explainer.introduction") %>
+
+<% %i[find edit print].each do |step| %>
+### <%== t(".explainer.steps.#{step}.heading") %>
+
+<%== t(".explainer.steps.#{step}.body") %>
+
+<% end %>
+### <%== t(".explainer.use_cases.heading") %>
+
+<%== t(".explainer.use_cases.body") %>
+
+<%== markdownify(t(".explainer.guide_note_html", guide_link: link_to(t(".explainer.guide_link"), print_lyrics_on_one_page_url))) %>
+
+<%== markdownify(t(".explainer.songbook_note_html", songbook_link: link_to(t(".explainer.songbook_link"), print_a_songbook_url))) %>
+
+## <%== t(".faq.heading") %>
+
+<% %i[source maker pdf one_page privacy].each do |question| %>
+### <%== t(".faq.questions.#{question}.heading") %>
+
+<%== t(".faq.questions.#{question}.body") %>
+
+<% end %>

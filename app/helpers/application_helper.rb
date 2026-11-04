@@ -128,4 +128,13 @@ module ApplicationHelper
     item = saved_item.item
     item.is_a?(Songbook) ? saved_songbook_title(item) : lyric_title(item)
   end
+
+  # Turns the app's own anchors (link_to output) into Markdown so the .md pages
+  # reuse the same _html locale keys as the HTML pages without drifting. It
+  # handles only the anchors this app renders; user text never reaches it.
+  def markdownify(html)
+    html.to_s
+      .gsub(%r{<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>}i, '[\2](\1)')
+      .then { |text| CGI.unescapeHTML(text) }
+  end
 end

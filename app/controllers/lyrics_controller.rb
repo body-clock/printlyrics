@@ -7,6 +7,11 @@ class LyricsController < ApplicationController
   def new
     @lyric = Lyric.new
     @songbook = songbook_context
+    expose_markdown_twin(html_path: root_path, markdown_path: "/index.md")
+    respond_to do |format|
+      format.html
+      format.md { render layout: false }
+    end
   end
 
   def create
