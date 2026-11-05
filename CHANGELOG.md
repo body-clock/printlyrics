@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.21.0](https://github.com/body-clock/printlyrics/compare/v1.20.0...v1.21.0) (2026-11-05)
+
+
+### Features
+
+* **print:** count every print and offer it under the sheet ([#158](https://github.com/body-clock/printlyrics/issues/158)) ([f40825d](https://github.com/body-clock/printlyrics/commit/f40825dbc638a0f77d313b75ebae8a0e926b05b1))
+* **songbook:** answer the per-song formatting question in the guide ([#156](https://github.com/body-clock/printlyrics/issues/156)) ([45f8830](https://github.com/body-clock/printlyrics/commit/45f88307267396bad2b30271a14fa0f832488f4a))
+
 ## [1.20.0](https://github.com/body-clock/printlyrics/compare/v1.19.1...v1.20.0) (2026-11-04)
 
 
