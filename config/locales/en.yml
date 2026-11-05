@@ -340,6 +340,9 @@ en:
           add_later:
             heading: "Can I add a song to a songbook later?"
             body: "Yes. Open the songbook and choose Add a song, or use Add another song on any generated sheet. The new song joins the end of the set, and your chosen layout applies to it too."
+          customize:
+            heading: "Can I use a different size or column count for each song?"
+            body: "Yes. Each song keeps its own size and column count, so a two-column chorus and a one-column verse can sit in the same book. The All songs control changes the whole set at once, while a song's own Formatting control changes that song alone."
           word:
             heading: "Can I make a songbook in Word instead?"
             body: "You can, but a document editor leaves you managing page breaks and spacing so that each song starts on its own sheet. A songbook here does that already: every song keeps its sheet, the layout you chose applies to all of them, and the set prints as one job."
