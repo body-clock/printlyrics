@@ -88,7 +88,12 @@ either route, so a sheet built from a search result reports both
 minus `Song Result Selected` minus `Song Search Missed` is what separates a
 paste from a search that was abandoned.
 Its output is `Print Page Generated`, and its completion is
-`Print Dialog Opened`, the sheet reaching the printer. `Songbook Printed`
+`Print Dialog Opened`, the sheet reaching the printer. That completion is
+reported from the browser's own `beforeprint` as well as from the control,
+because a print can start at `⌘P`, in the browser's menu, or from a share sheet,
+and only the browser's event sees all of them. The control reports it directly
+too, because a stubbed or unsupported dialog raises nothing, and one print is
+one event however it started. `Songbook Printed`
 completes the set surface; `Second Print Page Generated`, `Songbook Created`,
 and `Songbook Created From Offer` are the artefacts and subsets between them.
 

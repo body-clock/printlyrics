@@ -33,7 +33,7 @@
 
 <div class="preview-shell"
      data-controller="preview"
-     data-action="resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
+     data-action="beforeprint@window->preview#reportPrint resize@window->preview#fitPagePreview afterprint@window->preview#restorePagePreview">
   <%= render "shared/flash" %>
 
   <nav class="control-bar no-print" aria-label="<%= t(".controls.label") %>">
@@ -94,6 +94,19 @@
       </article>
     </div>
   </div>
+
+  <%# The bar keeps the print action fixed at the top of the stage. This is the
+      same action where the reading ends, on the sheet a visit just generated —
+      the moment its own read is about to close. A shared sheet is a reader's
+      page and keeps the one control. %>
+  <% if @generated_page_key %>
+    <div class="sheet-actions no-print">
+      <button type="button" class="button button-primary" data-action="preview#print">
+        <span aria-hidden="true">↗</span>
+        <span><%= t(".actions.print_sheet") %></span>
+      </button>
+    </div>
+  <% end %>
 
   <%# A signed-in visitor sees the shelf action; a signed-out one is asked only
       when this visit made the sheet. A shared page gets neither. %>

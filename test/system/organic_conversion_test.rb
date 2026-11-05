@@ -19,7 +19,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_text "Practice Song"
     assert_text "Home Guitarist"
     assert_text "First line"
-    assert_button "Print"
+    within(".control-bar") { assert_button "Print" }
     assert_selector "meta[name='robots'][content*='noindex']", visible: false
     find("[data-preview-layout='columns'] [data-preview-value='2']").click
     assert_selector ".lyrics.cols-2"
@@ -67,7 +67,8 @@ class OrganicConversionTest < ApplicationSystemTestCase
     )
 
     assert_equal(
-      [ "Manual Entry Submitted", "Print Page Generated", "Account Prompt Shown", "Feedback Prompt Shown" ],
+      [ "Manual Entry Submitted", "Print Page Generated", "Account Prompt Shown", "Feedback Prompt Shown",
+        "Print Dialog Opened" ],
       captured_analytics_calls.map(&:first).reject { |name| name == "pageview" }
     )
   end
@@ -182,7 +183,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
 
     reset_analytics_capture
     stub_native_print
-    click_button "Print"
+    within(".control-bar") { click_button "Print" }
 
     entries = analytics_order
     print_event_index = entries.index { |entry| entry["name"] == "Print Dialog Opened" }
@@ -193,6 +194,30 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_equal "1", entries.dig(print_event_index, "data", "page_count_in_session")
     # A single sheet is not a set print.
     assert_nil entries.index { |entry| entry["name"] == "Songbook Printed" }
+  end
+
+  test "a print the button did not start still reports the dialog" do
+    visit root_path
+    install_persistent_analytics_capture
+    page.execute_script(analytics_capture_source)
+
+    fill_in "Song title", with: "Keyboard Song"
+    fill_in "Lyrics", with: "Line one"
+    click_button "Generate print page"
+    assert_text "Keyboard Song"
+
+    reset_analytics_capture
+
+    # ⌘P and the browser's menu never reach the button. The browser raises the
+    # event for both, which is what the sheet reports from now.
+    page.execute_script("window.dispatchEvent(new Event('beforeprint'))")
+    assert_equal 1, analytics_calls_named("Print Dialog Opened").length
+    page.execute_script("window.dispatchEvent(new Event('afterprint'))")
+
+    # The control under the paper is the same action, so it reports once more
+    # rather than a second event.
+    within(".sheet-actions") { click_button "Print this sheet" }
+    assert_equal 2, analytics_calls_named("Print Dialog Opened").length
   end
 
   test "restoring a generated page does not duplicate its generation event" do
@@ -209,7 +234,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
       page.execute_script("Turbo.visit('/')")
       assert_selector "h1", text: "Find, format, and print song lyrics"
       page.execute_script("Turbo.visit(#{generated_path.to_json})")
-      assert_button "Print"
+      within(".control-bar") { assert_button "Print" }
     end
 
     assert_equal 1, analytics_calls_named("Print Page Generated").length
@@ -605,7 +630,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     assert_selector "[data-preview-page]", count: 1
     assert_selector ".page-summary", text: /1 page/
 
-    click_button "Print"
+    within(".control-bar") { click_button "Print" }
     assert page.evaluate_script("window.__printed")
   end
 
@@ -697,7 +722,7 @@ class OrganicConversionTest < ApplicationSystemTestCase
     refute_includes captured_umami_payloads.to_json, lyric.artist
 
     page.execute_script("window.print = () => {}")
-    click_button "Print"
+    within(".control-bar") { click_button "Print" }
 
     # Umami keeps the product's names verbatim, spaces and all, so there is no
     # mapping table between the two, and a pageview is the payload with no name.

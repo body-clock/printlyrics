@@ -244,6 +244,8 @@ en:
         back: "Back"
         add_to_songbook: "Add another song"
         print: "Print"
+      actions:
+        print_sheet: "Print this sheet"
       page_count:
         one: "Letter · 0.75 in margins · 1 page"
         other: "Letter · 0.75 in margins · %{count} pages"
@@ -367,6 +369,8 @@ en:
         label: "Songbook controls"
         add_song: "Add a song"
         print: "Print all"
+      actions:
+        print_set: "Print this songbook"
       layout_error: "That formatting didn't save. Try again."
       dock:
         label: "Format the song you are reading"
