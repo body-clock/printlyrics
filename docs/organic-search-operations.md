@@ -160,8 +160,9 @@ rather than making a single sheet.
 
 Umami has no channel filter. It reports the grouping under **Channels**, but its
 segment builder offers referrer, location, environment, UTM, and event instead,
-so the ordered questions are read under one referrer segment per search engine,
-which "Read the events in Umami" names. Its attribution is visit-level; do not
+so traffic is read under one referrer segment per search engine, which "Read the
+events in Umami" names. Conversions are read with `run_attribution`, because the
+sheet and dialog events carry no referrer. Its attribution is visit-level; do not
 try to identify individual visitors.
 
 ### Umami
@@ -288,7 +289,7 @@ name mapping to keep in step, and no per-event charge.
 | --- | --- |
 | **Events** | The row's **Events** count is the total; **Visitors** is the unique count. |
 | **Goals** | Optional saved conversions for the readings below. Umami counts an event without one. |
-| **Funnels** | Build five, each with a 60-minute window: **Search to sheet** (`Song Search Submitted` → `Print Page Generated`), **Paste to sheet** (`Manual Entry Submitted` → `Print Page Generated`), **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`), **Search to printer** (`Song Search Submitted` → `Song Result Selected` → `Print Page Generated` → `Print Dialog Opened`), and **Account to saved item** (`Account Created` → `Library Item Saved`). |
+| **Funnels** | The six saved funnels: **Search to printer** (`Song Search Submitted` → `Song Result Selected` → `Print Page Generated` → `Print Dialog Opened`, 60 min), **Search to miss** (`Song Search Submitted` → `Song Search Missed`, 60 min), **Sheet to printer** (`Print Page Generated` → `Print Dialog Opened`, 60 min, single sheet), **Set to printer** (`Songbook Created` → `Songbook Printed`, 24 h), **Offer to printed set** (`Songbook Offer Shown` → `Songbook Created From Offer` → `Songbook Printed`, 24 h), and **Account to saved item** (`Account Prompt Shown` → `Account Created` → `Library Item Saved`, 24 h). |
 | **Event data** | Each property with its value counts: `entry_method`, `songbook_size`, `songbook_origin`, `page_count_in_session`, `songbook_offer_surface`, `account_method`, `account_prompt_surface`, `saved_item_type`, `save_source`, and the feedback event's `feedback_surface`, `song_query`, `feedback_note`, and `feedback_reason`. |
 | **Reports**, **Segments**, **Cohorts**, **Journeys** | Ad-hoc queries over the same events and properties. |
 
@@ -339,7 +340,10 @@ Rules that make those surfaces read correctly:
   same call with `filters: { referrer: "bing.com" }` returns zero steps where the
   unfiltered funnel returns 174. A filtered funnel is therefore always the
   segment's, and a zero-step funnel is a filter problem before it is a product
-  finding.
+  finding. A referrer segment is the exception: `Print Page Generated` and
+  `Print Dialog Opened` carry no referrer on a saved page, so a referrer-scoped
+  funnel returns zero at those steps however the segment is built. Read
+  acquisition conversions with `run_attribution` instead.
 - **Nothing marks a change on the timeline by itself.** Annotate what changes a
   reading — an instrumentation release, a sitemap submission, an indexing change,
   the measurement start — because a chart shows an effect and never its cause,
@@ -373,8 +377,9 @@ through the page-response path, so they are ordinary Umami event rows.
   them the same.
 - **Do they come back?** `Account Signed In` and `Account Library Opened`.
   A creation count with no later opens is a one-time detour, not a habit.
-- **Did a new account ever save anything?** The **Account to saved item** funnel
-  reads `Account Created` → `Library Item Saved` in a 60-minute window.
+- **Did a new account ever save anything?** The saved **Account to saved item**
+  funnel reads `Account Prompt Shown` → `Account Created` → `Library Item Saved`
+  over 24 hours; read it as direction only until the account flow has 30 days.
 
 Campaign performance needs no application support: Umami attributes a visit from
 the landing URL's own `utm_source`, `utm_medium`, and `utm_campaign`, and reports
@@ -407,8 +412,9 @@ section 4 table, and neither needs an object saved in the dashboard first.
 - **Where a search dies.** `run_journey` with `startStep: "/"` continues the path
   after the landing page. In the same eight days, the step that follows a search
   is the miss prompt or the paste form about twice as often as a picked result,
-  so the loss is in the picking rather than in the making. **Search to printer**
-  states that as ordered steps; the journey states it before that funnel exists.
+  so the loss is in the picking rather than in the making. **Search to miss**
+  states the zero-result branch and **Search to printer** states the rest; the
+  journey states both before those funnels existed.
   Read the journey's counts as visits rather than visitors — they sum past the
   site's visitor total, and what the dashboard's own view shows is what settles
   the unit.
@@ -730,14 +736,15 @@ On launch day, record zero or current values for the previous 30 days:
 | Valid indexed pages and excluded-page reasons | Search Console Page indexing |
 | Queries, impressions, clicks, CTR, and average position | Search Console Performance |
 | Organic visitors and entry pages | Umami **Channels** and **Referrers**, or a saved referrer segment per engine |
-| `Print Page Generated` from organic visits | Umami `Print Page Generated` under the organic referrer segment |
-| `Print Dialog Opened` from organic visits | Umami `Print Dialog Opened` under the organic referrer segment |
-| Generated-to-dialog conversion rate | Umami funnel **Sheet to printer** |
-| Where a search is lost: nothing picked, or picked and not made | Umami funnel **Search to printer**, or `run_journey` from `/` |
+| `Print Page Generated` from organic visits | `run_attribution` over `Print Page Generated`, first click; sum the engine rows |
+| `Print Dialog Opened` from organic visits | `run_attribution` over `Print Dialog Opened`, first click; sum the engine rows |
+| Single-sheet generated-to-dialog conversion rate | Umami funnel **Sheet to printer** |
+| Where a search is lost: nothing picked, or picked and not made | Umami funnels **Search to miss** and **Search to printer**, or `run_journey` from `/` |
 | `Second Print Page Generated` from organic visits | Umami `Second Print Page Generated` |
 | Share of generating visits that reach a second sheet | Umami `Second Print Page Generated` against `Print Page Generated` |
-| Sets printed as one job | Umami `Songbook Printed` |
+| Sets created and printed | Umami funnel **Set to printer**, and `Songbook Printed` for the count |
 | Sets created, and how many came from the suggestion | Umami `Songbook Created` and `Songbook Created From Offer`, or `songbook_origin` |
+| Offer shown to printed set | Umami funnel **Offer to printed set** |
 | Referrers that generated a sheet, and each one's share of its arrivals | Umami `run_attribution` over `Print Page Generated`, first click |
 
 Record the window and the segment with every figure. The pre-Umami baseline is a
@@ -844,14 +851,20 @@ period before the migration. Keep the exported CSVs with the launch issue.
 ### Reading the target
 
 The 90-day target above is 25 `Print Dialog Opened` events attributed to Organic
-Search. In Umami that is the event's **Visitors** count under the organic
-segments — the referrer segments, one per engine, because referrer is the
-acquisition dimension Umami can filter on. Its **Channels** report groups the
-same traffic but cannot be saved as a filter, so a channel figure is a reading of
-its own rather than a segment's. Record which segment a figure came from in every
-review.
+Search. Read it with `run_attribution` over `Print Dialog Opened`, first click,
+and sum the search-engine rows: Bing, Google, DuckDuckGo, and Yahoo with its
+subdomains. Do not read it as the event's Visitors count under a referrer
+segment. The tracker reports the document's referrer on every payload, and a
+saved page has none, so `Print Page Generated` and `Print Dialog Opened` rows
+carry no referrer and a referrer segment excludes them; attribution uses the
+visit's arrival referrer and sees the whole visit. Record the window and the
+referrer rows with every review.
 
 ### First Umami reading, 2026-10-07
+
+The funnel names in the readings below are the ones saved at the time; `Search to
+sheet` and `Paste to sheet` were retired on 2026-10-28 and replaced by `Search to
+miss` and `Set to printer`.
 
 The first eight days of the Umami series, from the site's creation on 2026-09-30
 to this reading: 2,338 pageviews, 642 visitors, and 744 visits, over 45

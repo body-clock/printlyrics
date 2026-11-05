@@ -33,13 +33,19 @@ property as well. `Songbook Created` and `Songbook Created From Offer` are the
 worked example: the subset over the total is the offer's conversion rate.
 
 A saved funnel carries a name too, and it follows the same rule: the funnel that
-reads a tool's attempt to its output is named `<entry> to <outcome>` in the
-product's own words. The print tool's three are `Search to sheet`, `Paste to
-sheet`, and `Sheet to printer`, and one more carries the selection step that the
-other three cannot: `Search to printer` reads the same attempt through
-`Song Result Selected` and `Print Page Generated` to `Print Dialog Opened`, so
-the search's loss is read as two — a search that found nothing to pick, and a
-result that was picked and never made.
+reads a tool's attempt to its outcome is named `<entry> to <outcome>` in the
+product's own words. The print tool's five partition the flow rather than repeat
+it: `Search to printer` reads the attempt through `Song Result Selected` and
+`Print Page Generated` to `Print Dialog Opened`; `Search to miss` reads the
+zero-result branch; `Sheet to printer` reads a generated single sheet to the
+dialog;
+`Set to printer` reads a created songbook to its print over 24 hours; and
+`Offer to printed set` reads the offer through `Songbook Created From Offer` to
+`Songbook Printed`. There is no `Paste to sheet`: `Manual Entry Submitted` and
+`Print Page Generated` fire on the same generate request, so their ratio is a
+generation-success check, not a funnel. Read it as the two event counts. The
+account flow adds one: `Account to saved item` reads `Account Prompt Shown` →
+`Account Created` → `Library Item Saved` over 24 hours.
 
 The twenty names in use, grouped by the flow that fires them:
 
@@ -57,6 +63,16 @@ The twenty names in use, grouped by the flow that fires them:
   `account_prompt_surface`; `Library Item Saved` carries `saved_item_type` and
   `save_source`; `Account Library Opened` counts a signed-in return to the
   library.
+
+The list is the ceiling, not a snapshot. An event is added only with a slot, a
+name in the product's words, and a question it answers; an event with no reading
+is not added. An event is retired in the same change that removes the surface
+firing it: delete the marker and the name from this list together. Umami keeps
+the historical rows, and they are not a reason to keep a dead name in the
+contract or a dead marker in the code. Audit quarterly against the dashboard: a
+name not in this list is drift, and a listed name with no events for 30 days is a
+retirement candidate. Do not merge a subset into its total to lower the count —
+the subset is the conversion.
 
 ## The three slots every tool fills
 

@@ -173,18 +173,21 @@ The vocabulary, the funnels, and the properties for this deployment live in
 `docs/measurement-contract.md` and `docs/organic-search-operations.md`. The
 load-bearing constraints for the query plan:
 
-- The nine event names are `Print Page Generated`,
-  `Second Print Page Generated`, `Print Dialog Opened`, `Songbook Created`,
-  `Songbook Created From Offer`, `Songbook Printed`, `Song Search Submitted`,
-  `Song Search Missed`, and `Manual Entry Submitted`. There are no others; a
-  tenth name is drift.
+- The twenty event names in `docs/measurement-contract.md` are the vocabulary,
+  and that list is the ceiling. A name not in the list is drift; a name with no
+  events for 30 days is a retirement candidate.
 - `Second Print Page Generated` is not a funnel step. It fires before the second
   print dialog, so it is read as a standalone packet-intent signal.
-- The three saved funnels are `Search to sheet`, `Paste to sheet`, and
-  `Sheet to printer`, each with a 60-minute window.
-- The properties are `entry_method`, `songbook_size`, `songbook_origin`,
-  `campaign_source`, `campaign_name`, `page_count_in_session`, and
-  `songbook_offer_surface`, and each rides only on the events that set it.
+- The six saved funnels are `Search to printer`, `Search to miss`,
+  `Sheet to printer`, `Set to printer`, `Offer to printed set`, and
+  `Account to saved item`; the last three use a 24-hour window, the rest 60
+  minutes.
+- The properties are the thirteen the contract lists — `page_count_in_session`,
+  `songbook_size`, `songbook_origin`, `songbook_offer_surface`, `entry_method`,
+  `account_method`, `account_prompt_surface`, `saved_item_type`, `save_source`,
+  `feedback_surface`, `feedback_reason`, `feedback_note`, and `song_query` — and
+  each rides only on the events that set it. Campaign values are URL attribution,
+  not properties.
 - Saved pages report `/lyrics/:token` and `/songbooks/:token`, so document
   identity is not recoverable from a reported path.
 
