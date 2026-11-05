@@ -1881,6 +1881,15 @@ html:has(body.preview-body) {
   margin: 0 auto;
 }
 
+/* The bar's print action is fixed at the top of the stage and the reading ends
+   at the bottom of the sheet, so the same commitment is offered where the eye
+   already is. */
+.sheet-actions {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-6) auto var(--space-3);
+}
+
 .paper-pages {
   display: grid;
   gap: 0.3in;

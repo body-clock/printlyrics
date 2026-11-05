@@ -6,6 +6,12 @@ const SIZE_KEY = "printlyrics-size"
 const COLUMNS_KEY = "printlyrics-columns"
 const SIZES = ["s", "m", "l", "xl"]
 
+// One print reaches the report twice when the visitor presses the button: the
+// control reports it, then `window.print()` raises `beforeprint` and the
+// window reports it again. The pair arrives within a few milliseconds, so a
+// report this soon after the last one is the same print.
+const PRINT_REPORT_GAP_MS = 250
+
 export default class extends Controller {
   static targets = ["pageFrame", "pages", "pageSummary", "layoutStatus", "songFormatTitle", "songFormatGroup"]
 
@@ -19,6 +25,7 @@ export default class extends Controller {
     this.saveQueue = Promise.resolve()
     this.activeSongToken = null
     this.scrollFrame = null
+    this.lastPrintReport = 0
 
     this.songs = this.songSources()
     // Read before the first render replaces the sources with the pages it
@@ -98,7 +105,17 @@ export default class extends Controller {
     }
   }
 
-  print() {
+  // Printing is not only the button. A visitor presses ⌘P, uses the browser's
+  // menu, or prints from a share sheet, and none of those pass through this
+  // controller. The browser raises `beforeprint` for every one of them, so the
+  // report belongs there; the button reports as well because a stubbed or
+  // unsupported dialog never raises it, and `PRINT_REPORT_GAP_MS` keeps the one
+  // click from counting twice.
+  reportPrint() {
+    const now = Date.now()
+    if (now - this.lastPrintReport < PRINT_REPORT_GAP_MS) return
+    this.lastPrintReport = now
+
     const songbookSize = Number(this.element.dataset.songbookSize || 0)
     const isSet = songbookSize > 0
 
@@ -112,6 +129,10 @@ export default class extends Controller {
     // total stays continuous while the set prints stay countable. The size and
     // `entry_method` ride as properties on the dialog event for the same split.
     if (isSet) trackEvent("Songbook Printed", songbookSizeProperties(songbookSize))
+  }
+
+  print() {
+    this.reportPrint()
 
     window.print()
   }
@@ -403,6 +424,9 @@ export default class extends Controller {
   }
 
   restorePagePreview() {
+    // The print attempt is over, so the next `beforeprint` is a new one and not
+    // the half of a click this controller already reported.
+    this.lastPrintReport = 0
     window.requestAnimationFrame(() => this.fitPagePreview())
   }
 }
