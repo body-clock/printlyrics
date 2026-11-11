@@ -26,7 +26,12 @@ Rails.application.configure do
     # The Turnstile widget is an iframe served by Cloudflare.
     policy.frame_src   "https://challenges.cloudflare.com"
     policy.form_action :self
-    policy.frame_ancestors :none
+    # Permit embedding only for Superconductor's development preview.
+    if Rails.env.development? && ENV["AGENT_WEB_HOST"].present?
+      policy.frame_ancestors :self, "https://superconductor.com", "https://*.superconductor.com"
+    else
+      policy.frame_ancestors :none
+    end
     policy.manifest_src :self
     # The preview controller sets `--preview-scale` on .paper-pages as an inline
     # style attribute, which a nonce (a script-only mechanism) cannot cover.

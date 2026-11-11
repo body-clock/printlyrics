@@ -44,11 +44,13 @@ module Authentication
   def start_new_session_for(user)
     user.sessions.create!.tap do |session_record|
       Current.session = session_record
+      # Keep sign-in cookies usable inside Superconductor's HTTPS preview iframe.
+      embedded_preview = Rails.env.development? && ENV["AGENT_WEB_HOST"].present?
       cookies.signed.permanent[:session_id] = {
         value: session_record.id,
         httponly: true,
-        same_site: :lax,
-        secure: Rails.env.production?
+        same_site: embedded_preview ? :none : :lax,
+        secure: Rails.env.production? || embedded_preview
       }
       finish_pending_save_for(user)
     end
