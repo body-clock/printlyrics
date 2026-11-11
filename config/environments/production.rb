@@ -58,6 +58,12 @@ Rails.application.configure do
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "printlyrics.app", protocol: "https" }
 
+  # Canonical links, Open Graph URLs, structured data, and the sitemap are built
+  # from URL helpers. Pin them to the public host so a request that arrives under
+  # another Host header (an IP, a stray subdomain) cannot publish that host as the
+  # page's canonical address.
+  Rails.application.routes.default_url_options = { host: "printlyrics.app", protocol: "https" }
+
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {
   #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
