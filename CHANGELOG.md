@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.22.0](https://github.com/body-clock/printlyrics/compare/v1.21.0...v1.22.0) (2026-11-11)
+
+
+### Features
+
+* enable live app preview in development iframe ([#159](https://github.com/body-clock/printlyrics/issues/159)) ([33b11cb](https://github.com/body-clock/printlyrics/commit/33b11cb575f0f492dee78693b8f2a1d2014c963c))
+
+
+### Code Refactoring
+
+* **seo:** improve SEO optimization and default privacy ([#161](https://github.com/body-clock/printlyrics/issues/161)) ([f5d7dd0](https://github.com/body-clock/printlyrics/commit/f5d7dd086e32a0aac9132d52245ae4fd11f445d0))
+
 ## [1.21.0](https://github.com/body-clock/printlyrics/compare/v1.20.0...v1.21.0) (2026-11-05)
 
 
