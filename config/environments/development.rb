@@ -3,6 +3,14 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # Allow Superconductor's HTTPS preview host and sessions inside its iframe.
+  if (preview_host = ENV["AGENT_WEB_HOST"].presence)
+    config.hosts << preview_host
+    config.action_dispatch.default_headers.delete("X-Frame-Options")
+    config.action_dispatch.cookies_same_site_protection = :none
+    config.session_store :cookie_store, key: "_printlyrics_session", same_site: :none, secure: true
+  end
+
   # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
 
