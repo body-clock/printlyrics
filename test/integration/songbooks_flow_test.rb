@@ -310,7 +310,8 @@ class SongbooksFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "meta[name='robots'][content='noindex, nofollow']", 1
-    assert_select "link[rel='canonical'][href='#{root_url}']", 1
+    assert_select "link[rel='canonical'][href='#{songbook_url(songbook)}']", 1
+    assert_select "meta[property='og:url'][content='#{songbook_url(songbook)}']", 1
 
     get sitemap_path
 

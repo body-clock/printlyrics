@@ -5,7 +5,7 @@
 %>
 <% content_for :title, t(".seo.title") %>
 <% content_for :description, t(".seo.description") %>
-<% content_for :canonical_url, root_url %>
+<% content_for :canonical_url, songbook_url(@songbook) %>
 <% content_for :robots, "noindex, nofollow" %>
 <% content_for :body_class, "preview-body" %>
 <% content_for :hide_site_chrome, true %>
